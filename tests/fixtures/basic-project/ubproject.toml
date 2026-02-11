@@ -1,0 +1,16 @@
+[project]
+name = "Brake System"
+
+[needs]
+id_required = true
+id_length = 3
+types = [
+    {directive = "req", title = "Requirement", prefix = "REQ_", color = "#BFD8D2", style = "node"},
+    {directive = "spec", title = "Specification", prefix = "SPEC_", color = "#FEDCD2", style = "node"},
+    {directive = "impl", title = "Implementation", prefix = "IMPL_", color = "#DF744A", style = "node"},
+    {directive = "test", title = "Test Case", prefix = "TEST_", color = "#DCB239", style = "node"},
+]
+
+[needs.extra_links]
+implements = {incoming = "is implemented by", outgoing = "implements"}
+tests = {incoming = "is tested by", outgoing = "tests"}
