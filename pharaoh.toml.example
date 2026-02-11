@@ -1,0 +1,35 @@
+# Pharaoh configuration
+# Copy to pharaoh.toml and adjust to your project needs.
+# All settings are optional. Without this file, advisory mode applies.
+
+[pharaoh]
+# "advisory" (default) - suggests workflow but never blocks
+# "enforcing" - skills gate each other per workflow rules
+strictness = "advisory"
+
+[pharaoh.id_scheme]
+# Pattern for generating new need IDs
+# Available placeholders: {TYPE}, {MODULE}, {NUMBER}
+pattern = "{TYPE}-{MODULE}-{NUMBER}"
+auto_increment = true
+
+[pharaoh.workflow]
+# Require pharaoh:change before pharaoh:author
+require_change_analysis = true
+# Require pharaoh:verify before pharaoh:release
+require_verification = true
+# Require pharaoh:mece before pharaoh:release (optional)
+require_mece_on_release = false
+
+[pharaoh.traceability]
+# Required link chains - pharaoh:mece reports violations
+# Format: "source_type -> target_type"
+required_links = [
+    "req -> spec",
+    "spec -> impl",
+    "impl -> test",
+]
+
+[pharaoh.codelinks]
+# Follow sphinx-codelinks in change analysis
+enabled = true
