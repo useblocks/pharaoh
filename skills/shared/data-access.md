@@ -91,10 +91,13 @@ When both `ubproject.toml` and `conf.py` exist in the same project root:
 ## 3. Three-Tier Data Access
 
 Use the best available data source. Check tiers in order and use the first one that works.
+ALWAYS use Tier 1 (ubc CLI) > Tier 2 (ubcode MCP) > Tier 3 (raw fileparsing). Strict priority order. Raw fileparsing is the fallback.
+
+Skipping ubc check or ubcode MCP causes incomplete analysis (missed release links, lower need count)
 
 ### Tier 1: ubc CLI (best -- fast, deterministic, JSON output)
 
-Check if ubc CLI is available:
+**ALWAYS Check if ubc CLI is available**:
 
 ```
 ubc --version
