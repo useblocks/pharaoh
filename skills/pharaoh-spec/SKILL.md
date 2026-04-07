@@ -272,13 +272,13 @@ Source requirements: REQ_042, REQ_043
 
 ## Plan table
 
-| # | Task | Skill | Target | Detail | Required |
-|---|------|-------|--------|--------|----------|
-| 1 | Analyze impact | pharaoh:change | REQ_042 | Trace downstream effects | yes |
-| 2 | Author spec | pharaoh:author | (new) | Subsystem X timing | yes |
-| 3 | Author test | pharaoh:author | (new) | CAN driver verification | yes |
-| 4 | Update spec | pharaoh:author | SPEC_010 | Timing constraints | yes |
-| 5 | Verify | pharaoh:verify | (all) | Check traceability | yes |
+| # | Task | Skill | Target | Detail | File | Required |
+|---|------|-------|--------|--------|------|----------|
+| 1 | Analyze impact | pharaoh:change | REQ_042 | Trace downstream effects | docs/requirements.rst | yes |
+| 2 | Author spec | pharaoh:author | (new) | Subsystem X timing | docs/specifications.rst | yes |
+| 3 | Author test | pharaoh:author | (new) | CAN driver verification | docs/test_cases.rst | yes |
+| 4 | Update spec | pharaoh:author | SPEC_010 | Timing constraints | docs/specifications.rst | yes |
+| 5 | Verify | pharaoh:verify | (all) | Check traceability | -- | yes |
 ```
 
 #### Section rules
@@ -312,6 +312,7 @@ Each task row must specify:
 - **Skill**: The exact Pharaoh skill to invoke (e.g., `pharaoh:change`, `pharaoh:author`, `pharaoh:verify`, `pharaoh:mece`).
 - **Target**: The need ID being acted on, or `(new)` for needs to create, or `(all)` for verification tasks.
 - **Detail**: A specific description of the change or action. Not vague -- name the exact property or content being changed.
+- **File**: The target file path for the task (e.g., `docs/requirements.rst`, `docs/specifications.rst`), or `--` if not applicable.
 - **Required**: `yes`, `no`, or `recommended` based on strictness mode.
 
 #### Required field rules
@@ -477,12 +478,12 @@ User confirms: proceed.
 - Implementation scope: create 1 spec (pedal sensor timing) and 1 test (CAN driver HIL)
 - Plan table (advisory mode, all `recommended`):
 
-| # | Task | Skill | Target | Detail | Required |
-|---|------|-------|--------|--------|----------|
-| 1 | Analyze impact | pharaoh:change | REQ_001 | Trace downstream effects of new spec | recommended |
-| 2 | Author spec | pharaoh:author | (new) | Pedal sensor interface timing spec | recommended |
-| 3 | Author test | pharaoh:author | (new) | CAN driver HIL test case | recommended |
-| 4 | Verify coverage | pharaoh:verify | (all) | Check REQ_001 traceability chain | recommended |
+| # | Task | Skill | Target | Detail | File | Required |
+|---|------|-------|--------|--------|------|----------|
+| 1 | Analyze impact | pharaoh:change | REQ_001 | Trace downstream effects of new spec | docs/requirements.rst | recommended |
+| 2 | Author spec | pharaoh:author | (new) | Pedal sensor interface timing spec | docs/specifications.rst | recommended |
+| 3 | Author test | pharaoh:author | (new) | CAN driver HIL test case | docs/test_cases.rst | recommended |
+| 4 | Verify coverage | pharaoh:verify | (all) | Check REQ_001 traceability chain | -- | recommended |
 
 **Step 8** -- Handoff:
 
