@@ -7,5 +7,5 @@
   },
   "repository": "https://github.com/patdhlk/pharaoh",
   "license": "MIT",
-  "keywords": ["sphinx-needs", "requirements", "traceability", "change-analysis", "mece", "safety-critical", "automotive"]
+  "keywords": ["sphinx-needs", "requirements", "traceability", "change-analysis", "mece", "safety-critical", "automotive", "decisions"]
 }

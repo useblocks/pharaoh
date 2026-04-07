@@ -47,13 +47,18 @@ Pharaoh has no runtime binary or Python package. All analysis logic is encoded i
 | `pharaoh:verify` | `@pharaoh.verify` | Validate implementations against requirements -- content-level satisfaction checks |
 | `pharaoh:release` | `@pharaoh.release` | Release management -- changelog from requirements, traceability coverage metrics |
 | `pharaoh:plan` | `@pharaoh.plan` | Structured implementation planning -- break changes into tasks with workflow enforcement |
+| `pharaoh:spec` | `@pharaoh.spec` | Generate spec from requirements -- read needs hierarchy, record decisions, produce Superpowers-compatible spec with plan table |
+| `pharaoh:decide` | `@pharaoh.decide` | Record design decisions -- create `decision` needs with alternatives, rationale, and traceability links |
 
 ## Workflow
 
 ```
-pharaoh:change -> pharaoh:author -> pharaoh:verify -> pharaoh:release
-               -> pharaoh:mece   (optional, for gap analysis)
-               -> pharaoh:trace  (optional, for exploration)
+pharaoh:spec   -> pharaoh:decide (for gaps)
+               -> produces spec doc with plan table
+                    |
+pharaoh:plan   -> pharaoh:change -> pharaoh:author -> pharaoh:verify -> pharaoh:release
+                                 -> pharaoh:mece   (optional, for gap analysis)
+                                 -> pharaoh:trace  (optional, for exploration)
 ```
 
 ## Experience Tiers
