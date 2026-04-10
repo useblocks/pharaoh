@@ -20,13 +20,18 @@ Pharaoh is a skill-based AI assistant framework for sphinx-needs projects. It he
 | `@pharaoh.verify` | Validate implementations against requirements -- content-level satisfaction checks |
 | `@pharaoh.release` | Release management -- changelog from requirements, traceability coverage metrics |
 | `@pharaoh.plan` | Structured implementation planning -- break changes into tasks with workflow enforcement |
+| `@pharaoh.spec` | Generate spec from requirements -- read needs hierarchy, record decisions, produce spec with plan table |
+| `@pharaoh.decide` | Record design decisions -- create `decision` needs with alternatives, rationale, and traceability links |
 
 ## Recommended Workflow
 
 ```
-@pharaoh.change -> @pharaoh.author -> @pharaoh.verify -> @pharaoh.release
-                -> @pharaoh.mece   (optional, for gap analysis)
-                -> @pharaoh.trace  (optional, for exploration)
+@pharaoh.spec   -> @pharaoh.decide (for gaps)
+                -> produces spec doc with plan table
+                     |
+@pharaoh.plan   -> @pharaoh.change -> @pharaoh.author -> @pharaoh.verify -> @pharaoh.release
+                                   -> @pharaoh.mece   (optional, for gap analysis)
+                                   -> @pharaoh.trace  (optional, for exploration)
 ```
 
 ## Data Access Tiers

@@ -9,8 +9,22 @@ types = [
     {directive = "spec", title = "Specification", prefix = "SPEC_", color = "#FEDCD2", style = "node"},
     {directive = "impl", title = "Implementation", prefix = "IMPL_", color = "#DF744A", style = "node"},
     {directive = "test", title = "Test Case", prefix = "TEST_", color = "#DCB239", style = "node"},
+    {directive = "decision", title = "Decision", prefix = "DEC_", color = "#9B59B6", style = "artifact"},
 ]
 
 [needs.extra_links]
 implements = {incoming = "is implemented by", outgoing = "implements"}
 tests = {incoming = "is tested by", outgoing = "tests"}
+decides = {incoming = "is decided by", outgoing = "decides for"}
+
+[needs.fields.decided_by]
+description = "Who made the decision (human name or 'claude')"
+schema.type = "string"
+
+[needs.fields.alternatives]
+description = "Rejected alternatives, semicolon-separated"
+schema.type = "string"
+
+[needs.fields.rationale]
+description = "Why this option was chosen over alternatives"
+schema.type = "string"
