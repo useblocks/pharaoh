@@ -44,15 +44,15 @@ jobs:
             # Extract frontmatter (between first and second ---)
             frontmatter=$(sed -n '2,/^---$/p' "$skill_file" | sed '$d')
 
-            # Check for name field
-            if ! echo "$frontmatter" | grep -qE '^name:'; then
-              echo "ERROR: $skill_file missing 'name' in frontmatter"
+            # Check for name field (must be lowercase with hyphens)
+            if ! echo "$frontmatter" | grep -qE '^name: [a-z0-9-]+$'; then
+              echo "ERROR: $skill_file 'name' missing or not lowercase-with-hyphens"
               status=1
             fi
 
-            # Check for description field
-            if ! echo "$frontmatter" | grep -qE '^description:'; then
-              echo "ERROR: $skill_file missing 'description' in frontmatter"
+            # Check for description field (must start with "Use when")
+            if ! echo "$frontmatter" | grep -qE '^description: "?Use when'; then
+              echo "ERROR: $skill_file 'description' missing or does not start with 'Use when'"
               status=1
             fi
 
