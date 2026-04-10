@@ -125,34 +125,23 @@ jobs:
           exit $status
 
       - name: Check internal links
+        shell: bash
         run: |
           status=0
-          shopt -s globstar
-
-          # Check relative links in markdown files (top-level and docs/)
+          shopt -s globstar nullglob
           for md_file in *.md docs/**/*.md; do
             [ -f "$md_file" ] || continue
             dir=$(dirname "$md_file")
-
-            # Extract markdown links: [text](path) — skip URLs, anchors, and template links
-            grep -oP '\[.*?\]\(\K[^)]+' "$md_file" > /tmp/links.txt || true
-            while read -r link; do
-              # Skip URLs
-              case "$link" in
-                http://*|https://*|mailto:*|#*|\?*) continue ;;
-              esac
-
-              # Strip anchor from link
+            grep -oP '\[.*?\]\(\K[^)]+' "$md_file" | grep -v '^http' | grep -v '^mailto:' | grep -v '^#' | grep -v '^?' | while IFS= read -r link; do
               path="${link%%#*}"
               [ -z "$path" ] && continue
-
-              # Resolve relative to the markdown file's directory
               target="${dir}/${path}"
               if [ ! -e "$target" ]; then
                 echo "ERROR: $md_file links to '$link' but $target does not exist"
-                status=1
+                echo "FAILED" >> /tmp/link_check_failed
               fi
-            done < /tmp/links.txt
+            done
           done
-
-          exit $status
+          if [ -f /tmp/link_check_failed ]; then
+            exit 1
+          fi
