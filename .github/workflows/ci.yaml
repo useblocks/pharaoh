@@ -132,7 +132,8 @@ jobs:
           for md_file in *.md docs/**/*.md; do
             [ -f "$md_file" ] || continue
             dir=$(dirname "$md_file")
-            grep -oP '\[.*?\]\(\K[^)]+' "$md_file" | grep -v '^http' | grep -v '^mailto:' | grep -v '^#' | grep -v '^?' | while IFS= read -r link; do
+            links=$(grep -oP '\[.*?\]\(\K[^)]+' "$md_file" | grep -v '^http' | grep -v '^mailto:' | grep -v '^#' | grep -v '^?' || true)
+            for link in $links; do
               path="${link%%#*}"
               [ -z "$path" ] && continue
               target="${dir}/${path}"
