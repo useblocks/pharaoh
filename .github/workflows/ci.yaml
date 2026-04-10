@@ -135,6 +135,7 @@ jobs:
             dir=$(dirname "$md_file")
 
             # Extract markdown links: [text](path) — skip URLs, anchors, and template links
+            grep -oP '\[.*?\]\(\K[^)]+' "$md_file" > /tmp/links.txt || true
             while read -r link; do
               # Skip URLs
               case "$link" in
@@ -151,7 +152,7 @@ jobs:
                 echo "ERROR: $md_file links to '$link' but $target does not exist"
                 status=1
               fi
-            done < <(grep -oP '\[.*?\]\(\K[^)]+' "$md_file" || true)
+            done < /tmp/links.txt
           done
 
           exit $status
