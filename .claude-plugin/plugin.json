@@ -3,9 +3,9 @@
   "description": "AI assistant framework for sphinx-needs projects: change analysis, traceability, MECE, authoring, verification, and release management",
   "version": "0.1.0",
   "author": {
-    "name": "patdhlk"
+    "name": "useblocks"
   },
-  "repository": "https://github.com/patdhlk/pharaoh",
+  "repository": "https://github.com/useblocks/pharaoh",
   "license": "MIT",
   "keywords": ["sphinx-needs", "requirements", "traceability", "change-analysis", "mece", "safety-critical", "automotive", "decisions"]
 }

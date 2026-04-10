@@ -2,7 +2,7 @@
   "name": "pharaoh-dev",
   "description": "Development marketplace for Pharaoh sphinx-needs AI assistant",
   "owner": {
-    "name": "patdhlk"
+    "name": "useblocks"
   },
   "plugins": [
     {
@@ -11,7 +11,7 @@
       "version": "0.1.0",
       "source": "./",
       "author": {
-        "name": "patdhlk"
+        "name": "useblocks"
       }
     }
   ]

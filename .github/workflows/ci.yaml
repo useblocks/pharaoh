@@ -1,0 +1,148 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Validate skill frontmatter
+        run: |
+          status=0
+          for skill_dir in skills/*/; do
+            # Skip shared directory
+            if [ "$(basename "$skill_dir")" = "shared" ]; then
+              continue
+            fi
+
+            skill_file="${skill_dir}SKILL.md"
+            if [ ! -f "$skill_file" ]; then
+              echo "ERROR: Missing SKILL.md in $skill_dir"
+              status=1
+              continue
+            fi
+
+            # Check for YAML frontmatter delimiters
+            first_line=$(head -1 "$skill_file")
+            if [ "$first_line" != "---" ]; then
+              echo "ERROR: $skill_file missing YAML frontmatter (no opening ---)"
+              status=1
+              continue
+            fi
+
+            # Extract frontmatter (between first and second ---)
+            frontmatter=$(sed -n '2,/^---$/p' "$skill_file" | sed '$d')
+
+            # Check for name field (must be lowercase with hyphens)
+            if ! echo "$frontmatter" | grep -qE '^name: [a-z0-9-]+$'; then
+              echo "ERROR: $skill_file 'name' missing or not lowercase-with-hyphens"
+              status=1
+            fi
+
+            # Check for description field (must start with "Use when")
+            if ! echo "$frontmatter" | grep -qE '^description: "?Use when'; then
+              echo "ERROR: $skill_file 'description' missing or does not start with 'Use when'"
+              status=1
+            fi
+
+            echo "OK: $skill_file"
+          done
+          exit $status
+
+      - name: Validate agent frontmatter
+        run: |
+          status=0
+          for agent_file in .github/agents/*.agent.md; do
+            [ -f "$agent_file" ] || continue
+
+            first_line=$(head -1 "$agent_file")
+            if [ "$first_line" != "---" ]; then
+              echo "ERROR: $agent_file missing YAML frontmatter"
+              status=1
+              continue
+            fi
+
+            frontmatter=$(sed -n '2,/^---$/p' "$agent_file" | sed '$d')
+
+            if ! echo "$frontmatter" | grep -qE '^description:'; then
+              echo "ERROR: $agent_file missing 'description' in frontmatter"
+              status=1
+            fi
+
+            if ! echo "$frontmatter" | grep -qE '^handoffs:'; then
+              echo "ERROR: $agent_file missing 'handoffs' in frontmatter"
+              status=1
+            fi
+
+            echo "OK: $agent_file"
+          done
+          exit $status
+
+      - name: Cross-reference skills and agents
+        run: |
+          status=0
+
+          # Check every pharaoh skill has a matching agent
+          for skill_dir in skills/pharaoh-*/; do
+            skill_name=$(basename "$skill_dir")
+            # Convert pharaoh-change -> pharaoh.change
+            agent_name=$(echo "$skill_name" | sed 's/-/./')
+            agent_file=".github/agents/${agent_name}.agent.md"
+
+            if [ ! -f "$agent_file" ]; then
+              echo "ERROR: Skill $skill_name has no matching agent at $agent_file"
+              status=1
+            else
+              echo "OK: $skill_name <-> $agent_file"
+            fi
+          done
+
+          # Check every pharaoh agent has a matching skill
+          for agent_file in .github/agents/pharaoh.*.agent.md; do
+            [ -f "$agent_file" ] || continue
+            agent_basename=$(basename "$agent_file" .agent.md)
+            # Convert pharaoh.change -> pharaoh-change
+            skill_name=$(echo "$agent_basename" | sed 's/\./-/')
+            skill_dir="skills/${skill_name}/"
+
+            if [ ! -d "$skill_dir" ]; then
+              echo "ERROR: Agent $agent_basename has no matching skill at $skill_dir"
+              status=1
+            fi
+          done
+
+          exit $status
+
+      - name: Check internal links
+        shell: bash
+        run: |
+          status=0
+          shopt -s globstar nullglob
+          for md_file in *.md docs/**/*.md; do
+            [ -f "$md_file" ] || continue
+            dir=$(dirname "$md_file")
+            links=$(grep -oP '\[.*?\]\(\K[^)]+' "$md_file" | grep -v '^http' | grep -v '^mailto:' | grep -v '^#' | grep -v '^?' || true)
+            for link in $links; do
+              path="${link%%#*}"
+              [ -z "$path" ] && continue
+              target="${dir}/${path}"
+              if [ ! -e "$target" ]; then
+                echo "ERROR: $md_file links to '$link' but $target does not exist"
+                echo "FAILED" >> /tmp/link_check_failed
+              fi
+            done
+          done
+          if [ -f /tmp/link_check_failed ]; then
+            exit 1
+          fi

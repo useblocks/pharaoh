@@ -1,6 +1,6 @@
 # Contributing to Pharaoh
 
-Thank you for your interest in contributing to Pharaoh! This guide covers how the project is structured, how to make changes, and how to submit contributions.
+Pharaoh is maintained by [useblocks](https://useblocks.com) and welcomes contributions from the community. This guide covers how the project is structured, how to make changes, and how to submit contributions.
 
 ## Project Structure
 
@@ -105,6 +105,22 @@ Test fixtures live in `tests/fixtures/`. Each fixture is a minimal sphinx-needs 
 - First line: brief summary (under 72 characters).
 - Group related changes in a single commit.
 
+## Developer Certificate of Origin
+
+This project uses the [Developer Certificate of Origin](https://developercertificate.org/) (DCO). By contributing, you certify that you wrote or have the right to submit the code under the project's MIT license.
+
+Sign off your commits with:
+
+```bash
+git commit -s -m "Your commit message"
+```
+
+All commits in a PR must be signed off. If you forget, you can amend:
+
+```bash
+git commit --amend -s
+```
+
 ## Pull Request Process
 
 1. Fork the repository and create a branch from `main`.
@@ -118,12 +134,12 @@ Test fixtures live in `tests/fixtures/`. Each fixture is a minimal sphinx-needs 
 
 ## Reporting Issues
 
-When reporting an issue, include:
+Use the GitHub issue templates:
 
-- Which skill/agent was involved.
-- The sphinx-needs project structure (types, link types, config source).
-- What you expected to happen vs what actually happened.
-- The AI platform used (Claude Code or GitHub Copilot).
+- **[Bug Report](?template=bug_report.md)** -- for problems with skills or agents
+- **[Feature Request](?template=feature_request.md)** -- for improvements or new capabilities
+
+The templates include fields for the skill/agent involved, AI platform, and project configuration.
 
 ## Questions?
 

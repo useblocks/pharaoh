@@ -1,0 +1,78 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    uses: ./.github/workflows/ci.yaml
+
+  release:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Get version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Find the previous tag
+          prev_tag=$(git tag --sort=-v:refname | sed -n '2p')
+
+          if [ -z "$prev_tag" ]; then
+            # First release — log from the beginning
+            log=$(git log --pretty=format:"- %s (%h)" "$GITHUB_REF")
+          else
+            log=$(git log --pretty=format:"- %s (%h)" "${prev_tag}..${GITHUB_REF}")
+          fi
+
+          # Write to file for body_path
+          echo "$log" > RELEASE_NOTES.md
+
+      - name: Create release archive
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          archive="pharaoh-${VERSION}.zip"
+
+          # Collect paths that exist
+          paths=""
+          for p in \
+            skills/ \
+            .github/agents/ \
+            .github/prompts/ \
+            .claude-plugin/ \
+            agents/ \
+            tests/fixtures/ \
+            pharaoh.toml.example \
+            README.md \
+            LICENSE \
+            CHANGELOG.md \
+            CONTRIBUTING.md \
+            SECURITY.md
+          do
+            [ -e "$p" ] && paths="$paths $p"
+          done
+
+          zip -r "$archive" $paths
+
+          echo "archive=${archive}" >> "$GITHUB_ENV"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ steps.version.outputs.version }}
+          body_path: RELEASE_NOTES.md
+          files: ${{ env.archive }}
