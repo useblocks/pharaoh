@@ -115,10 +115,6 @@ Pharaoh never re-defines these settings. `pharaoh.toml` only controls Pharaoh's 
 
 When a project uses [sphinx-codelinks](https://sphinx-codelinks.useblocks.com/), Pharaoh follows codelink references in change analysis and traceability. A change to a requirement surfaces affected code files, not just other requirements.
 
-## Design
-
-See the [design document](docs/plans/2026-02-11-pharaoh-design.md) for architecture details, platform support, and the full data access model.
-
 ## License
 
 MIT
