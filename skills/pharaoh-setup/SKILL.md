@@ -152,7 +152,7 @@ Strictness mode controls whether Pharaoh enforces workflow order.
   enforcing           - Pharaoh checks prerequisites before each
                         skill and blocks if they are not met.
                         (e.g., pharaoh:change must run before
-                        pharaoh:author)
+                        any authoring skill)
 
 Which mode would you like? [advisory/enforcing]
 ```
@@ -465,8 +465,8 @@ Available skills (Claude Code):
   pharaoh:change   - Analyze impact of a requirement change
   pharaoh:trace    - Navigate traceability links in any direction
   pharaoh:mece     - Check for gaps, redundancies, and inconsistencies
-  pharaoh:author   - Create or modify needs with proper schema compliance
-  pharaoh:verify   - Validate implementations against requirements
+  pharaoh:req-draft    - Draft new requirements as traceable sphinx-needs directives
+  pharaoh:req-review   - Validate requirements against linked specs and implementations
   pharaoh:release  - Generate changelogs and release summaries
   pharaoh:plan     - Break changes into structured implementation tasks
 ```

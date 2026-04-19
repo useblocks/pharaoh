@@ -28,9 +28,9 @@ the needs set.
 - **Schema validation**: When ubc CLI is available, runs full ontology and lint
   checks.
 
-### How it differs from pharaoh:verify
+### How it differs from review skills (e.g. pharaoh:req-review)
 
-`pharaoh:verify` checks the **content** of individual needs -- whether the
+Review skills (e.g. `pharaoh:req-review`) check the **content** of individual needs -- whether the
 requirement text is clear, whether test cases adequately cover what they claim,
 whether implementations match their specifications.
 

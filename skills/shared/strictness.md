@@ -34,8 +34,8 @@ Read `[pharaoh.workflow]` for gate configuration:
 
 ```toml
 [pharaoh.workflow]
-require_change_analysis = true    # pharaoh:author requires pharaoh:change
-require_verification = true       # pharaoh:release requires pharaoh:verify
+require_change_analysis = true    # any authoring skill requires pharaoh:change
+require_verification = true       # pharaoh:release requires any review skill
 require_mece_on_release = false   # pharaoh:release requires pharaoh:mece
 ```
 
@@ -59,7 +59,7 @@ required_links = [
 ]
 ```
 
-Each entry defines that every need of the source type should have at least one outgoing link to a need of the target type. These are used by pharaoh:mece for gap analysis and by pharaoh:verify for completeness checks.
+Each entry defines that every need of the source type should have at least one outgoing link to a need of the target type. These are used by pharaoh:mece for gap analysis and by any review skill for completeness checks.
 
 If `required_links` is missing or empty, no traceability chains are enforced.
 
@@ -87,8 +87,8 @@ Specific tips by skill:
 
 | Current skill | Missing prerequisite | Tip message |
 |---|---|---|
-| `pharaoh:author` | No change analysis done | `Tip: Consider running pharaoh:change first to understand the impact of this modification.` |
-| `pharaoh:release` | No verification done | `Tip: Consider running pharaoh:verify to validate implementations before release.` |
+| any authoring skill | No change analysis done | `Tip: Consider running pharaoh:change first to understand the impact of this modification.` |
+| `pharaoh:release` | No verification done | `Tip: Consider running any review skill (e.g. pharaoh:req-review) to validate before release.` |
 | `pharaoh:release` | No MECE check done | `Tip: Consider running pharaoh:mece to check for gaps before release.` |
 
 ### When to show tips
@@ -116,7 +116,7 @@ When `strictness = "enforcing"`:
 
 Before executing a skill, check the following gates:
 
-**pharaoh:author** gate:
+**Any authoring skill** gate (e.g. pharaoh:req-draft, pharaoh:arch-draft, pharaoh:vplan-draft):
 1. Read session state (see Section 4).
 2. If `require_change_analysis = true`:
    - Check if `pharaoh:change` was run for the relevant needs.
@@ -130,12 +130,12 @@ Before executing a skill, check the following gates:
 **pharaoh:release** gate:
 1. Read session state.
 2. If `require_verification = true`:
-   - Check if `pharaoh:verify` was run and passed.
+   - Check if any review skill (e.g. pharaoh:req-review) was run and passed.
    - The verification must show `verified = true` in session state.
    - If not met, block with:
      ```
      Blocked: Verification required before release.
-     Run pharaoh:verify to validate implementations first.
+     Run the appropriate review skill (e.g. pharaoh:req-review) to validate implementations first.
      ```
 3. If `require_mece_on_release = true`:
    - Check if `pharaoh:mece` was run.
@@ -150,8 +150,8 @@ Before executing a skill, check the following gates:
 
 | Skill | Requires | Condition |
 |---|---|---|
-| `pharaoh:author` | `pharaoh:change` acknowledged | `require_change_analysis = true` |
-| `pharaoh:release` | `pharaoh:verify` passed | `require_verification = true` |
+| any authoring skill | `pharaoh:change` acknowledged | `require_change_analysis = true` |
+| `pharaoh:release` | any review skill passed | `require_verification = true` |
 | `pharaoh:release` | `pharaoh:mece` checked | `require_mece_on_release = true` |
 
 ### Skills with no gates
@@ -161,7 +161,7 @@ The following skills have no prerequisites and execute freely in any mode:
 - `pharaoh:change`
 - `pharaoh:trace`
 - `pharaoh:mece`
-- `pharaoh:verify`
+- `pharaoh:req-review`
 - `pharaoh:plan`
 
 ---
@@ -214,8 +214,8 @@ The state file is `.pharaoh/session.json` in the workspace root.
 - `changes`: Dictionary keyed by need ID. Each entry tracks per-need workflow progress:
   - `change_analysis`: Timestamp of when pharaoh:change was run for this need. `null` if not run.
   - `acknowledged`: Boolean. True if the user acknowledged the change analysis results.
-  - `authored`: Boolean. True if pharaoh:author was used to modify this need.
-  - `verified`: Boolean. True if pharaoh:verify passed for this need.
+  - `authored`: Boolean. True if any authoring skill was used to modify this need.
+  - `verified`: Boolean. True if any review skill passed for this need.
 - `global`: Global workflow state not tied to a specific need:
   - `mece_checked`: Boolean. True if pharaoh:mece was run.
   - `mece_timestamp`: Timestamp of last MECE check. `null` if not run.
@@ -230,7 +230,7 @@ When checking prerequisites:
 3. If the file contains malformed JSON, warn the user and treat as empty.
 4. Check the relevant fields for the gate being evaluated.
 
-For per-need gates (e.g., pharaoh:author checking change analysis):
+For per-need gates (e.g., any authoring skill checking change analysis):
 - Look up each affected need ID in the `changes` dictionary.
 - If the need ID is not present, the prerequisite was not met.
 - If the need ID is present, check the relevant boolean field.
@@ -248,8 +248,8 @@ After a skill completes successfully, update the session state:
 | After skill | Fields to update |
 |---|---|
 | `pharaoh:change` | Set `changes.<need_id>.change_analysis` to current timestamp. Set `acknowledged` to `true` if the user acknowledged the results. |
-| `pharaoh:author` | Set `changes.<need_id>.authored` to `true`. |
-| `pharaoh:verify` | Set `changes.<need_id>.verified` to `true` for each verified need. |
+| any authoring skill | Set `changes.<need_id>.authored` to `true`. |
+| any review skill | Set `changes.<need_id>.verified` to `true` for each verified need. |
 | `pharaoh:mece` | Set `global.mece_checked` to `true`. Set `global.mece_timestamp` to current timestamp. |
 | `pharaoh:release` | Set `global.last_release` to current timestamp. |
 
