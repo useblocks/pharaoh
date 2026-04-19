@@ -56,11 +56,17 @@ without reading any other document beyond the referenced parent requirement.
 
 **1a. `artefact-catalog.yaml`**
 
-Look up the `tc` entry. If found, read `required_fields`, `optional_fields`, `lifecycle`.
+Look up the `tc` entry. If found, read `required_fields`, `optional_fields`, `lifecycle`,
+and `required_body_sections`.
+
+**`required_fields` / `optional_fields`** are directive option names (sphinx-needs `:key: value`
+options). **`required_body_sections`** are top-level Markdown/RST section headings that must
+appear in the directive body prose (e.g. `Inputs`, `Steps`, `Expected`).
 
 If the `tc` entry does not exist, use these defaults:
-- `required_fields`: `[id, status, verifies, inputs, steps, expected]`
+- `required_fields`: `[id, status, verifies]`
 - `optional_fields`: `[tags, rationale, level]`
+- `required_body_sections`: `[Inputs, Steps, Expected]`
 - `lifecycle`: `[draft, valid, inspected]`
 
 Note the fallback in output if defaults were applied.

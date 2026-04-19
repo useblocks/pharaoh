@@ -5,6 +5,8 @@ prefixes:
   wf: workflow
   std_req: external standard requirement (ISO/ASPICE)
   gd_chklst: checklist
+  arch: architecture
+  tc: test case
 # NOTE: std_req IDs embed source-standard codes that may contain uppercase and hyphens,
 # e.g. std_req__aspice_40__MAN-3-BP1.  The regex below applies to all other prefixes;
 # std_req is intentionally exempt because the local-part mirrors upstream identifier

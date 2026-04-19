@@ -107,10 +107,17 @@ unambiguity_prose, comprehensibility, feasibility):
 ### Step 1: Read tailoring
 
 Read `.pharaoh/project/artefact-catalog.yaml`. Extract the `tc` entry:
-- `required_fields` (expected: `[id, status, verifies, inputs, steps, expected]`)
+- `required_fields` — directive-option keys, expected: `[id, status, verifies]`
+- `required_body_sections` — top-level body headings, expected: `[Inputs, Steps, Expected]`
 
-If the `tc` entry is absent, apply defaults: `required_fields = [id, status, verifies, inputs, steps, expected]`.
-Note the fallback in output.
+`required_fields` are sphinx-needs directive options (`:id:`, `:status:`, `:verifies:`).
+`required_body_sections` are named sections *inside* the directive body prose (`Inputs`,
+`Steps`, `Expected`). These are separate axes and validated separately by the `schema` check
+below.
+
+If the `tc` entry is absent, apply defaults:
+`required_fields = [id, status, verifies]` and
+`required_body_sections = [Inputs, Steps, Expected]`. Note the fallback in output.
 
 Read `id-conventions.yaml` for `id_regex`.
 
@@ -174,9 +181,16 @@ Score 1 only if both sub-conditions hold.
 
 **Schema:**
 
-Verify every field in `required_fields` is present and non-empty. For default tc:
-`id`, `status`, `verifies`, `inputs`, `steps`, `expected` must all be present. Score 0 with
-reason listing missing field(s).
+Two independent sub-checks — both must pass to score 1:
+
+1. Every key in `required_fields` is present as a sphinx-needs directive option and
+   non-empty. For default tc: `:id:`, `:status:`, `:verifies:` must be set.
+2. Every entry in `required_body_sections` is present as a top-level section heading in
+   the directive body prose and non-empty. For default tc: `Inputs`, `Steps`, `Expected`
+   sections must appear with content.
+
+Score 0 with a `reason` listing the missing fields and/or missing body sections (prefix
+option failures with `:field:` and body-section failures with the section name).
 
 ---
 

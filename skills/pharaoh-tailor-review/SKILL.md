@@ -112,19 +112,21 @@ but do not replace them.
 
 | Key | Type | Rule |
 |---|---|---|
-| `separator` | string or null | Must be present; string if set |
-| `id_regex` | string or null | Must be present |
+| `separator` | string | Must be present |
+| `id_regex` | string | Must be present; non-empty |
 | `prefixes` | map | Must be present; must contain at least one entry |
-| `id_regex_exceptions` | map | Must be present; may be empty (`{}`) |
+| `id_regex_exceptions` | map | Optional; if present must be a map of `<prefix>: <regex>` where `<prefix>` is declared in the `prefixes` map |
 
 For each entry in `prefixes`, the key must be a non-empty string and the value must be a
-non-empty string (the description).
+non-empty string (the description). See
+`examples/score/.pharaoh/project/schemas/id-conventions.schema.json` for the authoritative
+JSON Schema.
 
 **workflows.yaml required keys:**
 
 | Key | Type | Rule |
 |---|---|---|
-| `lifecycle_states` | map | Must be present; at least one state |
+| `lifecycle_states` | array of strings | Must be present; at least two unique, non-empty state names |
 | `transitions` | list | Must be present; may be empty |
 
 For each transition in `transitions`:
@@ -132,28 +134,38 @@ For each transition in `transitions`:
 - `from` and `to` must be non-empty strings.
 - `requires` must be a list (may be empty).
 
+See `examples/score/.pharaoh/project/schemas/workflows.schema.json` for the authoritative
+JSON Schema.
+
 **artefact-catalog.yaml required structure:**
 
 Top level must be a map of artefact-type keys. For each artefact type:
 
 | Key | Type | Rule |
 |---|---|---|
-| `required_fields` | list | Must be present; must include at least `id` and `status` |
-| `optional_fields` | list | Must be present; may be empty |
+| `required_fields` | list | Must be present; must include at least `id` and `status`. Entries are sphinx-needs *option* keys (`:key: value`). |
+| `optional_fields` | list | Optional; may be empty. Entries are sphinx-needs *option* keys. |
+| `required_body_sections` | list | Optional; entries are top-level heading names that must appear inside the directive body prose (e.g. `Inputs`, `Steps`, `Expected` for `tc`). Validated as body prose, not as `:key:` options. |
 | `lifecycle` | list | Optional; if present must be non-empty |
 
-**checklists/requirement.md frontmatter:**
+See `examples/score/.pharaoh/project/schemas/artefact-catalog.schema.json` for the
+authoritative JSON Schema.
 
-The file must start with a YAML frontmatter block (delimited by `---`). The frontmatter must
-contain:
+**checklists/*.md frontmatter:**
+
+YAML frontmatter (delimited by `---`) at the top of a checklist file is **optional**. When
+present, it is validated against
+`examples/score/.pharaoh/project/schemas/checklists-frontmatter.schema.json`:
 
 | Key | Rule |
 |---|---|
-| `title` | Non-empty string |
-| `standard` | One of: `iso26262-8.6`, `aspice-4.0`, `iso21434`, or a custom string |
-| `axes` | Map with at least one sub-key (`individual`, `set_level`, or `chain_level`) |
+| `name` | Optional; non-empty string if present |
+| `applies_to` | Optional; artefact-type key from `artefact-catalog.yaml`, or `"*"` |
+| `axes` | Optional; list of one or more non-empty axis labels |
 
-If frontmatter is missing or any key absent, record a `severity: error` violation.
+Additional fields are allowed (`additionalProperties: true`). Do NOT error on a missing
+frontmatter block or on missing individual keys; only error on fields that are *present* but
+violate the type rule above.
 
 ---
 
@@ -174,7 +186,7 @@ Prefix '<key>' appears in artefact-catalog.yaml but is not declared in id-conven
 **C2 — Lifecycle states in artefact-catalog exist in workflows.yaml**
 
 For every artefact type in `artefact-catalog.yaml` that carries a `lifecycle` list, every
-state value must appear as a key in `workflows.yaml.lifecycle_states`.
+state value must appear as an entry in the `workflows.yaml.lifecycle_states` array.
 
 Violation (error) if not:
 ```
@@ -184,7 +196,7 @@ Lifecycle state '<state>' referenced in artefact-catalog.yaml (<type>.lifecycle)
 **C3 — Transition states exist in lifecycle_states**
 
 For every transition in `workflows.yaml.transitions`, both `from` and `to` must appear as
-keys in `workflows.yaml.lifecycle_states`.
+entries in the `workflows.yaml.lifecycle_states` array.
 
 Violation (error) if not:
 ```

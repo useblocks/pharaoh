@@ -5,6 +5,36 @@ Follow these steps when a skill needs to check prerequisites or record progress.
 
 ---
 
+## 0. Who performs these checks
+
+Session-state gating (`.pharaoh/session.json` reads and writes, enforcing-mode blocking,
+advisory-mode tips) is an **orchestrator concern**, not an atomic-primitive concern.
+
+**Atomic skills** (single-artefact primitives: `pharaoh:req-draft`,
+`pharaoh:arch-draft`, `pharaoh:vplan-draft`, `pharaoh:fmea`, `pharaoh:req-review`,
+`pharaoh:arch-review`, `pharaoh:vplan-review`, etc.) execute their defined operation
+exactly once and emit their defined output. They do **not** read `pharaoh.toml`, do **not**
+consult `.pharaoh/session.json`, and do **not** block on gate conditions. This keeps them
+indivisible (atomicity criterion a) and composable into arbitrary flows.
+
+**Orchestrator / composite skills** (`pharaoh:flow`, `pharaoh:audit-fanout`,
+`pharaoh:reqs-from-module`, `pharaoh:plan`, `pharaoh:change`, `pharaoh:release`, and the
+legacy top-level skills `pharaoh:decide`, `pharaoh:spec`, `pharaoh:mece`, `pharaoh:trace`,
+`pharaoh:setup`) are responsible for:
+
+1. Reading `pharaoh.toml` and determining the strictness level (Section 1).
+2. Reading `.pharaoh/session.json` to check whether gate prerequisites are met
+   (Sections 3 and 4).
+3. Blocking in enforcing mode when a gate fails, or emitting a tip in advisory mode
+   (Sections 2 and 3).
+4. Dispatching the relevant atomic primitives when gates pass.
+5. Writing back to `.pharaoh/session.json` on successful completion (Section 4d).
+
+The rest of this document describes *what* the checks are. *Where* they run: in
+orchestrators. Atomic primitives ignore these rules.
+
+---
+
 ## 1. Read Strictness Configuration
 
 ### Step 1a: Find pharaoh.toml
@@ -161,8 +191,16 @@ The following skills have no prerequisites and execute freely in any mode:
 - `pharaoh:change`
 - `pharaoh:trace`
 - `pharaoh:mece`
-- `pharaoh:req-review`
 - `pharaoh:plan`
+- All **review / audit skills** (they inspect existing artefacts and do not modify them):
+  `pharaoh:req-review`, `pharaoh:arch-review`, `pharaoh:vplan-review`,
+  `pharaoh:review-completeness`, `pharaoh:coverage-gap`,
+  `pharaoh:standard-conformance`, `pharaoh:lifecycle-check`,
+  `pharaoh:process-audit`, `pharaoh:tailor-review`
+- All **read-only memory / context skills**: `pharaoh:context-gather`
+- All **tailoring authoring skills** (they author `.pharaoh/project/` metadata, not
+  sphinx-needs artefacts, and therefore are not subject to the authoring gate):
+  `pharaoh:tailor-detect`, `pharaoh:tailor-fill`
 
 ---
 

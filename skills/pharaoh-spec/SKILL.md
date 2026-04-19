@@ -275,10 +275,10 @@ Source requirements: REQ_042, REQ_043
 | # | Task | Skill | Target | Detail | File | Required |
 |---|------|-------|--------|--------|------|----------|
 | 1 | Analyze impact | pharaoh:change | REQ_042 | Trace downstream effects | docs/requirements.rst | yes |
-| 2 | Author spec | pharaoh:req-draft | (new) | Subsystem X timing | docs/specifications.rst | yes |
-| 3 | Author test | pharaoh:req-draft | (new) | CAN driver verification | docs/test_cases.rst | yes |
-| 4 | Update spec | pharaoh:req-draft | SPEC_010 | Timing constraints | docs/specifications.rst | yes |
-| 5 | Verify | pharaoh:req-review | (all) | Check traceability | -- | yes |
+| 2 | Author spec | pharaoh:arch-draft | (new) | Subsystem X timing | docs/specifications.rst | yes |
+| 3 | Author test | pharaoh:vplan-draft | (new) | CAN driver verification | docs/test_cases.rst | yes |
+| 4 | Update spec | pharaoh:arch-draft | SPEC_010 | Timing constraints | docs/specifications.rst | yes |
+| 5 | Verify | pharaoh:arch-review, pharaoh:vplan-review | (all) | Check traceability and per-type axes | -- | yes |
 ```
 
 #### Section rules

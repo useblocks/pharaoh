@@ -194,13 +194,13 @@ Format the plan as a structured document the user can review before execution.
 
 | #  | Task                  | Skill            | Target     | Detail                                    | File                     | Required |
 |----|-----------------------|------------------|------------|-------------------------------------------|--------------------------|----------|
-| 1  | Analyze impact        | pharaoh:change   | REQ_001    | Trace downstream impact of latency change | docs/requirements.rst    | yes      |
-| 2  | Update requirement    | pharaoh:req-draft   | REQ_001    | Change latency from 100ms to 50ms         | docs/requirements.rst    | yes      |
-| 3  | Update specification  | pharaoh:req-draft   | SPEC_001   | Update signal timing to match new latency | docs/specifications.rst  | yes      |
-| 4  | Update implementation | pharaoh:req-draft   | IMPL_001   | Adjust timer configuration                | docs/implementations.rst | yes      |
-| 5  | Update test case      | pharaoh:req-draft   | TC_001     | Update expected timing in assertions      | docs/test_cases.rst      | yes      |
-| 6  | Verify all changes    | pharaoh:req-review  | (all)      | Verify REQ_001, SPEC_001, IMPL_001, TC_001| --                       | yes*     |
-| 7  | MECE check            | pharaoh:mece     | (all)      | Check for gaps in modified area           | --                       | no       |
+| 1  | Analyze impact        | pharaoh:change                          | REQ_001    | Trace downstream impact of latency change  | docs/requirements.rst    | yes      |
+| 2  | Update requirement    | pharaoh:req-draft / pharaoh:req-regenerate | REQ_001    | Change latency from 100ms to 50ms          | docs/requirements.rst    | yes      |
+| 3  | Update specification  | pharaoh:arch-draft                      | SPEC_001   | Update signal timing to match new latency  | docs/specifications.rst  | yes      |
+| 4  | Update implementation | pharaoh:arch-draft                      | IMPL_001   | Adjust timer configuration                 | docs/implementations.rst | yes      |
+| 5  | Update test case      | pharaoh:vplan-draft                     | TC_001     | Update expected timing in assertions       | docs/test_cases.rst      | yes      |
+| 6  | Verify all changes    | pharaoh:req-review, pharaoh:arch-review, pharaoh:vplan-review | (all) | Run the per-type review for each updated artefact | -- | yes* |
+| 7  | MECE check            | pharaoh:mece                            | (all)      | Check for gaps in modified area            | --                       | no       |
 
 *Required in enforcing mode when require_verification = true.
 
