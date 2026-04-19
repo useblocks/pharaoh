@@ -1,6 +1,6 @@
 ---
 name: pharaoh-standard-conformance
-description: Evaluate a single sphinx-needs artefact against one regulatory standard (ISO 26262-8 §6, ASPICE 4.0, ISO/SAE 21434). Emits per-indicator findings JSON with pass/fail on mechanizable indicators and 0-3 scores on subjective ones.
+description: Use when evaluating a single sphinx-needs artefact against one regulatory standard (ISO 26262-8 §6, ASPICE 4.0, ISO/SAE 21434). Emits per-indicator findings JSON with pass/fail on mechanizable indicators and 0-3 scores on subjective ones.
 chains_from: [pharaoh-req-review, pharaoh-arch-review, pharaoh-vplan-review, pharaoh-process-audit]
 chains_to: []
 ---

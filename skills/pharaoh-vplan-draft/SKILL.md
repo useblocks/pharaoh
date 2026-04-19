@@ -1,6 +1,6 @@
 ---
 name: pharaoh-vplan-draft
-description: Draft a single sphinx-needs test-case (verification plan item) for one requirement. Emits an RST tc__ directive with inputs, steps, and expected outcome, linking to the parent req via :verifies:.
+description: Use when drafting a single sphinx-needs test-case (verification plan item) for one requirement. Emits an RST tc__ directive with inputs, steps, and expected outcome, linking to the parent req via :verifies:.
 chains_from: [pharaoh-req-draft, pharaoh-req-regenerate, pharaoh-arch-draft]
 chains_to: [pharaoh-vplan-review]
 ---

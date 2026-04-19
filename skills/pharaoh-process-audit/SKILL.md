@@ -1,6 +1,6 @@
 ---
 name: pharaoh-process-audit
-description: Run a full-corpus audit against a sphinx-needs project. Orchestrates pharaoh-coverage-gap across all gap categories plus cross-artefact consistency checks. Emits a prioritised gap report.
+description: Use when running a full-corpus audit against a sphinx-needs project. Orchestrates pharaoh-coverage-gap across all gap categories plus cross-artefact consistency checks. Emits a prioritised gap report.
 chains_from: []
 chains_to: [pharaoh-coverage-gap, pharaoh-standard-conformance]
 ---

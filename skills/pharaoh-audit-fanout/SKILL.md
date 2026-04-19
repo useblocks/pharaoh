@@ -1,6 +1,6 @@
 ---
 name: pharaoh-audit-fanout
-description: Orchestrator — run a full project audit by dispatching 5 atomic audit skills in parallel, each writing findings to a shared Papyrus workspace via pharaoh-finding-record for automatic deduplication. Emits the aggregated deduplicated findings list.
+description: Use when running a full project audit in parallel by dispatching 5 atomic audit skills, each writing findings to a shared Papyrus workspace via pharaoh-finding-record for automatic deduplication. Emits the aggregated deduplicated findings list.
 ---
 
 # pharaoh-audit-fanout

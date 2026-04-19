@@ -1,6 +1,6 @@
 ---
 name: pharaoh-req-regenerate
-description: Regenerate a single sphinx-needs requirement to address findings from pharaoh-req-review. Consumes the original RST + findings JSON, emits a revised RST directive that passes the flagged axes.
+description: Use when regenerating a single sphinx-needs requirement to address findings from pharaoh-req-review. Consumes the original RST + findings JSON, emits a revised RST directive that passes the flagged axes.
 chains_from: [pharaoh-req-review]
 chains_to: [pharaoh-req-review]
 ---

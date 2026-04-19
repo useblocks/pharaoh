@@ -1,6 +1,6 @@
 ---
 name: pharaoh-reqs-from-module
-description: Orchestrator — reverse-engineer comp_reqs for an entire module by dispatching pharaoh-req-from-code in parallel, one agent per source file, sharing a Papyrus workspace for cross-agent terminology coordination. Aggregates into a single RST document.
+description: Use when reverse-engineering comp_reqs for an entire module in parallel by dispatching pharaoh-req-from-code subagents, one per source file, sharing a Papyrus workspace for cross-agent terminology coordination. Aggregates into a single RST document.
 ---
 
 # pharaoh-reqs-from-module

@@ -1,6 +1,6 @@
 ---
 name: pharaoh-req-from-code
-description: Atomic — read one C++ source file and emit one or more comp_req RST directives describing the observable behavior in the file. Queries shared Papyrus for canonical terms before naming concepts; writes newly surfaced concepts back. Does not draft architecture, plans, or FMEA.
+description: Use when reading one source file and emitting one or more comp_req RST directives describing the observable behavior in that file. Queries shared Papyrus for canonical terms before naming concepts; writes newly surfaced concepts back. Does not draft architecture, plans, or FMEA.
 ---
 
 # pharaoh-req-from-code

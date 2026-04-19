@@ -1,6 +1,6 @@
 ---
 name: pharaoh-finding-record
-description: Atomic — record an audit finding in the shared Papyrus workspace with automatic dedup. Uses deterministic ID to ensure the same {category, subject_id} tuple never appears twice across concurrent subagents. Returns {action: wrote|duplicate, papyrus_id}.
+description: Use when recording an audit finding in the shared Papyrus workspace with automatic dedup. Uses deterministic ID to ensure the same {category, subject_id} tuple never appears twice across concurrent subagents. Returns {action: wrote|duplicate, papyrus_id}.
 ---
 
 # pharaoh-finding-record

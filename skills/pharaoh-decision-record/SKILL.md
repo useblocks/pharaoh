@@ -1,6 +1,6 @@
 ---
 name: pharaoh-decision-record
-description: Atomic — record a canonical decision, fact, or preference in the shared Papyrus workspace with automatic dedup on (type, canonical_name). Returns {action: wrote|duplicate, papyrus_id}. Generalizes pharaoh-finding-record beyond audit findings.
+description: Use when recording a canonical decision, fact, or preference in the shared Papyrus workspace with automatic dedup on (type, canonical_name). Returns {action: wrote|duplicate, papyrus_id}. Generalizes pharaoh-finding-record beyond audit findings.
 ---
 
 # pharaoh-decision-record

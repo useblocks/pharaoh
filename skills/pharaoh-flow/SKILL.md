@@ -1,6 +1,6 @@
 ---
 name: pharaoh-flow
-description: Orchestrate the full V-model chain for one feature context — requirement → architecture element → verification plan → FMEA, each with a review pass. Invokes pharaoh-req-draft, pharaoh-req-review, pharaoh-arch-draft, pharaoh-arch-review, pharaoh-vplan-draft, pharaoh-vplan-review, pharaoh-fmea in sequence.
+description: Use when orchestrating the full V-model chain for one feature context — requirement → architecture element → verification plan → FMEA, each with a review pass. Invokes pharaoh-req-draft, pharaoh-req-review, pharaoh-arch-draft, pharaoh-arch-review, pharaoh-vplan-draft, pharaoh-vplan-review, pharaoh-fmea in sequence.
 chains_from: []
 chains_to: []
 ---

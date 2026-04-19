@@ -1,9 +1,6 @@
 ---
 description: Analyze the impact of changing a requirement, specification, or any sphinx-needs item. Traces through all link types and codelinks to produce a Change Document.
 handoffs:
-  - label: Implement Changes
-    agent: pharaoh.author
-    prompt: Author the changes identified in the Change Document
   - label: MECE Check
     agent: pharaoh.mece
     prompt: Check the affected area for gaps and redundancies

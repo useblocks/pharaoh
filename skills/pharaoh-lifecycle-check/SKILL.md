@@ -1,6 +1,6 @@
 ---
 name: pharaoh-lifecycle-check
-description: Verify a sphinx-needs artefact's current lifecycle state and the legality of a requested state transition per the project's workflows.yaml state machine.
+description: Use when verifying a sphinx-needs artefact's current lifecycle state and the legality of a requested state transition per the project's workflows.yaml state machine.
 chains_to: []
 ---
 

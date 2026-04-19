@@ -1,6 +1,6 @@
 ---
 name: pharaoh-arch-draft
-description: Draft a single sphinx-needs architecture element (component / interface / module) from one parent requirement. Emits an RST directive block linking back to the parent via :satisfies:.
+description: Use when drafting a single sphinx-needs architecture element (component / interface / module) from one parent requirement. Emits an RST directive block linking back to the parent via :satisfies:.
 chains_from: [pharaoh-req-draft, pharaoh-req-regenerate]
 chains_to: [pharaoh-arch-review]
 ---

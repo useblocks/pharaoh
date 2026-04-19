@@ -1,6 +1,6 @@
 ---
 name: pharaoh-review-completeness
-description: Atomic — inspect one or more needs for review/approval-chain completeness. Flags needs missing required :reviewer: or :approved_by: fields per the project's artefact catalog. Emits one finding per incomplete need via pharaoh-finding-record.
+description: Use when inspecting one or more needs for review / approval-chain completeness. Flags needs missing required :reviewer: or :approved_by: fields per the project's artefact catalog. Emits one finding per incomplete need via pharaoh-finding-record.
 ---
 
 # pharaoh-review-completeness

@@ -1,6 +1,6 @@
 ---
 name: pharaoh-req-draft
-description: Draft a single sphinx-needs requirement from a feature description. Produces a new RST directive block with ID, status=draft, and a single shall-clause body, linking to a parent requirement or workflow per the project's artefact-catalog.
+description: Use when drafting a single sphinx-needs requirement from a feature description. Produces a new RST directive block with ID, status=draft, and a single shall-clause body, linking to a parent requirement or workflow per the project's artefact-catalog.
 chains_to: [pharaoh-req-review]
 ---
 

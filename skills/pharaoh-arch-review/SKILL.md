@@ -1,6 +1,6 @@
 ---
 name: pharaoh-arch-review
-description: Audit a single architecture element against the 10 ISO 26262-8 §6 axes plus arch-specific axes (traceability back to requirement). Emits structured findings JSON.
+description: Use when auditing a single architecture element against the 10 ISO 26262-8 §6 axes plus arch-specific axes (traceability back to requirement). Emits structured findings JSON.
 chains_from: [pharaoh-arch-draft, pharaoh-arch-regenerate]
 chains_to: [pharaoh-req-regenerate]
 ---

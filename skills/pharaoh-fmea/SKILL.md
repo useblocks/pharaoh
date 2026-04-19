@@ -1,6 +1,6 @@
 ---
 name: pharaoh-fmea
-description: Derive a single failure-mode entry (FMEA / DFA row) from one requirement or architecture element. Emits structured JSON with cause, effect, severity (1-10), occurrence (1-10), detection (1-10), and RPN.
+description: Use when deriving a single failure-mode entry (FMEA / DFA row) from one requirement or architecture element. Emits structured JSON with cause, effect, severity (1-10), occurrence (1-10), detection (1-10), and RPN.
 chains_from: [pharaoh-req-draft, pharaoh-arch-draft]
 chains_to: []
 ---

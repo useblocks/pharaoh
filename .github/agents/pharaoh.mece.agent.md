@@ -1,9 +1,6 @@
 ---
 description: Check for gaps, redundancies, and inconsistencies in sphinx-needs requirements. Validates traceability completeness.
 handoffs:
-  - label: Fill Gaps
-    agent: pharaoh.author
-    prompt: Create needs to fill the gaps identified in the MECE report
   - label: Trace a Need
     agent: pharaoh.trace
     prompt: Trace a specific need to understand its connections

@@ -1,6 +1,6 @@
 ---
 name: pharaoh-tailor-fill
-description: Author the .pharaoh/project/ tailoring files (id-conventions.yaml, workflows.yaml, artefact-catalog.yaml, checklists/requirement.md) from detected-conventions JSON produced by pharaoh-tailor-detect.
+description: Use when authoring the .pharaoh/project/ tailoring files (id-conventions.yaml, workflows.yaml, artefact-catalog.yaml, checklists/requirement.md) from detected-conventions JSON produced by pharaoh-tailor-detect.
 chains_from: [pharaoh-tailor-detect]
 chains_to: [pharaoh-tailor-review]
 ---

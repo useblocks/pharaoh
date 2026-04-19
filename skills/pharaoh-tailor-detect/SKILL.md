@@ -1,6 +1,6 @@
 ---
 name: pharaoh-tailor-detect
-description: Inspect a sphinx-needs project and emit a structured report of detected conventions — prefixes, ID regex candidates, separator, lifecycle states, artefact types with observed required/optional fields. Does NOT author tailoring files (see pharaoh-tailor-fill).
+description: Use when inspecting a sphinx-needs project to emit a structured report of detected conventions — prefixes, ID regex candidates, separator, lifecycle states, artefact types with observed required/optional fields. Does NOT author tailoring files (see pharaoh-tailor-fill).
 chains_to: [pharaoh-tailor-fill, pharaoh-tailor-review]
 ---
 

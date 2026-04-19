@@ -1,6 +1,6 @@
 ---
 name: pharaoh-context-gather
-description: Atomic — retrieve rationale memories relevant to an authoring context from a Papyrus workspace. Returns a structured list of memories (memory_id, text, relevance_score). Does NOT draft, review, or modify artefacts.
+description: Use when retrieving rationale memories relevant to an authoring context from a Papyrus workspace, before invoking any draft or review skill. Returns a structured list of memories (memory_id, text, relevance_score). Does NOT draft, review, or modify artefacts.
 ---
 
 # pharaoh-context-gather

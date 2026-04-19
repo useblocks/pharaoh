@@ -1,6 +1,6 @@
 ---
 name: pharaoh-coverage-gap
-description: Detect one gap category (orphan / unverified / duplicate / contradictory / lifecycle / ...) in a sphinx-needs corpus. Returns ordered list of needs falling into that gap.
+description: Use when detecting one gap category (orphan / unverified / duplicate / contradictory / lifecycle / ...) in a sphinx-needs corpus. Returns ordered list of needs falling into that gap.
 chains_from: [pharaoh-process-audit]
 chains_to: []
 ---

@@ -1,6 +1,6 @@
 ---
 name: pharaoh-tailor-review
-description: Audit .pharaoh/project/ tailoring files against JSON schemas (id-conventions, workflows, artefact-catalog, checklists frontmatter) plus cross-file consistency checks (every lifecycle state referenced in artefact-catalog exists in workflows.yaml, every prefix in artefact-catalog is declared in id-conventions, etc.).
+description: Use when auditing .pharaoh/project/ tailoring files against JSON schemas (id-conventions, workflows, artefact-catalog, checklists frontmatter) plus cross-file consistency checks (every lifecycle state referenced in artefact-catalog exists in workflows.yaml, every prefix in artefact-catalog is declared in id-conventions, etc.).
 chains_from: [pharaoh-tailor-fill]
 chains_to: [pharaoh-tailor-fill]
 ---

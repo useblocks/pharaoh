@@ -1,6 +1,6 @@
 ---
 name: pharaoh-req-review
-description: Audit a single sphinx-needs requirement against the 10 ISO 26262 Part 8 §6 axes. Emits structured findings JSON — per-axis pass/fail for mechanized axes, 0-3 score for subjective axes, with action items for any failure.
+description: Use when auditing a single sphinx-needs requirement against the 10 ISO 26262 Part 8 §6 axes. Emits structured findings JSON — per-axis pass/fail for mechanized axes, 0-3 score for subjective axes, with action items for any failure.
 chains_from: [pharaoh-req-draft, pharaoh-req-regenerate]
 chains_to: [pharaoh-req-regenerate]
 ---
