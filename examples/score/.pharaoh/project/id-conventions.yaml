@@ -1,0 +1,15 @@
+# examples/score/.pharaoh/project/id-conventions.yaml
+prefixes:
+  gd_req: requirement (guide-level)
+  wp: work product
+  wf: workflow
+  std_req: external standard requirement (ISO/ASPICE)
+  gd_chklst: checklist
+# NOTE: std_req IDs embed source-standard codes that may contain uppercase and hyphens,
+# e.g. std_req__aspice_40__MAN-3-BP1.  The regex below applies to all other prefixes;
+# std_req is intentionally exempt because the local-part mirrors upstream identifier
+# conventions (ASPICE BP numbers, ISO clause codes) that Score does not control.
+id_regex: "^[a-z][a-z_]*__[a-z0-9_]+$"
+id_regex_exceptions:
+  std_req: "^std_req__[a-z0-9_]+__[A-Za-z0-9_-]+$"
+separator: "__"
