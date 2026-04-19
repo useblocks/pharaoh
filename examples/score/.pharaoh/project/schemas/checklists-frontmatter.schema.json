@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pharaoh.useblocks.com/schemas/checklists-frontmatter.schema.json",
+  "title": "Pharaoh checklists frontmatter block",
+  "description": "Validates the YAML frontmatter block (delimited by ---) at the top of any .pharaoh/project/checklists/*.md file. If no frontmatter block is present the validator receives an empty object, which is valid (frontmatter is optional).",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable name of this checklist."
+    },
+    "applies_to": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Artefact-type key this checklist targets, or '*' for any type."
+    },
+    "axes": {
+      "type": "array",
+      "description": "Ordered list of quality-axis labels covered by this checklist.",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  },
+  "additionalProperties": true
+}

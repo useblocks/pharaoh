@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pharaoh.useblocks.com/schemas/artefact-catalog.schema.json",
+  "title": "Pharaoh artefact-catalog tailoring file",
+  "description": "Validates the structure of .pharaoh/project/artefact-catalog.yaml. Top-level keys are artefact-type tokens (e.g. gd_req, wp, wf). Each value describes the expected sphinx-needs fields for that type.",
+  "$comment": "The lifecycle array values are validated against workflows.lifecycle_states by pharaoh-tailor-review cross-file rule C2. Every top-level key must also appear in id-conventions.yaml prefixes (C1).",
+  "type": "object",
+  "minProperties": 1,
+  "additionalProperties": {
+    "type": "object",
+    "required": ["required_fields"],
+    "properties": {
+      "required_fields": {
+        "type": "array",
+        "description": "sphinx-needs option keys that must be present in every need of this type.",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "minItems": 1,
+        "uniqueItems": true
+      },
+      "optional_fields": {
+        "type": "array",
+        "description": "sphinx-needs option keys that may be present. Must not overlap with required_fields (enforced by pharaoh-tailor-review C5).",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "uniqueItems": true
+      },
+      "lifecycle": {
+        "type": "array",
+        "description": "Lifecycle states applicable to this artefact type. Values must be declared in workflows.lifecycle_states (enforced by pharaoh-tailor-review C2).",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "minItems": 1,
+        "uniqueItems": true
+      },
+      "required_body_sections": {
+        "type": "array",
+        "description": "Section headers that must appear in the RST body of every need of this type.",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "uniqueItems": true
+      }
+    },
+    "additionalProperties": false
+  }
+}

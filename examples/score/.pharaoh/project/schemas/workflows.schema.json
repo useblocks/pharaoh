@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pharaoh.useblocks.com/schemas/workflows.schema.json",
+  "title": "Pharaoh workflows tailoring file",
+  "description": "Validates the structure of .pharaoh/project/workflows.yaml",
+  "$comment": "JSON Schema cannot enforce cross-array referential integrity (transition from/to values must be members of lifecycle_states). That check is performed by pharaoh-tailor-review cross-file rule C3.",
+  "type": "object",
+  "required": ["lifecycle_states", "transitions"],
+  "properties": {
+    "lifecycle_states": {
+      "type": "array",
+      "description": "Ordered list of valid lifecycle state names for this project.",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 2,
+      "uniqueItems": true
+    },
+    "transitions": {
+      "type": "array",
+      "description": "Allowed state transitions. Each entry declares the source state, destination state, and required approvals.",
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "requires"],
+        "properties": {
+          "from": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Source lifecycle state. Must be a member of lifecycle_states (enforced by pharaoh-tailor-review C3)."
+          },
+          "to": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Target lifecycle state. Must be a member of lifecycle_states (enforced by pharaoh-tailor-review C3)."
+          },
+          "requires": {
+            "type": "array",
+            "description": "List of approval or gate names that must be satisfied before this transition is allowed.",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
