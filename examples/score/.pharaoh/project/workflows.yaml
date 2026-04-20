@@ -1,0 +1,9 @@
+# examples/score/.pharaoh/project/workflows.yaml
+lifecycle_states: [draft, valid, inspected]
+transitions:
+  - from: draft
+    to: valid
+    requires: [author_review]
+  - from: valid
+    to: inspected
+    requires: [independent_inspection, all_checklist_items_passed]

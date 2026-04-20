@@ -1,9 +1,6 @@
 ---
 description: Prepare a release by generating changelogs from requirements, release summaries, and traceability coverage metrics.
 handoffs:
-  - label: Verify First
-    agent: pharaoh.verify
-    prompt: Run verification before release
   - label: MECE Check
     agent: pharaoh.mece
     prompt: Run MECE analysis before release

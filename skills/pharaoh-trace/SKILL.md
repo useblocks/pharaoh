@@ -309,7 +309,7 @@ Traceability gaps found: 2
 - SPEC_003: Missing implementation (required: spec -> impl)
 - REQ_003: No test coverage through full chain (req -> spec -> impl -> test)
 
-Tip: Run pharaoh:author to create the missing needs, or pharaoh:mece for a full gap analysis.
+Tip: Run the appropriate authoring skill (e.g. pharaoh:req-draft) to create the missing needs, or pharaoh:mece for a full gap analysis.
 ```
 
 If no `required_links` are configured in `pharaoh.toml`, skip gap detection and

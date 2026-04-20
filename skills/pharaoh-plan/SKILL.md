@@ -109,8 +109,8 @@ Follow the instructions in `skills/shared/strictness.md` to determine which work
 Read `pharaoh.toml` (or use defaults if absent):
 
 - `strictness`: `"advisory"` or `"enforcing"`.
-- `require_change_analysis`: Whether `pharaoh:author` requires a prior `pharaoh:change`.
-- `require_verification`: Whether `pharaoh:release` requires a prior `pharaoh:verify`.
+- `require_change_analysis`: Whether authoring skills require a prior `pharaoh:change`.
+- `require_verification`: Whether `pharaoh:release` requires a prior review skill.
 - `require_mece_on_release`: Whether `pharaoh:release` requires a prior `pharaoh:mece`.
 
 These gates determine which tasks are mandatory in the plan versus optional.
@@ -129,15 +129,15 @@ When the change type is `modify`, use this default sequence:
    - Skip this task if the user already provided a Change Document.
    - In enforcing mode with `require_change_analysis = true`, this task is mandatory before any authoring tasks.
 
-2. **Author target need(s)** (`pharaoh:author`): Modify each target need with the requested change. One task per target need.
+2. **Author target need(s)** (authoring skill, e.g. `pharaoh:req-draft`): Modify each target need with the requested change. One task per target need. Use the skill matching the need type (req-draft for requirements, arch-draft for architecture, vplan-draft for verification plans).
 
-3. **Author affected specifications** (`pharaoh:author`): Update each specification that traces to a modified need. One task per affected specification.
+3. **Author affected specifications** (authoring skill): Update each specification that traces to a modified need. One task per affected specification.
 
-4. **Author affected implementations** (`pharaoh:author`): Update each implementation that traces to a modified specification. One task per affected implementation.
+4. **Author affected implementations** (authoring skill): Update each implementation that traces to a modified specification. One task per affected implementation.
 
-5. **Author affected test cases** (`pharaoh:author`): Update each test case that traces to a modified implementation. One task per affected test case.
+5. **Author affected test cases** (authoring skill): Update each test case that traces to a modified implementation. One task per affected test case.
 
-6. **Verify all changes** (`pharaoh:verify`): Verify that all modified needs satisfy their parents and meet traceability requirements.
+6. **Verify all changes** (review skill, e.g. `pharaoh:req-review`): Verify that all modified needs satisfy their parents and meet traceability requirements.
    - In enforcing mode with `require_verification = true`, this task is mandatory before any release task.
 
 7. **MECE check** (`pharaoh:mece`): Check for gaps, redundancies, or inconsistencies introduced by the changes. This task is optional by default.
@@ -151,17 +151,17 @@ When the change type is `modify`, use this default sequence:
 
 When the change type is `create`, use this sequence:
 
-1. **Author new requirement(s)** (`pharaoh:author`): Create the new top-level requirement(s). One task per requirement.
+1. **Author new requirement(s)** (`pharaoh:req-draft`): Create the new top-level requirement(s). One task per requirement.
 
-2. **Author new specifications** (`pharaoh:author`): Create specifications for each new requirement. One task per specification.
+2. **Author new specifications** (authoring skill matching need type): Create specifications for each new requirement. One task per specification.
 
-3. **Author new implementations** (`pharaoh:author`): Create implementations for each new specification. One task per implementation.
+3. **Author new implementations** (authoring skill matching need type): Create implementations for each new specification. One task per implementation.
 
-4. **Author new test cases** (`pharaoh:author`): Create test cases for each new implementation. One task per test case.
+4. **Author new test cases** (authoring skill matching need type): Create test cases for each new implementation. One task per test case.
 
 5. **MECE check** (`pharaoh:mece`): Verify complete coverage across the new needs. Confirm that every `required_links` chain is satisfied.
 
-6. **Verify all new needs** (`pharaoh:verify`): Verify that all new needs have proper links and satisfy their parents.
+6. **Verify all new needs** (review skill, e.g. `pharaoh:req-review`): Verify that all new needs have proper links and satisfy their parents.
 
 **Note on hierarchy levels**: Not every project uses all four levels (req, spec, impl, test). Only include tasks for need types that exist in the project's configuration. If the project defines only `req` and `test`, the plan should include only those levels.
 
@@ -194,13 +194,13 @@ Format the plan as a structured document the user can review before execution.
 
 | #  | Task                  | Skill            | Target     | Detail                                    | File                     | Required |
 |----|-----------------------|------------------|------------|-------------------------------------------|--------------------------|----------|
-| 1  | Analyze impact        | pharaoh:change   | REQ_001    | Trace downstream impact of latency change | docs/requirements.rst    | yes      |
-| 2  | Update requirement    | pharaoh:author   | REQ_001    | Change latency from 100ms to 50ms         | docs/requirements.rst    | yes      |
-| 3  | Update specification  | pharaoh:author   | SPEC_001   | Update signal timing to match new latency | docs/specifications.rst  | yes      |
-| 4  | Update implementation | pharaoh:author   | IMPL_001   | Adjust timer configuration                | docs/implementations.rst | yes      |
-| 5  | Update test case      | pharaoh:author   | TC_001     | Update expected timing in assertions      | docs/test_cases.rst      | yes      |
-| 6  | Verify all changes    | pharaoh:verify   | (all)      | Verify REQ_001, SPEC_001, IMPL_001, TC_001| --                       | yes*     |
-| 7  | MECE check            | pharaoh:mece     | (all)      | Check for gaps in modified area           | --                       | no       |
+| 1  | Analyze impact        | pharaoh:change                          | REQ_001    | Trace downstream impact of latency change  | docs/requirements.rst    | yes      |
+| 2  | Update requirement    | pharaoh:req-draft / pharaoh:req-regenerate | REQ_001    | Change latency from 100ms to 50ms          | docs/requirements.rst    | yes      |
+| 3  | Update specification  | pharaoh:arch-draft                      | SPEC_001   | Update signal timing to match new latency  | docs/specifications.rst  | yes      |
+| 4  | Update implementation | pharaoh:arch-draft                      | IMPL_001   | Adjust timer configuration                 | docs/implementations.rst | yes      |
+| 5  | Update test case      | pharaoh:vplan-draft                     | TC_001     | Update expected timing in assertions       | docs/test_cases.rst      | yes      |
+| 6  | Verify all changes    | pharaoh:req-review, pharaoh:arch-review, pharaoh:vplan-review | (all) | Run the per-type review for each updated artefact | -- | yes* |
+| 7  | MECE check            | pharaoh:mece                            | (all)      | Check for gaps in modified area            | --                       | no       |
 
 *Required in enforcing mode when require_verification = true.
 

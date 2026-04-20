@@ -10,14 +10,30 @@ pharaoh/
     shared/                        # Shared instructions referenced by all skills
       data-access.md               # Three-tier data access pattern
       strictness.md                # Advisory/enforcing mode logic
-    pharaoh-setup/SKILL.md
-    pharaoh-change/SKILL.md
-    pharaoh-trace/SKILL.md
-    pharaoh-mece/SKILL.md
-    pharaoh-author/SKILL.md
-    pharaoh-verify/SKILL.md
-    pharaoh-release/SKILL.md
-    pharaoh-plan/SKILL.md
+    pharaoh-arch-draft/SKILL.md    # Draft architecture elements from requirements
+    pharaoh-arch-review/SKILL.md   # Audit architecture elements against ISO 26262-8 §6 axes
+    pharaoh-change/SKILL.md        # Analyze impact of changing a requirement or need
+    pharaoh-coverage-gap/SKILL.md  # Detect one gap category in a sphinx-needs corpus
+    pharaoh-decide/SKILL.md        # Record design decisions with alternatives and rationale
+    pharaoh-flow/SKILL.md          # Orchestrate full V-model chain for one feature context
+    pharaoh-fmea/SKILL.md          # Derive a failure-mode entry (FMEA/DFA) from a need
+    pharaoh-lifecycle-check/SKILL.md  # Verify artefact lifecycle state transitions
+    pharaoh-mece/SKILL.md          # Check for gaps, redundancies, and traceability issues
+    pharaoh-plan/SKILL.md          # Break changes into structured tasks with ordering
+    pharaoh-process-audit/SKILL.md # Full-corpus audit across all gap categories
+    pharaoh-release/SKILL.md       # Generate changelogs and release summaries
+    pharaoh-req-draft/SKILL.md     # Draft a single requirement directive
+    pharaoh-req-regenerate/SKILL.md  # Regenerate a requirement to address review findings
+    pharaoh-req-review/SKILL.md    # Audit a requirement against ISO 26262-8 §6 axes
+    pharaoh-setup/SKILL.md         # Scaffold Pharaoh into a project for the first time
+    pharaoh-spec/SKILL.md          # Generate spec and plan document from requirements
+    pharaoh-standard-conformance/SKILL.md  # Evaluate an artefact against a regulatory standard
+    pharaoh-tailor-detect/SKILL.md # Detect project conventions for tailoring
+    pharaoh-tailor-fill/SKILL.md   # Author .pharaoh/project/ tailoring files
+    pharaoh-tailor-review/SKILL.md # Audit tailoring files against schemas
+    pharaoh-trace/SKILL.md         # Navigate traceability links in any direction
+    pharaoh-vplan-draft/SKILL.md   # Draft a test-case directive for a requirement
+    pharaoh-vplan-review/SKILL.md  # Audit a test case against ISO 26262-8 §6 axes
   agents/                          # Claude Code subagent definitions
     sphinx-needs-expert/agent.md
   copilot/                         # GitHub Copilot integration

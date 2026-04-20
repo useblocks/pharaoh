@@ -55,7 +55,7 @@ If `strictness = "advisory"`:
 
 | Missing prerequisite | Tip |
 |---|---|
-| `pharaoh:verify` not run | `Tip: Consider running pharaoh:verify to validate implementations before release.` |
+| no review skill run | `Tip: Consider running the appropriate review skill (e.g. pharaoh:req-review) to validate implementations before release.` |
 | `pharaoh:mece` not run | `Tip: Consider running pharaoh:mece to check for gaps before release.` |
 
 Do not show a tip if the corresponding workflow gate is disabled in `pharaoh.toml`
@@ -72,7 +72,7 @@ If `strictness = "enforcing"`:
    - If any need has `verified = false` or is missing from session state, block:
      ```
      Blocked: Verification required before release.
-     Run pharaoh:verify to validate implementations first.
+     Run the appropriate review skill (e.g. pharaoh:req-review) to validate implementations first.
 
      Unverified needs:
        - REQ_001 (authored but not verified)
@@ -345,7 +345,7 @@ Populate the verification status from session state (`.pharaoh/session.json`):
 - If session state does not exist, report:
   ```
   Verification Status
-  - Session state not available. Run pharaoh:verify and pharaoh:mece for status.
+  - Session state not available. Run the appropriate review skill and pharaoh:mece for status.
   ```
 
 ---

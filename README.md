@@ -37,18 +37,49 @@ Pharaoh has no runtime binary or Python package. All analysis logic is encoded i
 
 ## Skills / Agents
 
-| Skill (Claude Code) | Agent (Copilot) | Purpose |
-|---------------------|-----------------|---------|
-| `pharaoh:setup` | `@pharaoh.setup` | Scaffold Pharaoh into a project -- detect structure, generate `pharaoh.toml`, install Copilot agents |
-| `pharaoh:change` | `@pharaoh.change` | Analyze impact of a change -- trace through needs links and codelinks, produce a Change Document |
-| `pharaoh:trace` | `@pharaoh.trace` | Navigate traceability in any direction -- show everything linked to a need across all levels |
-| `pharaoh:mece` | `@pharaoh.mece` | Gap and redundancy analysis -- find orphans, missing links, MECE violations |
-| `pharaoh:author` | `@pharaoh.author` | AI-assisted requirement authoring -- create/modify needs with proper IDs, types, and links |
-| `pharaoh:verify` | `@pharaoh.verify` | Validate implementations against requirements -- content-level satisfaction checks |
-| `pharaoh:release` | `@pharaoh.release` | Release management -- changelog from requirements, traceability coverage metrics |
-| `pharaoh:plan` | `@pharaoh.plan` | Structured implementation planning -- break changes into tasks with workflow enforcement |
-| `pharaoh:spec` | `@pharaoh.spec` | Generate spec from requirements -- read needs hierarchy, record decisions, produce Superpowers-compatible spec with plan table |
-| `pharaoh:decide` | `@pharaoh.decide` | Record design decisions -- create `decision` needs with alternatives, rationale, and traceability links |
+**Core workflow skills:**
+
+| Skill (Claude Code) | Purpose |
+|---------------------|---------|
+| `pharaoh:setup` | Scaffold Pharaoh into a project -- detect structure, generate `pharaoh.toml`, install Copilot agents |
+| `pharaoh:change` | Analyze impact of a change -- trace through needs links and codelinks, produce a Change Document |
+| `pharaoh:trace` | Navigate traceability in any direction -- show everything linked to a need across all levels |
+| `pharaoh:mece` | Gap and redundancy analysis -- find orphans, missing links, MECE violations |
+| `pharaoh:release` | Release management -- changelog from requirements, traceability coverage metrics |
+| `pharaoh:plan` | Structured implementation planning -- break changes into tasks with workflow enforcement |
+| `pharaoh:spec` | Generate spec from requirements -- read needs hierarchy, record decisions, produce spec with plan table |
+| `pharaoh:decide` | Record design decisions -- create `decision` needs with alternatives, rationale, and traceability links |
+
+**Atomic authoring and review chain:**
+
+| Skill (Claude Code) | Purpose |
+|---------------------|---------|
+| `pharaoh:req-draft` | Draft a single requirement directive with ID, status, and shall-clause body |
+| `pharaoh:req-review` | Audit a requirement against ISO 26262-8 §6 axes -- per-axis findings with action items |
+| `pharaoh:req-regenerate` | Regenerate a requirement to address findings from req-review |
+| `pharaoh:arch-draft` | Draft a single architecture element directive from a parent requirement |
+| `pharaoh:arch-review` | Audit an architecture element against ISO 26262-8 §6 axes |
+| `pharaoh:vplan-draft` | Draft a test-case directive linking to a parent requirement |
+| `pharaoh:vplan-review` | Audit a test case against ISO 26262-8 §6 axes plus vplan-specific axes |
+| `pharaoh:fmea` | Derive a failure-mode entry (FMEA/DFA row) from a requirement or architecture element |
+| `pharaoh:flow` | Orchestrate the full V-model chain (req → arch → vplan → fmea) for one feature context |
+
+**Analysis and audit skills:**
+
+| Skill (Claude Code) | Purpose |
+|---------------------|---------|
+| `pharaoh:coverage-gap` | Detect one gap category (orphan / unverified / duplicate / ...) in a corpus |
+| `pharaoh:process-audit` | Full-corpus audit across all gap categories with prioritized findings |
+| `pharaoh:lifecycle-check` | Verify artefact lifecycle state and legality of a state transition |
+| `pharaoh:standard-conformance` | Evaluate an artefact against a regulatory standard (ISO 26262-8, ASPICE 4.0, ISO/SAE 21434) |
+
+**Tailoring skills:**
+
+| Skill (Claude Code) | Purpose |
+|---------------------|---------|
+| `pharaoh:tailor-detect` | Inspect a project and emit detected conventions for tailoring |
+| `pharaoh:tailor-fill` | Author `.pharaoh/project/` tailoring files from detected conventions |
+| `pharaoh:tailor-review` | Audit tailoring files against schemas and cross-file consistency |
 
 ## Workflow
 
@@ -56,7 +87,10 @@ Pharaoh has no runtime binary or Python package. All analysis logic is encoded i
 pharaoh:spec   -> pharaoh:decide (for gaps)
                -> produces spec doc with plan table
                     |
-pharaoh:plan   -> pharaoh:change -> pharaoh:author -> pharaoh:verify -> pharaoh:release
+pharaoh:plan   -> pharaoh:change -> pharaoh:req-draft  -> pharaoh:req-review  -> pharaoh:release
+                                 -> pharaoh:arch-draft -> pharaoh:arch-review
+                                 -> pharaoh:vplan-draft -> pharaoh:vplan-review
+                                 -> pharaoh:fmea
                                  -> pharaoh:mece   (optional, for gap analysis)
                                  -> pharaoh:trace  (optional, for exploration)
 ```
@@ -106,7 +140,7 @@ See [`pharaoh.toml.example`](pharaoh.toml.example) for a fully commented templat
 ### Advisory vs Enforcing Mode
 
 - **Advisory** (default): Skills suggest the recommended workflow but never block. Tips are shown for skipped steps.
-- **Enforcing**: Skills check prerequisites and block if not met. For example, `pharaoh:author` requires `pharaoh:change` to be run and acknowledged first.
+- **Enforcing**: Skills check prerequisites and block if not met. For example, authoring skills (e.g. `pharaoh:req-draft`) require `pharaoh:change` to be run and acknowledged first.
 
 ### Project Configuration
 

@@ -275,10 +275,10 @@ Source requirements: REQ_042, REQ_043
 | # | Task | Skill | Target | Detail | File | Required |
 |---|------|-------|--------|--------|------|----------|
 | 1 | Analyze impact | pharaoh:change | REQ_042 | Trace downstream effects | docs/requirements.rst | yes |
-| 2 | Author spec | pharaoh:author | (new) | Subsystem X timing | docs/specifications.rst | yes |
-| 3 | Author test | pharaoh:author | (new) | CAN driver verification | docs/test_cases.rst | yes |
-| 4 | Update spec | pharaoh:author | SPEC_010 | Timing constraints | docs/specifications.rst | yes |
-| 5 | Verify | pharaoh:verify | (all) | Check traceability | -- | yes |
+| 2 | Author spec | pharaoh:arch-draft | (new) | Subsystem X timing | docs/specifications.rst | yes |
+| 3 | Author test | pharaoh:vplan-draft | (new) | CAN driver verification | docs/test_cases.rst | yes |
+| 4 | Update spec | pharaoh:arch-draft | SPEC_010 | Timing constraints | docs/specifications.rst | yes |
+| 5 | Verify | pharaoh:arch-review, pharaoh:vplan-review | (all) | Check traceability and per-type axes | -- | yes |
 ```
 
 #### Section rules
@@ -300,7 +300,7 @@ Construct the plan table following `pharaoh:plan` task sequencing rules.
 
 1. **Change analysis first** (if modifying existing needs): One `pharaoh:change` task per modified need, or a single task covering all modifications.
 2. **Author needs top-down**: Requirements before specifications, specifications before implementations, implementations before test cases. New needs before modifications at each level.
-3. **Verify after all authoring**: One `pharaoh:verify` task covering all created and modified needs.
+3. **Verify after all authoring**: One review skill task (e.g. `pharaoh:req-review`) covering all created and modified needs.
 4. **MECE check if configured**: Include a `pharaoh:mece` task if `require_mece_on_release = true` in `pharaoh.toml`, or if the scope involves creating needs at multiple hierarchy levels.
 
 #### Task format
@@ -309,7 +309,7 @@ Each task row must specify:
 
 - **#**: Sequential number starting from 1.
 - **Task**: Concise description of what the task does.
-- **Skill**: The exact Pharaoh skill to invoke (e.g., `pharaoh:change`, `pharaoh:author`, `pharaoh:verify`, `pharaoh:mece`).
+- **Skill**: The exact Pharaoh skill to invoke (e.g., `pharaoh:change`, `pharaoh:req-draft`, `pharaoh:req-review`, `pharaoh:mece`).
 - **Target**: The need ID being acted on, or `(new)` for needs to create, or `(all)` for verification tasks.
 - **Detail**: A specific description of the change or action. Not vague -- name the exact property or content being changed.
 - **File**: The target file path for the task (e.g., `docs/requirements.rst`, `docs/specifications.rst`), or `--` if not applicable.
@@ -369,7 +369,7 @@ Follow the instructions in `skills/shared/strictness.md`.
 - Execute freely. No gates. This skill has no prerequisites.
 - Plan table tasks mandated by workflow gates are marked `yes`:
   - `pharaoh:change` tasks are required if `require_change_analysis = true`.
-  - `pharaoh:verify` tasks are required if `require_verification = true`.
+  - review skill tasks are required if `require_verification = true`.
   - `pharaoh:mece` tasks are required if `require_mece_on_release = true`.
 - Decisions are recorded with status `accepted` (same as advisory mode).
 - The spec document clearly marks which plan tasks are mandatory.
@@ -481,9 +481,9 @@ User confirms: proceed.
 | # | Task | Skill | Target | Detail | File | Required |
 |---|------|-------|--------|--------|------|----------|
 | 1 | Analyze impact | pharaoh:change | REQ_001 | Trace downstream effects of new spec | docs/requirements.rst | recommended |
-| 2 | Author spec | pharaoh:author | (new) | Pedal sensor interface timing spec | docs/specifications.rst | recommended |
-| 3 | Author test | pharaoh:author | (new) | CAN driver HIL test case | docs/test_cases.rst | recommended |
-| 4 | Verify coverage | pharaoh:verify | (all) | Check REQ_001 traceability chain | -- | recommended |
+| 2 | Author spec | pharaoh:req-draft | (new) | Pedal sensor interface timing spec | docs/specifications.rst | recommended |
+| 3 | Author test | pharaoh:req-draft | (new) | CAN driver HIL test case | docs/test_cases.rst | recommended |
+| 4 | Verify coverage | pharaoh:req-review | (all) | Check REQ_001 traceability chain | -- | recommended |
 
 **Step 8** -- Handoff:
 
@@ -520,4 +520,4 @@ Scope for REQ_001, REQ_002:
 
 **Steps 5-6** -- Decisions skipped. Spec document generated at `docs/superpowers/specs/2026-04-07-brake-system-design.md` with both requirements in full text, a complete coverage table (6 downstream needs), empty gaps section ("No gaps identified"), empty decisions section, and no plan table ("No tasks required. All requirements have complete traceability chains.").
 
-**Step 8** -- Handoff offers: review the spec, run `pharaoh:verify` to confirm traceability, or done.
+**Step 8** -- Handoff offers: review the spec, run `pharaoh:req-review` to confirm traceability, or done.

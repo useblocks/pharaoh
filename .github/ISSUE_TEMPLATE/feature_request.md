@@ -8,7 +8,7 @@ assignees: ""
 
 ## Skill
 
-<!-- Which skill does this affect? (e.g., pharaoh:author) or "new skill" -->
+<!-- Which skill does this affect? (e.g., pharaoh:req-draft) or "new skill" -->
 
 ## Use Case
 

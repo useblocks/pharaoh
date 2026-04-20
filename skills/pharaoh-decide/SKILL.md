@@ -5,7 +5,7 @@ description: "Use when recording a design decision as a traceable sphinx-needs o
 
 # pharaoh-decide
 
-Record design decisions as traceable sphinx-needs `decision` directives. Each decision captures the chosen option, rejected alternatives, rationale, and explicit links to the requirements or specifications it affects. This skill ensures every decision has proper `decided_by`, `alternatives`, and `rationale` fields, and delegates RST generation to `pharaoh:author` to avoid duplicating directive-writing logic.
+Record design decisions as traceable sphinx-needs `decision` directives. Each decision captures the chosen option, rejected alternatives, rationale, and explicit links to the requirements or specifications it affects. This skill ensures every decision has proper `decided_by`, `alternatives`, and `rationale` fields.
 
 ---
 
@@ -119,8 +119,6 @@ The user may override the default in either case.
 
 ### Step 3: Generate ID
 
-Reuse `pharaoh:author` ID generation logic (Step 3 of pharaoh-author).
-
 1. Check `pharaoh.toml` for `[pharaoh.id_scheme]`. If a pattern exists, apply it with `{TYPE}` resolving to `DEC`.
 2. If no id_scheme is configured, infer the pattern from existing `decision` needs in the index. Look for `DEC_*` IDs and determine the numbering scheme.
 3. If no existing decisions exist, use the prefix from the type configuration (e.g., `DEC_`) and start at `001`, padded to match `id_length`.
@@ -130,7 +128,7 @@ Reuse `pharaoh:author` ID generation logic (Step 3 of pharaoh-author).
 
 ### Step 4: Write the Need
 
-Delegate to `pharaoh:author` with all fields populated. Provide the following directive structure to author:
+Write the directive directly to the target file with all fields populated:
 
 ```rst
 .. decision:: <title>
@@ -150,7 +148,7 @@ The expanded description should summarize the decision in one to three sentences
 
 When a new decision replaces an old one:
 
-1. Set the old decision's status to `superseded` using `pharaoh:author` modification logic.
+1. Locate the old decision's directive in its RST file and change its `:status:` field value to `superseded`.
 2. On the new decision, add `:links: <old_dec_id>` to establish the supersession chain.
 3. The new decision's description should reference the old decision ID and explain why it is being replaced.
 
@@ -173,9 +171,7 @@ Decisions
    ...
 ```
 
-4. If no `:decides:` links are specified (rare case), fall back to `pharaoh:author` file placement logic (Step 6 of pharaoh-author).
-
-Delegate the actual file writing to `pharaoh:author`.
+4. If no `:decides:` links are specified (rare case), place the decision in `decisions.rst` at the sphinx-needs source root.
 
 ---
 
@@ -210,7 +206,7 @@ After successfully writing the decision:
 After writing the decision, suggest the next step:
 
 ```
-Next step: Run pharaoh:verify to validate the decision against its linked requirements.
+Next step: Run pharaoh:req-review to validate the decision against its linked requirements.
 ```
 
 #### Called by `pharaoh:spec`
@@ -241,7 +237,7 @@ Strictness has no effect on decision recording. Both modes follow the same proce
 2. **Default `decided_by` to `claude`** when the AI is making the decision autonomously (e.g., during `pharaoh:spec` execution).
 3. **Default `status` to `proposed`** when standalone, `accepted` when called by `pharaoh:spec`.
 4. **Superseding requires two writes.** When replacing an old decision, update the old decision's status to `superseded` AND add `:links:` on the new decision referencing the old one.
-5. **Reuse `pharaoh:author` for RST writing.** Do not duplicate directive generation, file placement, or ID generation logic. Delegate to author for all file operations.
+5. **Write RST directly.** Generate the directive text and write it to the target file. Do not delegate to any other skill for file operations.
 6. **Validate `:decides:` targets exist.** Every need ID in the `:decides:` field must exist in the needs index. If a target does not exist, warn the user and ask whether to proceed.
 7. **Semicolons for alternatives.** Separate rejected alternatives with semicolons, not commas. Commas are reserved for need ID lists.
 
@@ -285,7 +281,7 @@ Why was PostgreSQL chosen over the alternatives?
 
 **Step 3** -- Generate ID. Existing decisions: DEC_001, DEC_002. Next ID: `DEC_003`.
 
-**Step 4** -- Delegate to `pharaoh:author`. Directive written:
+**Step 4** -- Directive written directly to file:
 
 ```rst
 .. decision:: Use PostgreSQL for the data store
@@ -309,7 +305,7 @@ Why was PostgreSQL chosen over the alternatives?
 **Step 7** -- Follow-up:
 
 ```
-Next step: Run pharaoh:verify to validate the decision against its linked requirements.
+Next step: Run pharaoh:req-review to validate the decision against its linked requirements.
 ```
 
 ---
@@ -329,7 +325,7 @@ Next step: Run pharaoh:verify to validate the decision against its linked requir
 
 1. Verifies `decision` type exists in configuration.
 2. Generates ID: `DEC_004`.
-3. Delegates to `pharaoh:author`:
+3. Writes directive directly to `docs/decisions.rst`:
 
 ```rst
 .. decision:: Use CAN bus for brake pedal sensor communication

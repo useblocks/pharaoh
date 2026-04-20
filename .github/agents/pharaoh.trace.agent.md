@@ -7,9 +7,6 @@ handoffs:
   - label: Check Gaps
     agent: pharaoh.mece
     prompt: Check for traceability gaps in this area
-  - label: Author Need
-    agent: pharaoh.author
-    prompt: Create a need to fill a gap in the traceability chain
 ---
 
 # @pharaoh.trace

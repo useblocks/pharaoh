@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pharaoh.useblocks.com/schemas/id-conventions.schema.json",
+  "title": "Pharaoh id-conventions tailoring file",
+  "description": "Validates the structure of .pharaoh/project/id-conventions.yaml",
+  "type": "object",
+  "required": ["prefixes", "id_regex", "separator"],
+  "properties": {
+    "prefixes": {
+      "type": "object",
+      "description": "Map of prefix token (e.g. gd_req) to human-readable description.",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "id_regex": {
+      "type": "string",
+      "description": "Default regex pattern that all IDs must match (except those covered by id_regex_exceptions).",
+      "minLength": 1
+    },
+    "separator": {
+      "type": "string",
+      "description": "Separator token inserted between prefix and local-part (typically '__')."
+    },
+    "id_regex_exceptions": {
+      "type": "object",
+      "description": "Per-prefix regex overrides. Keys must be prefixes declared in the prefixes map.",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -7,7 +7,7 @@ description: "Use when analyzing the impact of changing a requirement, specifica
 
 Analyze the full impact of a proposed change to any sphinx-needs item. Trace through ALL link types -- standard `links`, `extra_links` (implements, tests, etc.), and sphinx-codelinks -- to produce a structured Change Document listing every affected need and code file with a recommended action.
 
-This is a **gate-free skill**. It can be invoked at any time in any strictness mode. Other skills (notably `pharaoh:author`) depend on its output.
+This is a **gate-free skill**. It can be invoked at any time in any strictness mode. Authoring skills depend on its output.
 
 ---
 
@@ -313,7 +313,7 @@ After presenting the Change Document and updating session state, ask the user to
 Present exactly this prompt:
 
 ```
-Acknowledge this change analysis? Acknowledging allows proceeding to pharaoh:author for the affected needs.
+Acknowledge this change analysis? Acknowledging allows proceeding to the authoring skill for the affected needs.
 ```
 
 ### If the user acknowledges
@@ -323,7 +323,7 @@ Update `.pharaoh/session.json`: set `acknowledged` to `true` for each target nee
 Respond with:
 
 ```
-Change analysis for <TARGET_ID(s)> acknowledged. You may now proceed with pharaoh:author.
+Change analysis for <TARGET_ID(s)> acknowledged. You may now proceed with the appropriate authoring skill.
 ```
 
 ### If the user does not acknowledge
@@ -334,7 +334,7 @@ If the user asks questions about the Change Document, answer them. If the user r
 
 ### If the user ignores the acknowledgment prompt
 
-Do not force the issue. The session state remains with `acknowledged: false`. In advisory mode this has no effect. In enforcing mode, `pharaoh:author` will check and block if acknowledgment is missing.
+Do not force the issue. The session state remains with `acknowledged: false`. In advisory mode this has no effect. In enforcing mode, any authoring skill will check and block if acknowledgment is missing.
 
 ---
 
@@ -351,7 +351,7 @@ Follow the instructions in `skills/shared/strictness.md` for strictness handling
 ### Enforcing mode
 
 - This skill itself has no prerequisites (it is gate-free per `skills/shared/strictness.md` Section 3, "Skills with no gates").
-- However, its output gates `pharaoh:author`. In enforcing mode, `pharaoh:author` checks `.pharaoh/session.json` for `acknowledged: true` on the relevant need IDs.
+- However, its output gates any authoring skill. In enforcing mode, authoring skills check `.pharaoh/session.json` for `acknowledged: true` on the relevant need IDs.
 - Always perform the full analysis. Always update session state. Always ask for acknowledgment.
 
 ### Strictness has no effect on analysis depth

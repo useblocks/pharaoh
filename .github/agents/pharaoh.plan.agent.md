@@ -4,9 +4,6 @@ handoffs:
   - label: Start Change Analysis
     agent: pharaoh.change
     prompt: Analyze the impact of the planned changes
-  - label: Start Authoring
-    agent: pharaoh.author
-    prompt: Begin authoring the changes from the plan
 ---
 
 # @pharaoh.plan

@@ -1,0 +1,34 @@
+# examples/score/.pharaoh/project/artefact-catalog.yaml
+gd_req:
+  required_fields: [id, status, satisfies]
+  # satisfies is required by convention; 1/185 real needs lacks it (gd_req__impl_complexity_analysis).
+  # "required" means "should be present in well-formed needs" — not "100% present in corpus".
+  optional_fields: [complies, tags, rationale, verification]
+  lifecycle: [draft, valid, inspected]
+wp:
+  required_fields: [id, status]
+  # NOTE: wp needs do NOT carry a satisfies field (0/74 in corpus).  Plan specified
+  # satisfies as required but real data contradicts this; removed from required_fields.
+  # wp needs are linked to wf via input_back/output_back back-links, not satisfies.
+  optional_fields: [tags, complies]
+wf:
+  required_fields: [id, status, input, output, responsible]
+  # NOTE: wf needs do NOT carry a satisfies field (0/79) and do NOT use rasic (0/79).
+  # Plan specified satisfies as required and rasic as optional — both removed/corrected.
+  # Actual wf fields used: input, output, responsible, approved_by, supported_by, has, contains.
+  optional_fields: [tags, approved_by, supported_by, has, contains]
+arch:
+  required_fields: [id, status, satisfies, type]
+  # type: one of module | component | interface
+  # satisfies: links to parent requirement (gd_req or equivalent)
+  optional_fields: [tags, rationale, description]
+  lifecycle: [draft, valid, inspected]
+tc:
+  required_fields: [id, status, verifies]
+  # verifies: links to parent requirement or arch element.
+  # inputs/steps/expected live in the RST body as section headers, NOT as `:key:`
+  # options — checked separately by harness/scorers/exec_based/vplan_body_sections.py.
+  # level: unit | integration | system (optional).
+  optional_fields: [tags, rationale, level]
+  required_body_sections: [Inputs, Steps, Expected]
+  lifecycle: [draft, valid, inspected]

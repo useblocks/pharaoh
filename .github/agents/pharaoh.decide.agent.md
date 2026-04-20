@@ -1,9 +1,6 @@
 ---
 description: Record a design decision as a traceable sphinx-needs object with alternatives, rationale, and links to affected requirements.
 handoffs:
-  - label: Verify Decision
-    agent: pharaoh.verify
-    prompt: Verify the decision need has valid links and fields
   - label: Trace Decision
     agent: pharaoh.trace
     prompt: Trace the decision through all linked needs
