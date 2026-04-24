@@ -106,7 +106,7 @@ If `on_missing_config == "prompt"` (default) AND tailoring is missing (no `targe
 ## Atomicity
 
 - (a) Indivisible — one file in → N reqs out. No I/O beyond file read + optional Papyrus query/write + req emit. Emits in exactly one representation per call (`rst` OR `codelinks_comment`).
-- (b) Input: `{file_path, target_level, shared_context_path?, papyrus_workspace?, reporter_id, parent_feat_ids?, emit_override?, codelinks_project_name?, on_missing_config?, allowed_ids?, split_strategy?}`. Output: list of RST directive blocks OR list of sphinx-codelinks one-line comments, prefixed with `# emit=rst` or `# emit=codelinks_comment`. On missing tailoring with `on_missing_config=prompt`: single JSON object `{status: "needs_confirmation", proposal}`.
+- (b) Input: `{file_path, target_level, shared_context_path?, papyrus_workspace?, reporter_id, parent_feat_ids?, emit_override?, codelinks_project_name?, on_missing_config?, allowed_ids?, split_strategy?}`. Output: single JSON object `{"reqs": [{"id", "title", "type", "body", "source_doc", "satisfies", "verification", "raw_rst"}, ...]}` for `emit=rst`, or `{"codelinks": [str, ...]}` for `emit=codelinks_comment`. On missing tailoring with `on_missing_config=prompt`: single JSON object `{status: "needs_confirmation", proposal}`.
 - (c) Reward: language-parametric fixture — given `test_fixture.<ext>` (`.py` / `.cpp` / `.rs` / `.ts`) containing exactly 3 named symbols (`FooBar`, `BazQux`, `Quux`), emitted reqs must mention all 3 by canonical name. Directive name must equal `target_level`. If `parent_feat_ids` is non-empty, every emitted block MUST contain `:satisfies: <id1>, <id2>, ...` with all parents comma-joined.
 - (d) Reusable across reverse-engineering workflows, spec drafting, standalone CI "are there reqs for this code?" gates.
 - (e) Composable — strictly one phase. Never invokes `pharaoh-arch-draft`, `pharaoh-fmea`, `pharaoh-plan`.
@@ -124,32 +124,45 @@ If `on_missing_config == "prompt"` (default) AND tailoring is missing (no `targe
 
 ## Output
 
-Single one-line header names the emit mode (`# emit=rst` or `# emit=codelinks_comment`).
+A single JSON object. The top-level key names the emit mode: `reqs` for `emit=rst`, `codelinks` for `emit=codelinks_comment`. Downstream skills key off the presence of one or the other.
 
 ### `emit=rst`
 
-Zero or more RST directive blocks separated by one blank line. Directive name equals `target_level`. Each block:
-
+```json
+{
+  "reqs": [
+    {
+      "id": "<id_prefix><snake_case_id>",
+      "title": "<short_title>",
+      "type": "<target_level>",
+      "body": "The <Component subject> shall <observable behavior>.",
+      "source_doc": "<path to implementing source file>",
+      "satisfies": ["<parent_1>", "<parent_2>"],
+      "verification": "tc__TBD",
+      "raw_rst": ".. <target_level>:: <short_title>\n   :id: ...\n   :status: draft\n   :satisfies: ...\n   :source_doc: ...\n   :verification: tc__TBD\n\n   <body>\n"
+    }
+  ]
+}
 ```
-.. <target_level>:: <short_title>
-   :id: <id_prefix><snake_case_id>
-   :status: draft
-   :satisfies: <parent_1>, <parent_2>, ...    # only if parent_feat_ids is non-empty
-   :source_doc: <path to implementing source file>
-   :verification: tc__TBD
 
-   The <Component subject> shall <observable behavior>.
-```
+Field semantics:
 
-`<id_prefix>` defaults to `target_level` (`comp_req` → `comp_req__foo_01`). If `[[needs.types]].prefix` declares `"CREQ_"`, use `CREQ_foo_01`.
+- `id` — `<id_prefix><snake_case_id>`. `<id_prefix>` defaults to `target_level` (`comp_req` → `comp_req__foo_01`). If `[[needs.types]].prefix` declares `"CREQ_"`, use `CREQ_foo_01`.
+- `type` — equals input `target_level`.
+- `satisfies` — list of parent feat ids. Empty list when `parent_feat_ids` was empty. Always present (use `[]`).
+- `raw_rst` — exactly the RST directive block as it would appear in an `.rst` file. Downstream review / annotation skills read `raw_rst` when they need the directive text; helpers that consume `reqs` (e.g. by-stem grouping) read `id` / `source_doc`.
 
 ### `emit=codelinks_comment`
 
-Zero or more one-line strings matching the project's `[codelinks.projects.<name>.analyse.oneline_comment_style]`:
+```json
+{
+  "codelinks": [
+    "@ <title>, <id>, <target_level>, [<parent_1>, <parent_2>, ...]"
+  ]
+}
+```
 
-```
-@ <title>, <id>, <target_level>, [<parent_1>, <parent_2>, ...]
-```
+Each `codelinks[i]` is one comment line matching the project's `[codelinks.projects.<name>.analyse.oneline_comment_style]`:
 
 - Tailored `start_sequence` (default `@`).
 - Tailored `field_split_char` (default `,`) with surrounding spaces.
@@ -159,11 +172,11 @@ Zero or more one-line strings matching the project's `[codelinks.projects.<name>
 
 ### `status == "needs_confirmation"`
 
-When tailoring is missing and `on_missing_config == "prompt"`, output is a single JSON object. Downstream consumers check for this shape before parsing.
+When tailoring is missing and `on_missing_config == "prompt"`, output is a single JSON object `{"status": "needs_confirmation", "proposal": {...}}`. Downstream consumers check for this shape before parsing as `reqs` / `codelinks`.
 
 ## Output schema
 
-The orchestrator (or `pharaoh-output-validate`) validates each emitted block in two stages.
+Validated as `json_obj` by `pharaoh-output-validate`. The validator checks the top-level shape, then per-item shape against the regexes below.
 
 **Stage 1 — block recognizer (Python regex, `re.MULTILINE`):**
 
@@ -184,17 +197,16 @@ Identifies one directive block bounded by the next `.. ` at column 0 or end of i
 
 `re.finditer` with `re.MULTILINE` enumerates every option/value pair.
 
-**Validator checks (per block):**
+**Validator checks (per `reqs[*]`):**
 
-1. Stage 1 matched — block is well-formed.
-2. `directive` capture equals input `target_level`.
-3. Stage 2 yields at least `id`, `status`, `source_doc`, and `verification`.
-4. If `parent_feat_ids` was provided: `satisfies` (or tailored child→parent link name) is among options with every parent id in its value.
-5. Every option name is either declared in `ubproject.toml` `[[needs.types]]`, a built-in sphinx-needs option, or a Pharaoh convention option. Reject unknown names (catches typos like `subsatisfies`).
-6. After the last matched block, remaining input is only `\n*`.
-7. If `allowed_ids` was provided: every emitted `id` is a member of `allowed_ids`.
+1. `raw_rst` matches Stage 1 + Stage 2 — block is well-formed.
+2. `raw_rst` directive name equals `type` and equals input `target_level`.
+3. Stage 2 on `raw_rst` yields at least `id`, `status`, `source_doc`, and `verification`; values match the corresponding top-level fields.
+4. If `parent_feat_ids` was provided: `satisfies` field is non-empty and lists every parent id; `raw_rst` `:satisfies:` (or tailored child→parent link name) value matches.
+5. Every option in `raw_rst` is either declared in `ubproject.toml` `[[needs.types]]`, a built-in sphinx-needs option, or a Pharaoh convention option. Reject unknown names (catches typos like `subsatisfies`).
+6. If `allowed_ids` was provided: every `reqs[*].id` is a member of `allowed_ids`.
 
-**`emit=codelinks_comment`** — each line must parse via sphinx-codelinks `oneline_parser.parse_line()` against the tailored `oneline_comment_style`.
+**`emit=codelinks_comment`** — each `codelinks[*]` string must parse via sphinx-codelinks `oneline_parser.parse_line()` against the tailored `oneline_comment_style`.
 
 ## Process
 
@@ -266,7 +278,7 @@ Target: 1-5 reqs per file (per split_strategy). Fewer than 1 only if the file ha
 
 ### Step 6: Return
 
-Concatenation of directive blocks with blank-line separators. No prose wrapper, no final summary.
+Emit one JSON object per the Output shape (`{"reqs": [...]}` for `emit=rst`, `{"codelinks": [...]}` for `emit=codelinks_comment`). Build each `reqs[i]` by populating `id`, `title`, `type`, `body`, `source_doc`, `satisfies` (use `[]` when empty), `verification`, and `raw_rst` (the literal RST block that would render the directive). Nothing else on stdout — no `# emit=...` header line, no prose wrapper, no fenced code block.
 
 ## Failure modes
 

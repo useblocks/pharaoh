@@ -1,6 +1,6 @@
 ---
 name: pharaoh-activity-diagram-draft
-description: Use when drafting one activity diagram showing control flow (actions, decisions, forks/joins, swimlanes) for one procedure or algorithm. Typical ASPICE usage — SWE.3 Software Detailed Design. Renderer tailored via `pharaoh.toml`. Does NOT emit other diagram kinds.
+description: Use when drafting one activity diagram showing control flow (actions, decisions, forks/joins, swimlanes) for one procedure or algorithm. Typical ASPICE usage — SWE.3 Software Detailed Design. Renderer tailored via `pharaoh.toml`. Does NOT emit other diagram kinds. Status — PLANNED (design-only scaffold; invoking returns sentinel FAIL until implemented).
 ---
 
 # pharaoh-activity-diagram-draft (PLANNED)

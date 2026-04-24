@@ -36,7 +36,7 @@ All field names are lowercase snake_case. Unknown top-level fields are rejected.
   bundle_key: <ref>               # required iff execution_mode == "family-bundle". ref-grammar expression evaluated per foreach instance; instances sharing the same evaluated key dispatch in one subagent. See Execution modes below.
   retry_on_validation_fail: <int> # optional. overrides defaults.retry_on_validation_fail.
   expected_output_schema: <name>  # optional. named schema from pharaoh-output-validate (e.g. "rst_directive"). hint for executor; does NOT replace the validation block.
-  outputs:                        # optional. declares fields the task is expected to produce. purely documentary; executor does not enforce.
+  outputs:                        # optional. declares fields the task is expected to produce. used by the executor to bind parsed skill output into the artefact store; see Outputs binding below.
     <key>: <type_hint>
 ```
 
@@ -66,7 +66,7 @@ Before any task runs, the executor walks every task's `inputs`, `depends_on`, an
 
 1. Parses every ref syntactically. Syntax errors fail the plan.
 2. Resolves the producing task. Missing producers fail the plan.
-3. Checks the producing task's declared `outputs` map (if present) for the referenced field. Unknown fields are WARNINGs when `outputs` is present, not failures — the declaration is documentary.
+3. Checks the producing task's declared `outputs` map (if present) for the referenced field. Unknown fields are WARNINGs when `outputs` is present, not failures — the binding happens at runtime (see Outputs binding) and may include fields not declared in the map (documentary declaration is a hint, not an allowlist).
 4. Builds a DAG from `depends_on` plus implicit deps from refs. Detects cycles; cycles fail the plan.
 
 Static validation runs fast (no skill dispatch) so ref bugs fail before a single LLM call.
@@ -80,6 +80,18 @@ At dispatch time for task T:
 3. Apply helper if piped.
 4. Substitute into input map.
 5. If any ref is unresolvable at runtime (e.g., upstream task failed and executor still attempted dispatch due to a race), the task fails with `status=BLOCKED` and the error `unresolved_ref: <ref>`.
+
+## Outputs binding
+
+When a task completes, the executor takes the task's raw skill output and populates the in-memory artefact store under the task id. The binding rule depends on the emitted shape:
+
+1. **JSON object output** (either directly, or because `expected_output_schema: json_obj` / `yaml_map` succeeded and `pharaoh-output-validate` returned `parsed`): every top-level key of the parsed object becomes a field on the task record. A downstream `${task_id.field}` ref resolves to the value at that key. Example: `pharaoh-feat-draft-from-docs` emits `{"feats": [...]}`; `${draft_feats.feats}` resolves to the list.
+2. **Plain-text output** (emitter returns raw text not matching a parseable schema, or `expected_output_schema` is omitted): the whole output is bound to the default field. `${task_id}` (shorthand) and `${task_id.output}` both resolve to the raw string. No sub-field access.
+3. **Validation failure** (output did not parse as the declared `expected_output_schema`): no binding occurs; the task is retried per `retry_on_validation_fail`, then failed per the `validation` rule's `on_fail` policy.
+
+For a foreach task, binding runs per-instance. Cross-instance resolution follows the rules in [Foreach](#foreach): `${task_id.field}` with no index returns the list of per-instance field values, order-preserving.
+
+The task-level `outputs:` map is a documentary hint about the expected keys. The executor does NOT reject a skill output whose keys are a strict superset (extra keys are bound silently) or a strict subset (missing keys resolve as unavailable at runtime, raising `unresolved_ref: <ref>` when a downstream task tries to read one). Plan authors who care about completeness enforce it via `pharaoh-output-validate` in a `validation:` rule.
 
 ## Foreach
 

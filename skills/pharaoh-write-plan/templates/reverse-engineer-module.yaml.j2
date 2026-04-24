@@ -14,6 +14,7 @@ required_vars:
   - project_root
   - module_name           # slug for plan.name
   - module_dir            # relative to project_root
+  - docs_root             # relative to project_root (e.g. "docs/source"); used to locate needs.json
   - files                 # list[{filename, stem}] relative to module_dir; caller supplies stems
   - comp_req_directive    # from ubproject.toml
   - comp_req_prefix       # e.g. "CREQ_"
@@ -57,7 +58,7 @@ tasks:
           type: {{ comp_req_directive }}
           parent_feat_id: {{ (parent_feat_ids | default([]))[0] | default("null") }}
 {% endfor %}
-      existing_ids_file: ${project_root}/docs/_build/needs/needs.json
+      existing_ids_file: {{ project_root }}/{{ docs_root }}/_build/needs/needs.json
     depends_on: {% if papyrus_seeds %}[{% for seed in papyrus_seeds %}preseed_{{ loop.index0 }}{% if not loop.last %}, {% endif %}{% endfor %}]{% else %}[]{% endif %}
     outputs:
       allocations: mapping
@@ -76,34 +77,36 @@ tasks:
       reporter_id: "write-plan:req-from-code-{{ f.stem }}"
     depends_on: [id_allocate]
     parallel_group: reqs_from_code
-    expected_output_schema: rst_directive
+    expected_output_schema: json_obj
     outputs:
-      emitted_ids: list
+      reqs: list  # [{id, title, type, body, source_doc, satisfies, verification, raw_rst}, ...]
 {% endfor %}
 
   # Per-comp_req reviews and grounding checks — rendered per-stem since
   # the module template has no aggregate `reqs_from_code` task (each file
   # gets its own `reqs_<stem>`). Each stem gets its own review + grounding
-  # task foreach-ing over that stem's emitted_ids.
+  # task foreach-ing over that stem's reqs list.
 {% for f in files %}
   - id: review_{{ f.stem }}
     skill: pharaoh-req-review
-    foreach: "{% raw %}${reqs_{% endraw %}{{ f.stem }}{% raw %}.emitted_ids}{% endraw %}"
+    foreach: "{% raw %}${reqs_{% endraw %}{{ f.stem }}{% raw %}.reqs}{% endraw %}"
     execution_mode: subagents
     depends_on: [reqs_{{ f.stem }}]
     inputs:
-      target: ${item}
+      target: ${item.raw_rst}
       checklist_path: skills/shared/checklists/requirement.md
       tailoring_path: "{{ project_root }}/.pharaoh/project"
     parallel_group: review_comp_reqs
 
   - id: grounding_{{ f.stem }}
     skill: pharaoh-req-code-grounding-check
-    foreach: "{% raw %}${reqs_{% endraw %}{{ f.stem }}{% raw %}.emitted_ids}{% endraw %}"
+    foreach: "{% raw %}${reqs_{% endraw %}{{ f.stem }}{% raw %}.reqs}{% endraw %}"
     execution_mode: subagents
     depends_on: [reqs_{{ f.stem }}]
     inputs:
-      target: ${item}
+      target: ${item.raw_rst}
+      source_doc_path: ${item.source_doc}
+      project_root: ${project_root}
       tailoring_path: "{{ project_root }}/.pharaoh/project"
     parallel_group: grounding_check_comp_reqs
 {% endfor %}
@@ -118,6 +121,6 @@ tasks:
 validation:
 {% for f in files %}
   - task_output: ${reqs_{{ f.stem }}}
-    schema: rst_directive
+    schema: json_obj
     on_fail: skip_dependents
 {% endfor %}

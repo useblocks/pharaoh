@@ -18,7 +18,7 @@ The emitted directive name and ID prefix come from the consumer project's `ubpro
 ## Atomicity
 
 - (a) Indivisible — one invocation reads `doc_files` and emits N feature directives. No source-code reads. No file-mapping. No inter-feature dependency analysis. One artefact × one phase.
-- (b) Input: `{doc_files: list[str], target_level: str, project_root: str, papyrus_workspace?: str, reporter_id: str, on_missing_config?: "fail"|"prompt"|"use_default"}`. Output: list of RST directive blocks (directive name = `target_level`) as strings, separated by blank lines. On `on_missing_config="prompt"` with `target_level` undeclared → single JSON object `{status: "needs_confirmation", proposal: ...}`.
+- (b) Input: `{doc_files: list[str], target_level: str, project_root: str, papyrus_workspace?: str, reporter_id: str, on_missing_config?: "fail"|"prompt"|"use_default"}`. Output: single JSON object `{"feats": [{"id", "title", "type", "body", "source_doc", "raw_rst"}, ...]}`. The `raw_rst` field of each feat is the full RST directive block; downstream skills that want raw RST read it from there. On `on_missing_config="prompt"` with `target_level` undeclared → single JSON object `{status: "needs_confirmation", proposal: ...}`.
 - (c) Reward: deterministic fixture — a 2-file doc tree with known feature vocabulary (e.g. `features/csv.rst` mentioning "CSV import" and "CSV export"; `features/jama.rst` mentioning "Jama pull" and "Jama push"). After skill runs, scorer checks:
   1. Every emitted block uses `target_level` as the directive name.
   2. Every emitted block has a `:id:` option.
@@ -46,16 +46,24 @@ The emitted directive name and ID prefix come from the consumer project's `ubpro
 
 ## Output
 
-Zero or more RST directive blocks, one feature per block. Each block:
+A single JSON object with one top-level key `feats` (list of feat objects). One feat object per emitted feature. Shape:
 
+```json
+{
+  "feats": [
+    {
+      "id": "<id_prefix><snake_case_id>",
+      "title": "<short_title>",
+      "type": "<target_level>",
+      "body": "<one-sentence feature statement in user-facing language>",
+      "source_doc": "<relative_path_to_doc_file>",
+      "raw_rst": ".. <target_level>:: <short_title>\n   :id: ...\n   :status: draft\n   :source_doc: ...\n\n   <body>\n"
+    }
+  ]
+}
 ```
-.. <target_level>:: <short_title>
-   :id: <id_prefix><snake_case_id>
-   :status: draft
-   :source_doc: <relative_path_to_doc_file>
 
-   <one-sentence feature statement in user-facing language>
-```
+The `raw_rst` field MUST be exactly the directive block as it would appear if pasted into an RST file. Downstream skills (e.g. `pharaoh-req-review`, `pharaoh-feat-review`) read `raw_rst` when they need the directive text; helpers that consume `feats` (e.g. `to_papyrus_seeds`) read `id`, `title`, `body`.
 
 `<id_prefix>` resolution:
 1. Read `<project_root>/ubproject.toml`.
@@ -65,20 +73,19 @@ Zero or more RST directive blocks, one feature per block. Each block:
 
 `<snake_case_id>` is derived from the feature's short_title (lowercase, spaces → underscores, non-alphanumeric stripped).
 
-`:source_doc:` — relative path (from `project_root`) to the doc file this feature was derived from. This is a Pharaoh convention for provenance. `pharaoh-bootstrap` declares `source_doc` under `[[needs.extra_options]]` by default so sphinx-needs does not warn under `-nW`; callers who opted out of the default must declare it manually or accept the warnings. Downstream skills (`pharaoh-feat-file-map`, plans emitted by `pharaoh-write-plan`) read this to group features by source doc.
+`source_doc` — relative path (from `project_root`) to the doc file this feature was derived from. This is a Pharaoh convention for provenance. `pharaoh-bootstrap` declares `source_doc` under `[[needs.extra_options]]` by default so sphinx-needs does not warn under `-nW`; callers who opted out of the default must declare it manually or accept the warnings. Downstream skills (`pharaoh-feat-file-map`, plans emitted by `pharaoh-write-plan`) read this to group features by source doc.
 
-Blocks are separated by one blank line. No surrounding prose outside the blocks, no final summary.
+The output is one JSON object — no surrounding prose, no concatenated RST outside the JSON.
 
 ## Output schema
 
-Each emitted block must match the RST directive regex from `pharaoh-req-from-code`'s Output schema (same shape; different directive).
-
-Validator checks:
-1. (syntactic) `directive` equals input `target_level` (default `feat`).
-2. (syntactic) Required options present: `id`, `status`, `source_doc`.
-3. (semantic) `source_doc` value references a path present in the input `doc_files` list.
-4. (syntactic) No unknown option names.
-5. (syntactic) No content after the final block's body except blank lines.
+Validated as `json_obj` by `pharaoh-output-validate`. Validator checks:
+1. Top-level is a JSON object with exactly one required key `feats` (list).
+2. Every `feats[*]` has the keys `id`, `title`, `type`, `body`, `source_doc`, `raw_rst`.
+3. `feats[*].type` equals input `target_level` (default `feat`).
+4. `feats[*].source_doc` references a path present in the input `doc_files` list.
+5. `feats[*].raw_rst` matches the RST directive Stage 1 + Stage 2 regex from `pharaoh-req-from-code` `## Output schema`, with directive name = `feats[*].type` and `:id:` / `:status:` / `:source_doc:` options present.
+6. `feats[*].id` matches the resolved `<id_prefix><snake_case_id>` pattern.
 
 ## Process
 
@@ -156,7 +163,7 @@ Body text must be user-facing: "The system shall import needs from ReqIF files",
 
 ### Step 6: Return
 
-Return the concatenation of directive blocks with blank-line separators. No prose.
+Emit one JSON object `{"feats": [...]}` per the Output shape. For each emitted capability build the per-feat mapping with `id`, `title`, `type` (= `target_level`), `body`, `source_doc`, and `raw_rst` (the literal RST block that would render the directive). Nothing else on stdout — no prose wrapper, no fenced code block.
 
 ## No-memory mode
 

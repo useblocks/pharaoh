@@ -114,7 +114,7 @@ Unknown extension → FAIL rather than guess.
 - `req_id`: the requirement's sphinx-needs ID (e.g. `"CREQ_csv_export_01"`).
 - `req_title`: the requirement's short title (e.g. `"Write CSV header row"`).
 - `req_type`: the requirement's directive name (e.g. `"comp_req"`, `"impl"`). In `codelinks` mode used for the `type` field. In `backref` mode used only if the tailored `format` template includes `{type}`.
-- `file_path`: absolute path to the source file to annotate.
+- `file_path`: path to the source file to annotate. Accepts either an absolute path or a path relative to `project_root`; relative paths are joined with `project_root` before the file is opened.
 - `anchor`: `AnchorSpec` — one of:
   - `{type: "top_of_file"}` — insert after shebang/encoding lines but before any other content.
   - `{type: "before_symbol", symbol: "<name>"}` — insert immediately before the line where `<name>` is defined. Regex-based detection, not AST-level.
@@ -285,6 +285,16 @@ Write the file back. Preserve original EOL convention (LF vs CRLF) and final-new
 ### Step 8: Return
 
 Return the JSON object per the Output shape with `file_modified=true`.
+
+## Last step
+
+No dedicated `*-review` atom exists for codelink annotation; the operation is a one-line insert whose correctness is structural rather than prose-judgement. This skill therefore performs an inline self-verification in Step 8 before returning `file_modified=true`:
+
+1. Re-read `file_path` and confirm the line at `inserted_line` is byte-for-byte equal to `inserted_text`.
+2. Confirm the file has at most one line starting with the tailored `start_sequence + <separator>` bearing `req_id` (idempotence — a subsequent run with the same inputs must be a no-op, not a duplicate insert).
+3. If either check fails, roll back the write (restore the original file) and return `status: "failed"` with evidence.
+
+Coverage is mechanically enforced at plan level by `pharaoh-quality-gate`'s `link_types_covered` invariant (verifies every required link type referenced by the project's artefact catalog has at least one non-empty value across the emitted corpus). See [`shared/self-review-invariant.md`](../shared/self-review-invariant.md) for the rationale.
 
 ## Failure modes
 

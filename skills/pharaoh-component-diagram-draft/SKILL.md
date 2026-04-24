@@ -1,6 +1,6 @@
 ---
 name: pharaoh-component-diagram-draft
-description: Use when drafting one component-relationship diagram (nodes = sphinx-needs, edges = link relations) for a bounded scope — one feature, one module, one architectural view. Renderer tailored via `pharaoh.toml`. Does NOT emit sequence, class, or state diagrams — those are separate skills.
+description: Use when drafting one component-relationship diagram (nodes = sphinx-needs, edges = link relations) for a bounded scope — one feature, one module, one architectural view. Renderer tailored via `pharaoh.toml`. Does NOT emit sequence, class, or state diagrams — those are separate skills. Status — PLANNED (design-only scaffold; invoking returns sentinel FAIL until implemented).
 ---
 
 # pharaoh-component-diagram-draft (PLANNED)

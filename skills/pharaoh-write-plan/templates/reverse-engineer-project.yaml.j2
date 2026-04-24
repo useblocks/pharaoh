@@ -49,8 +49,8 @@ tasks:
       papyrus_workspace: {{ papyrus_workspace | default(project_root + "/.papyrus") }}
       reporter_id: "write-plan:draft-feats"
     outputs:
-      feats: list
-    expected_output_schema: rst_directive
+      feats: list  # [{id, title, type, body, source_doc, raw_rst}, ...]
+    expected_output_schema: json_obj
 
   - id: preseed_papyrus
     skill: pharaoh-decision-record
@@ -76,15 +76,17 @@ tasks:
     depends_on: [preseed_papyrus]
     parallel_group: map_files
     outputs:
+      feat_id: str
       files: list
       rationale: str
       entry_point: mapping
+      shared_with: list
 
   - id: id_allocate
     skill: pharaoh-id-allocate
     inputs:
       requests: ${map_files | to_files_flat | to_id_requests}
-      existing_ids_file: ${project_root}/docs/_build/needs/needs.json
+      existing_ids_file: {{ project_root }}/{{ docs_root }}/_build/needs/needs.json
       default_prefix: {{ comp_req_prefix | default("CREQ_") }}
       type: {{ comp_req_directive }}
     depends_on: [map_files]
@@ -105,9 +107,9 @@ tasks:
       reporter_id: "write-plan:req-from-code"
     depends_on: [id_allocate]
     parallel_group: reqs_from_code
-    expected_output_schema: rst_directive
+    expected_output_schema: json_obj
     outputs:
-      emitted_ids: list
+      reqs: list  # [{id, title, type, body, source_doc, satisfies, verification, raw_rst}, ...]
 
   # Per-comp_req prose review — explicit top-level task so the executor does
   # not silently skip it. The emitter's `## Last step` used to self-invoke
@@ -116,26 +118,28 @@ tasks:
   # dependency is harder to skip.
   - id: review_comp_reqs
     skill: pharaoh-req-review
-    foreach: "{{ '${' }}reqs_from_code.emitted_ids{{ '}' }}"
+    foreach: ${reqs_from_code.reqs | flatten}
     execution_mode: subagents
     depends_on: [reqs_from_code]
     inputs:
-      target: ${item}
+      target: ${item.raw_rst}
       checklist_path: skills/shared/checklists/requirement.md
       tailoring_path: "{{ project_root }}/.pharaoh/project"
     parallel_group: review_comp_reqs
 
   # Per-comp_req code-grounding check — explicit top-level task (same
-  # rationale as review_comp_reqs). Relies on each emitted CREQ carrying
-  # `:source_doc:`; skips CREQs without one with `"skipped: no source_doc"`
-  # evidence. Pluggable filter YAML resolved from tailoring_path.
+  # rationale as review_comp_reqs). The skill auto-derives source_doc_path
+  # from the RST block's `:source_doc:` option, resolved against project_root
+  # for absolute paths. Pluggable filter YAML resolved from tailoring_path.
   - id: grounding_check_comp_reqs
     skill: pharaoh-req-code-grounding-check
-    foreach: "{{ '${' }}reqs_from_code.emitted_ids{{ '}' }}"
+    foreach: ${reqs_from_code.reqs | flatten}
     execution_mode: subagents
     depends_on: [reqs_from_code]
     inputs:
-      target: ${item}
+      target: ${item.raw_rst}
+      source_doc_path: ${item.source_doc}
+      project_root: ${project_root}
       tailoring_path: "{{ project_root }}/.pharaoh/project"
     parallel_group: grounding_check_comp_reqs
 
@@ -148,12 +152,12 @@ tasks:
   # list from to_files_flat ({file, stem, parents, ...}).
   - id: api_coverage_comp_reqs
     skill: pharaoh-api-coverage-check
-    foreach: "{{ '${' }}map_files | to_files_flat{{ '}' }}"
+    foreach: ${map_files | to_files_flat}
     execution_mode: subagents
     depends_on: [reqs_from_code]
     inputs:
       source_file: ${item.file}
-      needs_json_path: ${project_root}/docs/source/_build/needs/needs.json
+      needs_json_path: {{ project_root }}/{{ docs_root }}/_build/needs/needs.json
       project_root: ${project_root}
       language: auto
     parallel_group: api_coverage_comp_reqs
@@ -167,13 +171,18 @@ tasks:
 {% if emit_codelinks | default(true) %}
   - id: codelink_annotate
     skill: pharaoh-req-codelink-annotate
-    foreach: ${reqs_from_code}
+    foreach: ${reqs_from_code.reqs | flatten}
     inputs:
-      req_directive: ${item}
-      src_root: {{ src_root }}
+      req_id: ${item.id}
+      req_title: ${item.title}
+      req_type: ${item.type}
+      file_path: ${item.source_doc}
+      anchor: {type: top_of_file}
+      parent_links: ${item.satisfies}
+      project_root: ${project_root}
     depends_on: [reqs_from_code]
     parallel_group: codelinks
-    expected_output_schema: codelinks_comment
+    expected_output_schema: json_obj
 {% endif %}
 
   - id: toctree
@@ -203,22 +212,22 @@ tasks:
     skill: pharaoh-feat-review
     depends_on: [draft_feats]
     execution_mode: subagents
-    foreach: "{{ '${' }}draft_feats.emitted_feat_ids{{ '}' }}"
+    foreach: ${draft_feats.feats}
     inputs:
-      target: ${item}
+      target: ${item.raw_rst}
       checklist_path: skills/shared/checklists/feat.md
       tailoring_path: "{{ project_root }}/.pharaoh/project"
 
-  # Diagram emission — use-case view. Iterates over feat IDs; the skill
+  # Diagram emission — use-case view. Iterates over feats; the skill
   # derives actors / use-cases / external-systems from the feat body at
   # dispatch time.
   - id: draft_use_case_diagrams
     skill: pharaoh-use-case-diagram-draft
     depends_on: [draft_feats]
     execution_mode: subagents
-    foreach: "{{ '${' }}draft_feats.emitted_feat_ids{{ '}' }}"
+    foreach: ${draft_feats.feats}
     inputs:
-      feat_id: ${item}
+      feat_id: ${item.id}
       tailoring_path: "{{ project_root }}/.pharaoh/project"
 
 {% if emit_component_diagrams | default(true) %}
@@ -314,7 +323,7 @@ tasks:
       gate_spec:
         invariants:
           papyrus_non_empty:
-            enabled: "{{ '${' }}preseed_papyrus{{ '}' }}"
+            enabled: true
             required_min: 1
           dispatch_signal_matches_plan:
             enabled: true
@@ -325,13 +334,13 @@ tasks:
 
 validation:
   - task_output: ${draft_feats}
-    schema: rst_directive
+    schema: json_obj
     on_fail: retry
   - task_output: ${reqs_from_code.*}
-    schema: rst_directive
+    schema: json_obj
     on_fail: skip_dependents
 {% if emit_codelinks | default(true) %}
   - task_output: ${codelink_annotate.*}
-    schema: codelinks_comment
+    schema: json_obj
     on_fail: skip_dependents
 {% endif %}

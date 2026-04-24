@@ -1,6 +1,6 @@
 ---
 name: pharaoh-class-diagram-draft
-description: Use when drafting one class diagram showing a bounded set of types/entities with their fields, methods, and relationships (inheritance, composition, aggregation, association). Renderer tailored via `pharaoh.toml`. Does NOT emit component, sequence, or state diagrams.
+description: Use when drafting one class diagram showing a bounded set of types/entities with their fields, methods, and relationships (inheritance, composition, aggregation, association). Renderer tailored via `pharaoh.toml`. Does NOT emit component, sequence, or state diagrams. Status — PLANNED (design-only scaffold; invoking returns sentinel FAIL until implemented).
 ---
 
 # pharaoh-class-diagram-draft (PLANNED)

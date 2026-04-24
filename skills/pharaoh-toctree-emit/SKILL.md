@@ -87,6 +87,18 @@ If it exists with different content → no-op, return `files_modified=false`, wa
 
 Return the JSON shape per Output section.
 
+## Last step
+
+No dedicated `*-review` atom exists for toctree emission; the operation is structural (write one `index.rst` listing N files) and its correctness is checked mechanically rather than via a prose-judgement review atom. This skill therefore performs an inline self-verification in Step 4 before returning:
+
+1. Every entry in the emitted `toctree` block resolves to an existing file under `target_dir` (no dangling references).
+2. The emitted `index.rst` contains exactly one `.. toctree::` directive (no accidental duplication).
+3. No entry appears twice in the toctree body.
+
+If any check fails, do not write `index.rst`; return `status: "failed"` with evidence.
+
+Coverage is mechanically enforced at plan level by `pharaoh-quality-gate`'s orphan / link-completeness invariants plus `sphinx-build -W` itself (which fails on orphan RST files). See [`shared/self-review-invariant.md`](../shared/self-review-invariant.md) for the rationale.
+
 ## Failure modes
 
 - `target_dir` does not exist → FAIL.

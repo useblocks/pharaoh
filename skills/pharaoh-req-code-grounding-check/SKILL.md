@@ -37,7 +37,8 @@ Do NOT use to grade prose quality (atomicity, verifiability, ambiguity) — that
 ## Input
 
 - `target`: either a `need_id` resolvable in `needs.json`, or a raw RST directive block for one CREQ. The block must contain the `:source_doc:` option; if absent, axis #8 (`source_doc_resolves`) fails with `"source_doc missing — cannot ground check"` and every other axis records `passed: "n/a"`.
-- `source_doc_path`: absolute path to the cited source file. Extension determines the raise-site / import regex flavour (Python MVP; other languages via `shared/public-symbol-patterns.md`). If the path does not resolve, axis #8 fails with `"source_doc unresolved"`.
+- `source_doc_path` (optional when `target` is an RST block): path to the cited source file. Accepts either an absolute path or a path relative to `project_root`; relative paths are joined with `project_root` before opening. Extension determines the raise-site / import regex flavour (Python MVP; other languages via `shared/public-symbol-patterns.md`). If the resolved path does not exist, axis #8 fails with `"source_doc unresolved"`. When `target` is a raw RST block AND `source_doc_path` is omitted, the skill auto-derives it from the block's `:source_doc:` option and resolves via `project_root`.
+- `project_root` (optional, required when `source_doc_path` is relative or omitted): absolute path to the consumer project's root. Used to resolve relative or auto-derived source docs to absolute paths before opening.
 - `tailoring_path`: absolute path to the project's tailoring directory (`.pharaoh/project/`). Two files are read:
   - `checklists/requirement.md` frontmatter for `tailoring.weasel_extra: [<word>, ...]` (axis #6 extension).
   - `code-grounding-filters.yaml` for axis #5's pluggable language-specific filter chain; schema in [`shared/code-grounding-filters.md`](../shared/code-grounding-filters.md). Missing, empty, or malformed YAML is acceptable — only the three universal filters apply.

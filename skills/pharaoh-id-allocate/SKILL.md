@@ -42,7 +42,7 @@ A JSON array of ID strings, in request order. For `requests = [{stem: "a", count
 
 (assuming no collisions with existing IDs). Callers parse with `json.loads` — no line-oriented or comma-separated alternative.
 
-On any collision, the allocator advances an independent per-stem sequence counter until a free slot is found, then emits exactly `count` IDs per request. If the per-stem counter reaches 100 without emitting `count` free slots, FAIL — excessive collision means the caller chose a poor stem (too generic, reused across many features).
+On any collision, the allocator advances an independent per-stem sequence counter until a free slot is found, then emits exactly `count` IDs per request. If the per-stem counter reaches 99 without emitting `count` free slots, FAIL — excessive collision means the caller chose a poor stem (too generic, reused across many features). The cap aligns with the 2-digit `_<seq:02d>` format: emitted `seq` values stay in `01..99`, never wider.
 
 ## Process
 
@@ -55,7 +55,7 @@ If `existing_ids_file` is provided, read it, parse as JSON, extract every `needs
 Maintain an "allocated in this call" set alongside `existing_ids`. For each request, keep a per-stem `seq` counter (starts at 1). Produce exactly `request.count` IDs by looping `slots_emitted` from 0 to `count - 1`:
 
 1. Generate candidate `<prefix><stem>_<seq:02d>` (e.g. `CREQ_writer_01`).
-2. If candidate collides with either set, increment `seq` and retry — the slot is not consumed. If `seq` exceeds 100 without emitting `count` free IDs for this request, FAIL naming the stem and the collision rate.
+2. If candidate collides with either set, increment `seq` and retry — the slot is not consumed. If `seq` exceeds 99 without emitting `count` free IDs for this request, FAIL naming the stem and the collision rate.
 3. On a non-colliding candidate: add to the "allocated in this call" set, append to the output list, increment `seq`, increment `slots_emitted`.
 
 Exactly `count` IDs per request end up in the output. The per-stem `seq` counter is independent of `slots_emitted` — `seq` only advances on collision; `slots_emitted` only advances on successful emit.
@@ -68,7 +68,7 @@ Emit the output as a JSON array of strings (per the wire format declared above).
 
 - Neither `existing_ids_file` nor `existing_ids` provided → FAIL.
 - `existing_ids_file` path unreadable → FAIL.
-- Counter exceeds 100 for any request → FAIL naming the stem.
+- Counter exceeds 99 for any request → FAIL naming the stem.
 - Any request has `count < 1` → FAIL.
 
 ## Non-goals

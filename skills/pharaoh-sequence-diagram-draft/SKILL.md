@@ -1,6 +1,6 @@
 ---
 name: pharaoh-sequence-diagram-draft
-description: Use when drafting one sequence diagram showing ordered interactions between participants (components, actors, external systems) over time. Renderer tailored via `pharaoh.toml`. Does NOT emit component, class, or state diagrams.
+description: Use when drafting one sequence diagram showing ordered interactions between participants (components, actors, external systems) over time. Renderer tailored via `pharaoh.toml`. Does NOT emit component, class, or state diagrams. Status — PLANNED (design-only scaffold; invoking returns sentinel FAIL until implemented).
 ---
 
 # pharaoh-sequence-diagram-draft (PLANNED)

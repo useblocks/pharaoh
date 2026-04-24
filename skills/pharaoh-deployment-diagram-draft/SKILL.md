@@ -1,6 +1,6 @@
 ---
 name: pharaoh-deployment-diagram-draft
-description: Use when drafting one deployment diagram showing physical nodes (ECUs, servers, boards), the software artefacts deployed on each, and communication channels (buses, networks). Typical ASPICE usage — SYS.3 System Architectural Design; essential for automotive HW/SW allocation per ISO 26262 Part 5 (HW) and Part 6 (SW). Renderer tailored via `pharaoh.toml`.
+description: Use when drafting one deployment diagram showing physical nodes (ECUs, servers, boards), the software artefacts deployed on each, and communication channels (buses, networks). Typical ASPICE usage — SYS.3 System Architectural Design; essential for automotive HW/SW allocation per ISO 26262 Part 5 (HW) and Part 6 (SW). Renderer tailored via `pharaoh.toml`. Status — PLANNED (design-only scaffold; invoking returns sentinel FAIL until implemented).
 ---
 
 # pharaoh-deployment-diagram-draft (PLANNED)
