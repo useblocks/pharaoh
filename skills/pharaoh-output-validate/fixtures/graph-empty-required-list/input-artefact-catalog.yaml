@@ -1,0 +1,6 @@
+# graph-empty-required-list/input-artefact-catalog.yaml
+# Explicit empty list for tc; feat key omitted entirely — both must short-circuit
+# to "no check" without error.
+tc:
+  required_metadata_fields: []
+# feat: intentionally omitted — absent key is treated as empty required list.

@@ -1,0 +1,16 @@
+{
+  "detected": {
+    "languages": ["python"],
+    "cli_framework": "typer",
+    "config_default_idiom": "python_dataclass",
+    "env_var_style": "uppercase-prefix",
+    "detected_env_prefix": "JAMA_"
+  },
+  "emitted_filters": [
+    "typer_kebab",
+    "env_var_glob",
+    "python_import",
+    "python_dataclass_default"
+  ],
+  "warnings": []
+}

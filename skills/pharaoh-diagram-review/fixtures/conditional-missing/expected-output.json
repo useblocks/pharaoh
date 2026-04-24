@@ -1,0 +1,15 @@
+{
+  "parent_need_id": "FEAT_order_submit",
+  "diagram_type": "sequence",
+  "renderer": "mermaid",
+  "axes": {
+    "conditional_branches_marked": {
+      "passed": false,
+      "evidence": "source has 3 conditional branches (if/elif/else in submit_order); diagram body has no alt/opt/loop/group marker"
+    },
+    "external_library_participant": {"passed": "n/a", "reason": "no non-stdlib imports called in submit_order"},
+    "returns_match_call_stack":     {"passed": true, "reason": "returns terminate at OrderService and CLI, both prior callers"}
+  },
+  "overall": "fail",
+  "blockers": ["conditional_branches_marked"]
+}

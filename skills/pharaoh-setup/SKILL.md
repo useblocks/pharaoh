@@ -33,11 +33,15 @@ Follow the full detection algorithm defined in `skills/shared/data-access.md`. T
 
 #### 1a. Find Sphinx project roots
 
-Search for `ubproject.toml` files in the workspace root and up to two levels of subdirectories using Glob with pattern `**/ubproject.toml`. Each location is a project root.
+Search for `ubproject.toml` files in the workspace root and up to two levels of subdirectories using Glob with pattern `**/ubproject.toml`. Each location is a candidate root.
 
-If no `ubproject.toml` is found, search for `conf.py` files containing sphinx-needs configuration using Grep with pattern `sphinx_needs|needs_types|needs_from_toml` in `**/conf.py`. Each matching `conf.py` location is a project root.
+For each candidate root, verify sphinx-needs is actually configured by checking either (a) a `[needs]` section or `[[needs.types]]` tables in `ubproject.toml`, or (b) `sphinx_needs` in the `extensions` list of a co-located `conf.py`. Candidates that fail this check are classified as **plain-Sphinx candidates** (no sphinx-needs), not sphinx-needs project roots.
 
-Record every project root path.
+If no `ubproject.toml` match is a true sphinx-needs root, search for `conf.py` files containing sphinx-needs configuration using Grep with pattern `sphinx_needs|needs_types|needs_from_toml` in `**/conf.py`. Each matching `conf.py` location is a sphinx-needs project root.
+
+If no sphinx-needs roots are found at all, do a final pass: Glob `**/conf.py` and record every match as a **plain-Sphinx candidate** (these exist but do not load sphinx-needs).
+
+Record every sphinx-needs root path and every plain-Sphinx candidate separately.
 
 #### 1b. Read need types
 
@@ -121,20 +125,35 @@ Data access:
   Fallback:  raw file parsing (always available)
 ```
 
-If no project roots were found, report the issue clearly:
+If no sphinx-needs project roots were found, branch on whether plain-Sphinx candidates exist:
+
+**Case A — No Sphinx project at all (no `conf.py` anywhere):**
 
 ```
-No sphinx-needs project detected in this workspace.
+No Sphinx project detected in this workspace.
 
-Looked for:
-  - ubproject.toml files (up to 2 levels deep)
-  - conf.py files with sphinx_needs configuration
-
-Please ensure this workspace contains a sphinx-needs project, or
-provide the path to your project root.
+Run `sphinx-quickstart` to create a Sphinx project, or provide the path
+to an existing one.
 ```
 
-Then ask the user for the project root path before proceeding.
+**Case B — Plain-Sphinx candidates exist but none loads sphinx-needs:**
+
+```
+Sphinx project(s) detected at:
+  - <path>
+  ...
+
+sphinx-needs is not configured in any of them.
+
+Pharaoh requires sphinx-needs to be loaded as an extension and at least
+one need type to be declared.
+
+Run `pharaoh-bootstrap` first to inject the minimum sphinx-needs
+configuration into the chosen project, then re-run this skill to author
+pharaoh.toml.
+```
+
+In either case, ask the user how to proceed before writing any files.
 
 ---
 
@@ -159,6 +178,51 @@ Which mode would you like? [advisory/enforcing]
 
 If the user does not specify, default to `"advisory"`.
 
+#### 2a.bis. Detect and confirm project mode
+
+Pharaoh's workflow gates (`require_change_analysis`, `require_verification`, `require_mece_on_release`) have different natural defaults depending on where the project sits in its lifecycle. Hardcoding the example's values is what produced the pilot feedback: a reverse-engineering project had `require_change_analysis = true` on day one, alarming every newly-drafted need because there was no Pharaoh change issue yet.
+
+Classify the project into one of three modes using the following heuristic (first matching branch wins):
+
+| Signal                                                                                           | Inferred mode  |
+| ------------------------------------------------------------------------------------------------ | -------------- |
+| `needs.json` exists (e.g. `docs/_build/needs/needs.json`) and contains ≥10 needs.                 | `steady-state` |
+| No `needs.json` or <10 needs, AND the source tree has ≥5 code files AND `docs/` has prose files with section headers that read like user-facing features (e.g. imperative verbs, capability lists). | `reverse-eng`  |
+| Otherwise (thin project: no needs, minimal src, placeholder docs).                                | `greenfield`   |
+
+Present the detected mode and ask the user to confirm or override:
+
+```
+Detected project mode: <reverse-eng | greenfield | steady-state>
+
+  reverse-eng   - Codebase exists and has feature-level documentation, but
+                  sphinx-needs artefacts are being created now. Workflow
+                  gates start permissive; tighten them once the catalogue
+                  stabilises.
+  greenfield    - Minimal scaffolding. Verification matters from day one
+                  (every new need should have a verification path), but
+                  change-analysis and MECE gates are noise until the
+                  catalogue grows.
+  steady-state  - Mature catalogue (≥10 needs). Full gating: change
+                  analysis before edits, verification required, MECE at
+                  release.
+
+Confirm detected mode, or choose a different one
+[reverse-eng/greenfield/steady-state]?
+```
+
+Record the chosen mode. Per-mode `[pharaoh.workflow]` defaults (applied in Step 2b):
+
+| Mode           | `require_change_analysis` | `require_verification` | `require_mece_on_release` |
+| -------------- | ------------------------- | ---------------------- | ------------------------- |
+| `reverse-eng`  | `false`                   | `true`                 | `false`                   |
+| `greenfield`   | `false`                   | `true`                 | `false`                   |
+| `steady-state` | `true`                    | `true`                 | `true`                    |
+
+`require_verification = true` is uniform across all three modes — step 1 of the gate-enablement ladder (see `skills/shared/gate-enablement.md`) is safe to enable out of the box because the review skills are ship-ready and read-only. A project that runs `pharaoh-setup` → `pharaoh-gate-advisor` immediately lands on step 2 as its next recommendation, not step 1. Mode still differentiates `require_change_analysis` and `require_mece_on_release` because those gates have pre-work that is not safe to assume on every project.
+
+A caller running this skill non-interactively MAY pass `mode` as an explicit override input. When present, Step 2a.bis uses that value and skips the confirmation prompt.
+
 #### 2b. Build pharaoh.toml content
 
 Generate the `pharaoh.toml` content using the detected project data. Use `pharaoh.toml.example` as the structural template, but populate values from detection results.
@@ -173,26 +237,31 @@ Generate the `pharaoh.toml` content using the detected project data. Use `pharao
 - Set `auto_increment = true`.
 
 **`[pharaoh.workflow]` section:**
-- Use the defaults from `pharaoh.toml.example`:
-  - `require_change_analysis = true`
-  - `require_verification = true`
-  - `require_mece_on_release = false`
+- Populate the three flags from the mode table in Step 2a.bis based on the mode the user confirmed. Do NOT blindly copy values from `pharaoh.toml.example` — that file documents the steady-state shape, not the day-one defaults for every mode.
+- Emit a one-line comment above the three flags naming the chosen mode, so a later reader of `pharaoh.toml` can see what assumption produced these values:
+  ```toml
+  [pharaoh.workflow]
+  # mode: reverse-eng — tighten as the catalogue stabilises
+  require_change_analysis = false
+  require_verification = false
+  require_mece_on_release = false
+  ```
 
 **`[pharaoh.traceability]` section:**
-- Build `required_links` from the detected extra link types.
-- For each extra link type, determine the source and target types by examining the link's usage in existing need directives. If the link name is `implements`, and it appears on `impl` directives pointing to `spec` directives, generate `"spec -> impl"`.
+- Build `required_links` from the detected extra link types, but **only for type pairs where BOTH types are declared in `ubproject.toml` `[[needs.types]]`.** A chain `comp_req -> test` where `test` is not a declared type is dead config — it alarms on every `comp_req` from day one. Skip it.
+- For each extra link type, determine the source and target types by examining the link's usage in existing need directives. If the link name is `implements`, and it appears on `impl` directives pointing to `spec` directives, generate `"spec -> impl"` only if both `impl` and `spec` are declared.
 - If usage cannot be determined from existing needs, infer from naming conventions:
   - `implements` or `realizes` -> `"spec -> impl"`
   - `tests` or `verifies` -> `"impl -> test"`
   - `satisfies` or `fulfills` -> `"req -> spec"`
   - `derives` or `derives_from` -> `"req -> req"` (parent to child)
 - Also check for standard `links` usage to detect implicit traceability chains (e.g., specs linking to reqs via `:links:`).
-- If the project has a clear type hierarchy (e.g., req -> spec -> impl -> test), generate the full chain:
+- If the project has a clear type hierarchy (e.g., req -> spec -> impl -> test), generate the full chain — but filter out any edges whose target type is not declared:
   ```toml
   required_links = [
       "req -> spec",
       "spec -> impl",
-      "impl -> test",
+      # "impl -> test",  # SKIPPED: 'test' is not declared in [[needs.types]]
   ]
   ```
 - If no link types are detected, leave `required_links` as an empty array with a comment explaining how to add entries.
@@ -255,36 +324,26 @@ If the user declines, skip to Step 4.
 
 #### 3b. Locate Copilot templates
 
-The Copilot templates live in the Pharaoh plugin directory under `copilot/`. Locate this directory relative to the plugin installation path.
+The Copilot templates live in the Pharaoh plugin directory under `.github/`. Pharaoh dogfoods its own agents — the same `.github/` tree it copies out is the one it uses on itself. Locate this directory relative to the plugin installation path.
 
 The expected template structure is:
 
 ```
-copilot/
+.github/
   agents/
-    pharaoh.setup.agent.md
-    pharaoh.change.agent.md
-    pharaoh.trace.agent.md
-    pharaoh.mece.agent.md
-    pharaoh.author.agent.md
-    pharaoh.verify.agent.md
-    pharaoh.release.agent.md
-    pharaoh.plan.agent.md
+    pharaoh.*.agent.md        (discovered via glob, not hardcoded)
   prompts/
-    pharaoh.change.prompt.md
-    pharaoh.trace.prompt.md
-    pharaoh.mece.prompt.md
-    pharaoh.author.prompt.md
-    pharaoh.verify.prompt.md
-    pharaoh.release.prompt.md
-    pharaoh.plan.prompt.md
+    pharaoh.*.prompt.md       (discovered via glob, not hardcoded)
   copilot-instructions.md
 ```
 
-If the template directory is not found, inform the user:
+Do NOT hardcode the agent or prompt file list in the skill — enumerate them at runtime with Glob on `.github/agents/pharaoh.*.agent.md` and `.github/prompts/pharaoh.*.prompt.md`. The set grows as new atomic skills land; a hardcoded list rots on every release.
+
+If the `.github/agents/` directory is not found in the plugin dir, inform the user:
 
 ```
-Copilot templates not found in the Pharaoh plugin directory.
+Copilot templates not found in the Pharaoh plugin directory
+(expected .github/agents/ and .github/prompts/).
 This may indicate an incomplete installation. Skipping Copilot setup.
 
 You can manually create Copilot agents later by running pharaoh:setup again
@@ -310,31 +369,20 @@ For files that do not exist, list them as new files to be created.
 
 #### 3d. Present file list and copy
 
-Show a summary of all files that will be created or updated:
+Enumerate the actual template files via Glob (see Step 3b) and show a summary. Example shape (exact list depends on the current plugin version):
 
 ```
 The following files will be created in your project:
 
-  New files:
-    .github/agents/pharaoh.setup.agent.md
-    .github/agents/pharaoh.change.agent.md
-    .github/agents/pharaoh.trace.agent.md
-    .github/agents/pharaoh.mece.agent.md
-    .github/agents/pharaoh.author.agent.md
-    .github/agents/pharaoh.verify.agent.md
-    .github/agents/pharaoh.release.agent.md
-    .github/agents/pharaoh.plan.agent.md
-    .github/prompts/pharaoh.change.prompt.md
-    .github/prompts/pharaoh.trace.prompt.md
-    .github/prompts/pharaoh.mece.prompt.md
-    .github/prompts/pharaoh.author.prompt.md
-    .github/prompts/pharaoh.verify.prompt.md
-    .github/prompts/pharaoh.release.prompt.md
-    .github/prompts/pharaoh.plan.prompt.md
+  New files (N agents, M prompts):
+    .github/agents/pharaoh.<name>.agent.md     × N
+    .github/prompts/pharaoh.<name>.prompt.md   × M
     .github/copilot-instructions.md
 
 Proceed? [yes/no]
 ```
+
+Show the full enumerated list to the user — do not print the `× N` shorthand. The shorthand above is just for this skill spec; the runtime output must list every file by name so the user can review before confirming.
 
 After user confirms, create the necessary directories (`.github/agents/`, `.github/prompts/`) and copy each template file to the user's project.
 
@@ -346,21 +394,46 @@ After user confirms, create the necessary directories (`.github/agents/`, `.gith
 
 Look for a `.gitignore` file in the workspace root.
 
-#### 4b. Add .pharaoh/ entry
+#### 4b. Add Pharaoh ephemeral paths (narrow, not wholesale)
 
-If `.gitignore` exists, read its contents and check whether `.pharaoh/` is already listed (matching the exact string `.pharaoh/` or `.pharaoh` on its own line).
+`.pharaoh/` contains a mix of committed tailoring and ephemeral run state. Ignoring the whole tree is wrong — it hides `.pharaoh/project/` tailoring which IS shared across the team. The skill ignores only the ephemeral subpaths:
 
-- If already present, do nothing. Report: `".pharaoh/" already in .gitignore -- no changes needed.`
-- If not present, append `.pharaoh/` to the file on a new line. If the file does not end with a newline, add one before the entry. Report: `Added ".pharaoh/" to .gitignore.`
+| Path                    | Purpose                                                  | Commit? |
+| ----------------------- | -------------------------------------------------------- | ------- |
+| `.pharaoh/project/`     | Tailoring: workflows, id-conventions, artefact-catalog, checklists | **yes** |
+| `.pharaoh/runs/`        | `pharaoh-execute-plan` run artefacts (report.yaml, staged RST) | no     |
+| `.pharaoh/plans/`       | plan.yaml files emitted by `pharaoh-write-plan`           | no     |
+| `.pharaoh/session.json` | Session / gate state                                      | no      |
+| `.pharaoh/cache/`       | Derived caches                                            | no      |
 
-If `.gitignore` does not exist, create it with the following content:
+Emitted entries:
 
 ```
-# Pharaoh session state (ephemeral, do not commit)
-.pharaoh/
+.pharaoh/runs/
+.pharaoh/plans/
+.pharaoh/session.json
+.pharaoh/cache/
 ```
 
-Report: `Created .gitignore with ".pharaoh/" entry.`
+If `.gitignore` exists, read its contents and branch:
+
+1. **Wide form already present.** If the file contains a bare `.pharaoh/` or `.pharaoh` line (no trailing path segment), emit a warning and leave it alone — do not auto-migrate, respect user control:
+   > `.pharaoh/ is ignored as a whole — this hides .pharaoh/project/ tailoring which should be committed. Consider narrowing to: .pharaoh/runs/, .pharaoh/plans/, .pharaoh/session.json, .pharaoh/cache/.`
+   Report: `".pharaoh/" entry is too wide; left in place with a warning.`
+2. **All four narrow entries already present.** Do nothing. Report: `".pharaoh/ ephemeral paths already ignored -- no changes needed."`
+3. **Some narrow entries missing.** Append the missing entries on new lines. If the file does not end with a newline, add one first. Report: `"Added <count> Pharaoh ephemeral-path entries to .gitignore."`
+
+If `.gitignore` does not exist, create it with:
+
+```
+# Pharaoh ephemeral state (do not commit). Project tailoring at .pharaoh/project/ IS committed.
+.pharaoh/runs/
+.pharaoh/plans/
+.pharaoh/session.json
+.pharaoh/cache/
+```
+
+Report: `Created .gitignore with Pharaoh ephemeral-path entries.`
 
 ---
 
@@ -435,6 +508,16 @@ Determine the current tier:
 
 ---
 
+### Step 5b: Bootstrap tailoring from declared types
+
+After `pharaoh.toml` is written, invoke `pharaoh-tailor-bootstrap` with `project_root` = the workspace root and `on_missing_config` = `"prompt"` (so the user confirms the generated content).
+
+This produces `.pharaoh/project/{workflows,id-conventions,artefact-catalog}.yaml` plus `checklists/<type>.md` per declared type. Without this step, every emitted need has `:status: draft` forever with no defined lifecycle transitions.
+
+If the user rejects the proposal, skip — the caller may run `pharaoh-tailor-fill` later (after needs exist) as the alternative path.
+
+---
+
 ### Step 6: Summary
 
 Present a final summary of everything that was configured:
@@ -446,6 +529,8 @@ Pharaoh Setup Complete
 Configuration:
   pharaoh.toml:  <created | updated | skipped>  (<path>)
   Strictness:    <advisory | enforcing>
+  Mode:          <reverse-eng | greenfield | steady-state>
+  Workflow:      change=<on|off>, verification=<on|off>, mece=<on|off>
   Codelinks:     <enabled | disabled>
   Traceability:  <N required link chains | no required links>
 
@@ -461,24 +546,30 @@ Detected projects:
     Links: <comma-separated>
 
 Available skills (Claude Code):
-  pharaoh:setup    - This skill (project setup and configuration)
-  pharaoh:change   - Analyze impact of a requirement change
-  pharaoh:trace    - Navigate traceability links in any direction
-  pharaoh:mece     - Check for gaps, redundancies, and inconsistencies
-  pharaoh:req-draft    - Draft new requirements as traceable sphinx-needs directives
-  pharaoh:req-review   - Validate requirements against linked specs and implementations
-  pharaoh:release  - Generate changelogs and release summaries
-  pharaoh:plan     - Break changes into structured implementation tasks
+  <enumerate from `skills/pharaoh-*/SKILL.md` frontmatter at runtime —
+   do not hardcode. The skill list has grown beyond the original 8 happy-path
+   agents to include atomic skills like pharaoh:req-draft, pharaoh:req-review,
+   pharaoh:arch-draft, pharaoh:arch-review, pharaoh:vplan-draft,
+   pharaoh:vplan-review, pharaoh:fmea, pharaoh:tailor-detect,
+   pharaoh:tailor-fill, pharaoh:audit-fanout, and others.>
 ```
 
 If Copilot agents were installed, also show:
 
 ```
 Available agents (GitHub Copilot):
-  @pharaoh.setup    @pharaoh.change   @pharaoh.trace   @pharaoh.mece
-  @pharaoh.author   @pharaoh.verify   @pharaoh.release @pharaoh.plan
+  <enumerate from the copied .github/agents/pharaoh.*.agent.md files —
+   do not hardcode. One entry per installed agent, formatted as @pharaoh.<name>.>
 
-Workflow: @pharaoh.change -> @pharaoh.author -> @pharaoh.verify -> @pharaoh.release
+Orchestration agents (coordinate atomic agents for end-to-end flows):
+  @pharaoh.flow, @pharaoh.process-audit, @pharaoh.write-plan, @pharaoh.execute-plan, ...
+  (again, discover from installed agents rather than hardcoding)
+
+For reverse-engineering requirements or architecture from code, use
+  @pharaoh.write-plan to generate a plan.yaml (choose a template such as
+  reverse-engineer-project or reverse-engineer-module) and @pharaoh.execute-plan
+  to run it. The deleted @pharaoh.reqs-from-module skill has been replaced by
+  this plan-based flow.
 ```
 
 End with a recommendation to run the MECE check:

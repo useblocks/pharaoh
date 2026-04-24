@@ -1,0 +1,20 @@
+{
+  "current_state": {
+    "strictness": "advisory",
+    "require_verification": false,
+    "require_change_analysis": false,
+    "require_mece_on_release": false,
+    "codelinks_enabled": false
+  },
+  "recommended_next_gate": "require_verification",
+  "rationale": "require_verification = true is the highest-value, lowest-cost step — it wires the review skills that are already ship-ready into the release gate and catches every PARTIAL finding via pharaoh-req-review. No pre-work required.",
+  "ladder": [
+    {"step": 1, "gate": "require_verification = true", "blocker": "none — safe to enable now"},
+    {"step": 2, "gate": "require_change_analysis = true", "blocker": "needs pharaoh-change to be tailored"},
+    {"step": 3, "gate": "require_mece_on_release = true", "blocker": "needs release-gate workflow"},
+    {"step": 4, "gate": "codelinks.enabled = true", "blocker": "needs codelink annotations in source"},
+    {"step": 5, "gate": "strictness = enforcing", "blocker": "requires steps 1-4 satisfied"}
+  ],
+  "overall": "pass",
+  "notes": []
+}

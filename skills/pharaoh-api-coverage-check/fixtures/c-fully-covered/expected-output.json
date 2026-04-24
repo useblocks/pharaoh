@@ -1,0 +1,23 @@
+{
+  "source_file": "input-source.c",
+  "language": "c",
+  "classification": "behavioral",
+  "file_coverage": {
+    "passed": true,
+    "citing_creqs": [
+      "CREQ_c_count_items",
+      "CREQ_c_load_catalog",
+      "CREQ_c_save_catalog"
+    ]
+  },
+  "raise_site_coverage": {
+    "total": 0,
+    "project_defined": 0,
+    "covered": [],
+    "uncovered": [],
+    "external": [],
+    "passed": true
+  },
+  "overall": "pass",
+  "blockers": []
+}

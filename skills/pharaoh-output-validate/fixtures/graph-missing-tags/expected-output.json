@@ -1,0 +1,9 @@
+{
+  "valid": false,
+  "errors": [],
+  "needs_checked": 4,
+  "violations": [
+    {"need_id": "comp_req__billing_refund", "type": "comp_req", "missing_fields": ["tags"]},
+    {"need_id": "comp_req__billing_void",   "type": "comp_req", "missing_fields": ["tags"]}
+  ]
+}

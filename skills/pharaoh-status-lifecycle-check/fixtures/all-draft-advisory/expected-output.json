@@ -1,0 +1,10 @@
+{
+  "needs_by_status": {"draft": 3, "reviewed": 0, "approved": 0, "released": 0},
+  "draft_count": 3,
+  "enforce": false,
+  "overall": "pass",
+  "blockers": [
+    "advisory: 3 needs in draft; release gate not enforced"
+  ],
+  "notes": []
+}

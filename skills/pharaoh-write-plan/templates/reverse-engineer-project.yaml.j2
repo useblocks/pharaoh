@@ -1,0 +1,337 @@
+---
+# Template front-matter. Parsed by pharaoh-write-plan, stripped before render.
+template_name: reverse-engineer-project
+description: |
+  Full reverse-engineering pipeline: prose docs -> feats -> per-feat file map
+  -> id allocation -> per-file req emission -> optional diagrams -> codelinks
+  -> toctree -> quality gate.
+
+  Upstream shape: pharaoh-feat-file-map emits FLAT mappings
+  {feat_id, files, rationale, entry_point?, shared_with?} per invocation
+  (one per foreach iteration). The to_files_flat helper denormalises a list
+  of those flat mappings into a file-centric list with populated `parents`
+  for files shared across feats.
+required_vars:
+  - project_root        # absolute path
+  - project_name        # slug used in plan.name
+  - docs_root           # relative to project_root (e.g. "docs/source"); used by write-plan to enumerate `docs`
+  - docs                # list[str] of relative doc paths; populated by write-plan Step 2 from docs_root
+  - src_root            # relative to project_root (e.g. "src/myproject")
+  - feat_directive      # from ubproject.toml (e.g. "feat")
+  - comp_req_directive  # from ubproject.toml (e.g. "comp_req")
+optional_vars:
+  - workspace_dir                 # default: <project_root>/.pharaoh/runs/<project_name>-<ts>/
+  - target_docs_path              # where emitted artefacts (RST, diagrams) finally live; default: ${workspace}/artefacts. Use this to land reverse-engineered spec under the project's docs tree (e.g. docs/source/spec/feature/) without overriding workspace_dir.
+  - emit_component_diagrams       # bool, default true
+  - emit_flow_diagrams            # bool, default true
+  - emit_codelinks                # bool, default true
+  - execution_mode                # "inline" | "subagents", default "subagents"
+  - papyrus_workspace             # default <project_root>/.papyrus
+---
+name: reverse-engineer-{{ project_name }}
+version: 1
+project_root: {{ project_root }}
+{% if workspace_dir %}workspace_dir: {{ workspace_dir }}{% endif %}
+defaults:
+  execution_mode: {{ execution_mode | default("subagents") }}
+  retry_on_validation_fail: 1
+
+tasks:
+  - id: draft_feats
+    skill: pharaoh-feat-draft-from-docs
+    inputs:
+      doc_files:
+{% for d in docs %}
+        - {{ d }}
+{% endfor %}
+      target_level: {{ feat_directive }}
+      project_root: {{ project_root }}
+      papyrus_workspace: {{ papyrus_workspace | default(project_root + "/.papyrus") }}
+      reporter_id: "write-plan:draft-feats"
+    outputs:
+      feats: list
+    expected_output_schema: rst_directive
+
+  - id: preseed_papyrus
+    skill: pharaoh-decision-record
+    foreach: ${draft_feats.feats | to_papyrus_seeds}
+    inputs:
+      type: fact
+      canonical_name: ${item.canonical_name}
+      body: ${item.body}
+      reporter_id: "write-plan:preseed"
+      tags: ["origin:preseed"]
+    depends_on: [draft_feats]
+
+  - id: map_files
+    skill: pharaoh-feat-file-map
+    foreach: ${draft_feats.feats}
+    inputs:
+      feat_id: ${item.id}
+      feat_title: ${item.title}
+      feat_body: ${item.body}
+      src_root: {{ src_root }}
+      papyrus_workspace: {{ papyrus_workspace | default(project_root + "/.papyrus") }}
+      reporter_id: "write-plan:feat-file-map"
+    depends_on: [preseed_papyrus]
+    parallel_group: map_files
+    outputs:
+      files: list
+      rationale: str
+      entry_point: mapping
+
+  - id: id_allocate
+    skill: pharaoh-id-allocate
+    inputs:
+      requests: ${map_files | to_files_flat | to_id_requests}
+      existing_ids_file: ${project_root}/docs/_build/needs/needs.json
+      default_prefix: {{ comp_req_prefix | default("CREQ_") }}
+      type: {{ comp_req_directive }}
+    depends_on: [map_files]
+    outputs:
+      allocations: mapping
+
+  - id: reqs_from_code
+    skill: pharaoh-req-from-code
+    foreach: ${map_files | to_files_flat}
+    inputs:
+      file_path: ${item.file}
+      parent_feat_ids: ${item.parents}
+      target_level: {{ comp_req_directive }}
+      split_strategy: ${heuristics.split_strategy(item.file)}
+      allowed_ids: ${id_allocate.allocations | by_stem(item.stem)}
+      papyrus_workspace: {{ papyrus_workspace | default(project_root + "/.papyrus") }}
+      project_root: {{ project_root }}
+      reporter_id: "write-plan:req-from-code"
+    depends_on: [id_allocate]
+    parallel_group: reqs_from_code
+    expected_output_schema: rst_directive
+    outputs:
+      emitted_ids: list
+
+  # Per-comp_req prose review — explicit top-level task so the executor does
+  # not silently skip it. The emitter's `## Last step` used to self-invoke
+  # this but dozens of emissions under foreach fan-out let the LLM drop the
+  # self-invoke. Scheduling it here as a top-level task with its own DAG
+  # dependency is harder to skip.
+  - id: review_comp_reqs
+    skill: pharaoh-req-review
+    foreach: "{{ '${' }}reqs_from_code.emitted_ids{{ '}' }}"
+    execution_mode: subagents
+    depends_on: [reqs_from_code]
+    inputs:
+      target: ${item}
+      checklist_path: skills/shared/checklists/requirement.md
+      tailoring_path: "{{ project_root }}/.pharaoh/project"
+    parallel_group: review_comp_reqs
+
+  # Per-comp_req code-grounding check — explicit top-level task (same
+  # rationale as review_comp_reqs). Relies on each emitted CREQ carrying
+  # `:source_doc:`; skips CREQs without one with `"skipped: no source_doc"`
+  # evidence. Pluggable filter YAML resolved from tailoring_path.
+  - id: grounding_check_comp_reqs
+    skill: pharaoh-req-code-grounding-check
+    foreach: "{{ '${' }}reqs_from_code.emitted_ids{{ '}' }}"
+    execution_mode: subagents
+    depends_on: [reqs_from_code]
+    inputs:
+      target: ${item}
+      tailoring_path: "{{ project_root }}/.pharaoh/project"
+    parallel_group: grounding_check_comp_reqs
+
+  # Per-source-file coverage — reverse direction of reqs_from_code. Asks
+  # "did the emitter cover every public symbol and every raise-site
+  # exception this file exposes?". Catches the under-decomposition failure
+  # mode where a compound CREQ bundles 5 behaviours and the other 4
+  # exception classes never get CREQs of their own. Uses the existing
+  # pharaoh-api-coverage-check atom. Iterates directly over the flat file
+  # list from to_files_flat ({file, stem, parents, ...}).
+  - id: api_coverage_comp_reqs
+    skill: pharaoh-api-coverage-check
+    foreach: "{{ '${' }}map_files | to_files_flat{{ '}' }}"
+    execution_mode: subagents
+    depends_on: [reqs_from_code]
+    inputs:
+      source_file: ${item.file}
+      needs_json_path: ${project_root}/docs/source/_build/needs/needs.json
+      project_root: ${project_root}
+      language: auto
+    parallel_group: api_coverage_comp_reqs
+
+  # Note: a regenerate_comp_reqs loop is intentionally omitted here. Wiring
+  # regenerate into the DAG requires pairing each review's findings_json
+  # with its original RST, which needs either a pairing helper in schema.md
+  # or an RST-emitting review output. Until one of those lands, operators
+  # invoke pharaoh-req-regenerate manually per-CREQ on review failures.
+
+{% if emit_codelinks | default(true) %}
+  - id: codelink_annotate
+    skill: pharaoh-req-codelink-annotate
+    foreach: ${reqs_from_code}
+    inputs:
+      req_directive: ${item}
+      src_root: {{ src_root }}
+    depends_on: [reqs_from_code]
+    parallel_group: codelinks
+    expected_output_schema: codelinks_comment
+{% endif %}
+
+  - id: toctree
+    skill: pharaoh-toctree-emit
+    inputs:
+      artefacts_dir: {{ target_docs_path | default("${workspace}/artefacts") }}
+      docs_root: {{ docs_root }}
+      feat_directive: {{ feat_directive }}
+    depends_on: [reqs_from_code{% if emit_component_diagrams | default(true) %}, extract_component_diagrams{% endif %}{% if emit_flow_diagrams | default(true) %}, extract_flow_diagrams{% endif %}]
+
+{% if emit_component_diagrams | default(true) or emit_flow_diagrams | default(true) %}
+  - id: diagram_lint
+    skill: pharaoh-diagram-lint
+    inputs:
+      docs_dir: {{ target_docs_path | default("${workspace}/artefacts") }}
+      strictness: report_only
+      reporter_id: "write-plan:diagram-lint"
+      papyrus_workspace: {{ papyrus_workspace | default(project_root + "/.papyrus") }}
+    depends_on: [toctree]
+    outputs:
+      findings: list
+      status: str
+{% endif %}
+
+  # Per-feat review — self-review invariant (shared/self-review-invariant.md)
+  - id: review_feats
+    skill: pharaoh-feat-review
+    depends_on: [draft_feats]
+    execution_mode: subagents
+    foreach: "{{ '${' }}draft_feats.emitted_feat_ids{{ '}' }}"
+    inputs:
+      target: ${item}
+      checklist_path: skills/shared/checklists/feat.md
+      tailoring_path: "{{ project_root }}/.pharaoh/project"
+
+  # Diagram emission — use-case view. Iterates over feat IDs; the skill
+  # derives actors / use-cases / external-systems from the feat body at
+  # dispatch time.
+  - id: draft_use_case_diagrams
+    skill: pharaoh-use-case-diagram-draft
+    depends_on: [draft_feats]
+    execution_mode: subagents
+    foreach: "{{ '${' }}draft_feats.emitted_feat_ids{{ '}' }}"
+    inputs:
+      feat_id: ${item}
+      tailoring_path: "{{ project_root }}/.pharaoh/project"
+
+{% if emit_component_diagrams | default(true) %}
+  # Diagram emission — static view (component extract from code). Iterates
+  # over map_files's per-feat outputs ({feat_id, files, ...}).
+  - id: extract_component_diagrams
+    skill: pharaoh-feat-component-extract
+    depends_on: [map_files]
+    execution_mode: subagents
+    foreach: ${map_files}
+    inputs:
+      feat_id: ${item.feat_id}
+      files: ${item.files}
+      project_root: {{ project_root }}
+      src_root: {{ src_root }}
+      tailoring_path: "{{ project_root }}/.pharaoh/project"
+{% endif %}
+
+{% if emit_flow_diagrams | default(true) %}
+  # Diagram emission — dynamic view (flow extract from call graph). Uses
+  # with_entry_point to skip feats that have no declared entry_point, since
+  # flow tracing requires one. Per-scenario enumeration is handled inside
+  # the skill from project.diagram_conventions.dynamic_view_scenarios —
+  # plan-level foreach is single-axis per schema.md.
+  - id: extract_flow_diagrams
+    skill: pharaoh-feat-flow-extract
+    depends_on: [map_files]
+    execution_mode: subagents
+    foreach: ${map_files | with_entry_point}
+    inputs:
+      feat_id: ${item.feat_id}
+      files: ${item.files}
+      entry_point: ${item.entry_point}
+      project_root: {{ project_root }}
+      src_root: {{ src_root }}
+      tailoring_path: "{{ project_root }}/.pharaoh/project"
+{% endif %}
+
+  # Per-diagram review — self-review invariant. Split per diagram kind
+  # because plan.yaml ref grammar disallows list-concatenation across
+  # multiple producer tasks. Each review task iterates the matching
+  # drafter's outputs. Executor runs them in parallel via the shared
+  # review_diagrams parallel_group.
+  - id: review_use_case_diagrams
+    skill: pharaoh-diagram-review
+    depends_on: [draft_use_case_diagrams]
+    execution_mode: subagents
+    foreach: ${draft_use_case_diagrams}
+    inputs:
+      diagram_block: ${item}
+      diagram_type: use_case
+      checklist_path: skills/shared/checklists/diagram.md
+      tailoring_path: "{{ project_root }}/.pharaoh/project"
+    parallel_group: review_diagrams
+
+{% if emit_component_diagrams | default(true) %}
+  - id: review_component_diagrams
+    skill: pharaoh-diagram-review
+    depends_on: [extract_component_diagrams]
+    execution_mode: subagents
+    foreach: ${extract_component_diagrams}
+    inputs:
+      diagram_block: ${item}
+      diagram_type: feat_component_extract
+      checklist_path: skills/shared/checklists/diagram.md
+      tailoring_path: "{{ project_root }}/.pharaoh/project"
+    parallel_group: review_diagrams
+{% endif %}
+
+{% if emit_flow_diagrams | default(true) %}
+  - id: review_flow_diagrams
+    skill: pharaoh-diagram-review
+    depends_on: [extract_flow_diagrams]
+    execution_mode: subagents
+    foreach: ${extract_flow_diagrams}
+    inputs:
+      diagram_block: ${item}
+      diagram_type: feat_flow_extract
+      checklist_path: skills/shared/checklists/diagram.md
+      tailoring_path: "{{ project_root }}/.pharaoh/project"
+    parallel_group: review_diagrams
+{% endif %}
+
+  - id: quality_gate
+    skill: pharaoh-quality-gate
+    inputs:
+      artefacts_dir: {{ target_docs_path | default("${workspace}/artefacts") }}
+      project_root: {{ project_root }}
+{% if emit_component_diagrams | default(true) or emit_flow_diagrams | default(true) %}
+      diagram_lint_findings: ${diagram_lint.findings}
+      diagram_lint_status: ${diagram_lint.status}
+{% endif %}
+      gate_spec:
+        invariants:
+          papyrus_non_empty:
+            enabled: "{{ '${' }}preseed_papyrus{{ '}' }}"
+            required_min: 1
+          dispatch_signal_matches_plan:
+            enabled: true
+          self_review_coverage:
+            enabled: true
+            self_review_map_path: skills/shared/self-review-map.yaml
+    depends_on: [toctree{% if emit_component_diagrams | default(true) or emit_flow_diagrams | default(true) %}, diagram_lint{% endif %}{% if emit_codelinks | default(true) %}, codelink_annotate{% endif %}, review_feats, review_comp_reqs, grounding_check_comp_reqs, api_coverage_comp_reqs, draft_use_case_diagrams{% if emit_component_diagrams | default(true) %}, extract_component_diagrams{% endif %}{% if emit_flow_diagrams | default(true) %}, extract_flow_diagrams{% endif %}, review_use_case_diagrams{% if emit_component_diagrams | default(true) %}, review_component_diagrams{% endif %}{% if emit_flow_diagrams | default(true) %}, review_flow_diagrams{% endif %}]
+
+validation:
+  - task_output: ${draft_feats}
+    schema: rst_directive
+    on_fail: retry
+  - task_output: ${reqs_from_code.*}
+    schema: rst_directive
+    on_fail: skip_dependents
+{% if emit_codelinks | default(true) %}
+  - task_output: ${codelink_annotate.*}
+    schema: codelinks_comment
+    on_fail: skip_dependents
+{% endif %}

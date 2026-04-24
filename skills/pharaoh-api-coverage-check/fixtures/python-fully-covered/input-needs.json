@@ -1,0 +1,32 @@
+{
+  "needs": {
+    "CREQ_inventory_error": {
+      "id": "CREQ_inventory_error",
+      "type": "comp_req",
+      "title": "InventoryError hierarchy",
+      "content": "The module shall expose InventoryError as the base class for all inventory-related failures.",
+      "source_doc": "input-source.py"
+    },
+    "CREQ_inventory_load": {
+      "id": "CREQ_inventory_load",
+      "type": "comp_req",
+      "title": "load_items reads inventory from disk",
+      "content": "The function load_items shall return a list of records parsed from the given path.",
+      "source_doc": "input-source.py"
+    },
+    "CREQ_inventory_save": {
+      "id": "CREQ_inventory_save",
+      "type": "comp_req",
+      "title": "save_items persists inventory",
+      "content": "The function save_items shall write the given items to the given path and return True on success.",
+      "source_doc": "input-source.py"
+    },
+    "CREQ_inventory_client": {
+      "id": "CREQ_inventory_client",
+      "type": "comp_req",
+      "title": "InventoryClient connects to the backend",
+      "content": "The class InventoryClient shall expose connect() for backend session establishment.",
+      "source_doc": "input-source.py"
+    }
+  }
+}

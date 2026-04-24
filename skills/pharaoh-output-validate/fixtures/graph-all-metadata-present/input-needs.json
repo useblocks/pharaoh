@@ -1,0 +1,27 @@
+{
+  "needs": {
+    "feat__inventory": {
+      "id": "feat__inventory",
+      "type": "feat",
+      "title": "Inventory management",
+      "status": "valid",
+      "tags": ["inventory"]
+    },
+    "comp_req__inventory_read": {
+      "id": "comp_req__inventory_read",
+      "type": "comp_req",
+      "title": "Read inventory file",
+      "status": "valid",
+      "tags": ["inventory", "io"],
+      "priority": "high"
+    },
+    "comp_req__inventory_write": {
+      "id": "comp_req__inventory_write",
+      "type": "comp_req",
+      "title": "Write inventory file",
+      "status": "valid",
+      "tags": ["inventory", "io"],
+      "priority": "medium"
+    }
+  }
+}

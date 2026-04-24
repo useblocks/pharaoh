@@ -1,0 +1,47 @@
+{
+  "need_id": "CREQ_dispatch_external",
+  "source_doc": "input-source.py",
+  "axes": {
+    "exception_raise_sites_exist": {
+      "passed": "n/a",
+      "reason": "no exception raise claim in body"
+    },
+    "trigger_condition_literal_match": {
+      "passed": false,
+      "evidence": "CREQ claims origin_field == \"External\"; source has origin_field != \"Sphinx-Needs\" \u2014 operator and value both diverge from the claim"
+    },
+    "named_symbol_exists": {
+      "passed": true,
+      "evidence": "dispatch_item found as def in source"
+    },
+    "type_framework_matches_imports": {
+      "passed": "n/a",
+      "reason": "no type-framework claim in body"
+    },
+    "backtick_symbol_in_source_doc": {
+      "passed": "n/a",
+      "reason": "no backtick-quoted tokens in body"
+    },
+    "no_weasel_adjectives": {
+      "passed": true
+    },
+    "quantifier_enumerated": {
+      "passed": "n/a",
+      "reason": "no unbounded quantifier in body"
+    },
+    "source_doc_resolves": {
+      "passed": true
+    },
+    "branch_count_aligned": {
+      "score": 2,
+      "evidence": "function dispatch_item has 2 branches; CREQ is one shall-clause covering the positive path"
+    }
+  },
+  "overall": "fail",
+  "blockers": [
+    "trigger_condition_literal_match"
+  ],
+  "actions": [
+    "Rewrite the trigger to match the source: either 'when origin_field != \"Sphinx-Needs\"' (mirror the code) or change the source to test equality with \"External\""
+  ]
+}

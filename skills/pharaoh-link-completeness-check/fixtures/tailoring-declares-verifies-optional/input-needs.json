@@ -1,0 +1,24 @@
+{
+  "needs": {
+    "feat__search": {
+      "id": "feat__search",
+      "type": "feat",
+      "title": "Search",
+      "status": "valid"
+    },
+    "comp_req__search_query": {
+      "id": "comp_req__search_query",
+      "type": "comp_req",
+      "title": "Accept query string",
+      "status": "draft",
+      "satisfies": ["feat__search"]
+    },
+    "comp_req__search_results": {
+      "id": "comp_req__search_results",
+      "type": "comp_req",
+      "title": "Rank search results",
+      "status": "draft",
+      "satisfies": ["feat__search"]
+    }
+  }
+}

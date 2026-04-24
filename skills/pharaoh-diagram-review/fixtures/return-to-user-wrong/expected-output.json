@@ -1,0 +1,15 @@
+{
+  "parent_need_id": "FEAT_settings_update",
+  "diagram_type": "sequence",
+  "renderer": "mermaid",
+  "axes": {
+    "conditional_branches_marked":  {"passed": "n/a", "reason": "source function has 0 conditional branches"},
+    "external_library_participant": {"passed": "n/a", "reason": "no non-stdlib imports called in update_setting"},
+    "returns_match_call_stack": {
+      "passed": false,
+      "evidence": "return 'SettingsService-->>User' terminates at User; User never issued a call and is not the declared entrypoint (entrypoint = CLI). Stack at return: [CLI, SettingsService]"
+    }
+  },
+  "overall": "fail",
+  "blockers": ["returns_match_call_stack"]
+}

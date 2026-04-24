@@ -1,0 +1,16 @@
+"""Literate-style Python kept in a .txt file for dogfood purposes."""
+
+
+def greet(name):
+    if not name:
+        raise GreetError("name required")
+    return "hello " + name
+
+
+class Greeter:
+    def say(self):
+        return "hi"
+
+
+class GreetError(Exception):
+    pass

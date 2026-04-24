@@ -1,0 +1,6 @@
+version: 1
+
+map:
+  pharaoh-req-from-code:
+    - pharaoh-req-review
+    - pharaoh-req-code-grounding-check

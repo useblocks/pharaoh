@@ -1,0 +1,22 @@
+# step-1-enabled fixture — the post-2026-04-22 shape that bootstrap + setup now ship by default.
+# require_verification = true is on (step 1 of the ladder), everything else remains advisory.
+# pharaoh-gate-advisor must recommend step 2 (require_change_analysis = true) next, naming
+# the pharaoh-change-tailoring blocker.
+
+[pharaoh]
+strictness = "advisory"
+
+[pharaoh.id_scheme]
+pattern = "{TYPE}-{MODULE}-{NUMBER}"
+auto_increment = true
+
+[pharaoh.workflow]
+require_change_analysis = false
+require_verification = true
+require_mece_on_release = false
+
+[pharaoh.traceability]
+required_links = []
+
+[pharaoh.codelinks]
+enabled = false

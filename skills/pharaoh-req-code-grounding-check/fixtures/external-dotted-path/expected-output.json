@@ -1,0 +1,43 @@
+{
+  "need_id": "CREQ_core_logger",
+  "source_doc": "input-source.py",
+  "axes": {
+    "exception_raise_sites_exist": {
+      "passed": "n/a",
+      "reason": "no exception raise claim in body"
+    },
+    "trigger_condition_literal_match": {
+      "passed": "n/a",
+      "reason": "no literal == / is trigger in body"
+    },
+    "named_symbol_exists": {
+      "passed": "n/a",
+      "reason": "no verb-prefixed [A-Z]\\w+ symbol in body (wrap-verb target is a dotted path, handled by filter step #5)"
+    },
+    "type_framework_matches_imports": {
+      "passed": "n/a",
+      "reason": "no type-framework claim in body"
+    },
+    "backtick_symbol_in_source_doc": {
+      "passed": true,
+      "evidence": "1 backtick token checked: 'rich.console.Console' \u2713 (tailored filter 'python_import' matched 'from rich.console import Console' in source)"
+    },
+    "no_weasel_adjectives": {
+      "passed": true
+    },
+    "quantifier_enumerated": {
+      "passed": "n/a",
+      "reason": "no unbounded quantifier in body"
+    },
+    "source_doc_resolves": {
+      "passed": true
+    },
+    "branch_count_aligned": {
+      "score": 2,
+      "evidence": "Logger.info has 1 branch but CREQ describes TTY/pipe dispatch that rich.console.Console handles internally \u2014 justified delegation"
+    }
+  },
+  "overall": "pass",
+  "blockers": [],
+  "actions": []
+}

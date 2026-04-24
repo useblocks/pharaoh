@@ -1,0 +1,4 @@
+# graph-missing-tags/input-artefact-catalog.yaml
+# comp_req must carry :tags:; feat has no metadata policy at all.
+comp_req:
+  required_metadata_fields: [tags]

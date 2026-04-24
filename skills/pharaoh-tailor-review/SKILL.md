@@ -119,7 +119,7 @@ but do not replace them.
 
 For each entry in `prefixes`, the key must be a non-empty string and the value must be a
 non-empty string (the description). See
-`examples/score/.pharaoh/project/schemas/id-conventions.schema.json` for the authoritative
+`examples/my-project/.pharaoh/project/schemas/id-conventions.schema.json` for the authoritative
 JSON Schema.
 
 **workflows.yaml required keys:**
@@ -134,7 +134,7 @@ For each transition in `transitions`:
 - `from` and `to` must be non-empty strings.
 - `requires` must be a list (may be empty).
 
-See `examples/score/.pharaoh/project/schemas/workflows.schema.json` for the authoritative
+See `examples/my-project/.pharaoh/project/schemas/workflows.schema.json` for the authoritative
 JSON Schema.
 
 **artefact-catalog.yaml required structure:**
@@ -148,14 +148,14 @@ Top level must be a map of artefact-type keys. For each artefact type:
 | `required_body_sections` | list | Optional; entries are top-level heading names that must appear inside the directive body prose (e.g. `Inputs`, `Steps`, `Expected` for `tc`). Validated as body prose, not as `:key:` options. |
 | `lifecycle` | list | Optional; if present must be non-empty |
 
-See `examples/score/.pharaoh/project/schemas/artefact-catalog.schema.json` for the
+See `examples/my-project/.pharaoh/project/schemas/artefact-catalog.schema.json` for the
 authoritative JSON Schema.
 
 **checklists/*.md frontmatter:**
 
 YAML frontmatter (delimited by `---`) at the top of a checklist file is **optional**. When
 present, it is validated against
-`examples/score/.pharaoh/project/schemas/checklists-frontmatter.schema.json`:
+`examples/my-project/.pharaoh/project/schemas/checklists-frontmatter.schema.json`:
 
 | Key | Rule |
 |---|---|

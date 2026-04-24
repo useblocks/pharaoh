@@ -1,0 +1,15 @@
+{
+  "detected": {
+    "languages": ["rust"],
+    "cli_framework": "clap",
+    "config_default_idiom": "rust_serde",
+    "env_var_style": "none",
+    "detected_env_prefix": null
+  },
+  "emitted_filters": [
+    "clap_kebab",
+    "rust_use_clause",
+    "rust_serde_default"
+  ],
+  "warnings": []
+}

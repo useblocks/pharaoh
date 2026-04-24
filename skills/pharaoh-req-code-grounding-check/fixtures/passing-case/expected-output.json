@@ -1,0 +1,43 @@
+{
+  "need_id": "CREQ_inventory_read",
+  "source_doc": "input-source.py",
+  "axes": {
+    "exception_raise_sites_exist": {
+      "passed": true,
+      "evidence": "InventoryValidationError cited; 1 raise site found"
+    },
+    "trigger_condition_literal_match": {
+      "passed": "n/a",
+      "reason": "no literal == / is trigger in body"
+    },
+    "named_symbol_exists": {
+      "passed": true,
+      "evidence": "read_inventory found as def in source"
+    },
+    "type_framework_matches_imports": {
+      "passed": "n/a",
+      "reason": "no type-framework claim in body"
+    },
+    "backtick_symbol_in_source_doc": {
+      "passed": true,
+      "evidence": "3 backtick tokens checked: 'read_inventory' \u2713, 'strict' \u2713, 'csv' \u2713 \u2014 all resolve in input-source.py"
+    },
+    "no_weasel_adjectives": {
+      "passed": true
+    },
+    "quantifier_enumerated": {
+      "passed": "n/a",
+      "reason": "no unbounded quantifier in body"
+    },
+    "source_doc_resolves": {
+      "passed": true
+    },
+    "branch_count_aligned": {
+      "score": 3,
+      "evidence": "function read_inventory has 1 observable branch (strict=true); CREQ enumerates it explicitly"
+    }
+  },
+  "overall": "pass",
+  "blockers": [],
+  "actions": []
+}

@@ -1,0 +1,26 @@
+{
+  "source_file": "input-source.py",
+  "language": "python",
+  "classification": "behavioral",
+  "file_coverage": {
+    "passed": true,
+    "citing_creqs": [
+      "CREQ_inventory_client",
+      "CREQ_inventory_error",
+      "CREQ_inventory_load",
+      "CREQ_inventory_save"
+    ]
+  },
+  "raise_site_coverage": {
+    "total": 1,
+    "project_defined": 1,
+    "covered": [
+      "InventoryError"
+    ],
+    "uncovered": [],
+    "external": [],
+    "passed": true
+  },
+  "overall": "pass",
+  "blockers": []
+}

@@ -1,0 +1,48 @@
+{
+  "needs": {
+    "feat__billing": {
+      "id": "feat__billing",
+      "type": "feat",
+      "title": "Billing",
+      "status": "valid"
+    },
+    "comp_req__billing_invoice": {
+      "id": "comp_req__billing_invoice",
+      "type": "comp_req",
+      "title": "Issue invoice",
+      "status": "valid",
+      "satisfies": ["feat__billing"],
+      "verifies": ["tc__billing_invoice_ok"]
+    },
+    "comp_req__billing_refund": {
+      "id": "comp_req__billing_refund",
+      "type": "comp_req",
+      "title": "Issue refund",
+      "status": "valid",
+      "satisfies": ["feat__billing"]
+    },
+    "comp_req__billing_dispute": {
+      "id": "comp_req__billing_dispute",
+      "type": "comp_req",
+      "title": "Handle dispute",
+      "status": "valid",
+      "satisfies": ["feat__billing"],
+      "verifies": []
+    },
+    "comp_req__billing_export": {
+      "id": "comp_req__billing_export",
+      "type": "comp_req",
+      "title": "Export billing history",
+      "status": "valid",
+      "satisfies": ["feat__billing"],
+      "verifies": ["tc__does_not_exist"]
+    },
+    "tc__billing_invoice_ok": {
+      "id": "tc__billing_invoice_ok",
+      "type": "tc",
+      "title": "Invoice happy path",
+      "status": "valid",
+      "verifies": ["comp_req__billing_invoice"]
+    }
+  }
+}

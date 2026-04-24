@@ -103,6 +103,12 @@ No surrounding prose. Emit exactly one JSON object per invocation.
 
 A future cleanup may reimplement `pharaoh-finding-record` as a thin wrapper over `pharaoh-decision-record`; that refactor is out of scope for Phase 4c.
 
+## Last step
+
+After emitting the artefact, invoke `pharaoh-decision-review` on it. Pass the emitted artefact (or its `need_id`) as `target`. Attach the returned review JSON to the skill's output under the key `review`. If the review emits any axis with `score: 0` or `severity: critical`, return a non-success status with the review findings verbatim and do NOT finalize the artefact — the caller must regenerate (via `pharaoh-decision-regenerate` if available, or by re-invoking this skill with the findings as input).
+
+See [`shared/self-review-invariant.md`](../shared/self-review-invariant.md) for the rationale and enforcement mechanism. Coverage is mechanically enforced by `pharaoh-self-review-coverage-check` in `pharaoh-quality-gate`.
+
 ## Composition
 
 Each caller invokes this skill once per canonical subject surfaced. The orchestrator or harness then reads the final Papyrus workspace via `papyrus recall` for the aggregated vocabulary.

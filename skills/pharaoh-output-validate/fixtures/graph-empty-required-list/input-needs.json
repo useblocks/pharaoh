@@ -1,0 +1,22 @@
+{
+  "needs": {
+    "feat__search": {
+      "id": "feat__search",
+      "type": "feat",
+      "title": "Search",
+      "status": "valid"
+    },
+    "tc__search_ok": {
+      "id": "tc__search_ok",
+      "type": "tc",
+      "title": "Search happy path",
+      "status": "valid"
+    },
+    "tc__search_empty": {
+      "id": "tc__search_empty",
+      "type": "tc",
+      "title": "Search with no results",
+      "status": "valid"
+    }
+  }
+}

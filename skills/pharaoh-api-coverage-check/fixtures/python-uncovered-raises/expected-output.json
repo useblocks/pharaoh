@@ -1,0 +1,31 @@
+{
+  "source_file": "input-source.py",
+  "language": "python",
+  "classification": "behavioral",
+  "file_coverage": {
+    "passed": true,
+    "citing_creqs": [
+      "CREQ_jama_authenticate",
+      "CREQ_jama_client",
+      "CREQ_jama_fetch_artifact",
+      "CREQ_jama_fetch_value_map",
+      "CREQ_jama_skip_artifact"
+    ]
+  },
+  "raise_site_coverage": {
+    "total": 4,
+    "project_defined": 4,
+    "covered": [
+      "JamaAuthError"
+    ],
+    "uncovered": [
+      "JamaArtifactTypeError",
+      "JamaSkippedValueError",
+      "JamaValueMapError"
+    ],
+    "external": [],
+    "passed": false
+  },
+  "overall": "fail",
+  "blockers": []
+}

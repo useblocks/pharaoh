@@ -1,0 +1,26 @@
+{
+  "versions": {
+    "1.0": {
+      "needs": {
+        "CREQ_inventory_read": {
+          "id": "CREQ_inventory_read",
+          "type": "comp_req",
+          "title": "Inventory reader",
+          "status": "reviewed"
+        },
+        "CREQ_inventory_validate": {
+          "id": "CREQ_inventory_validate",
+          "type": "comp_req",
+          "title": "Inventory validation",
+          "status": "approved"
+        },
+        "CREQ_inventory_export": {
+          "id": "CREQ_inventory_export",
+          "type": "comp_req",
+          "title": "Inventory export",
+          "status": "released"
+        }
+      }
+    }
+  }
+}

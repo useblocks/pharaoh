@@ -1,0 +1,56 @@
+# Draft ↔ review skill mapping.
+# Used by:
+#   - pharaoh-self-review-coverage-check (as fixture input)
+#   - pharaoh-write-plan (to insert *_review tasks after *_draft tasks)
+#   - shared/self-review-invariant.md (documentation)
+#
+# Keep in sync when adding a new emission skill. Adding an emission skill
+# WITHOUT a corresponding review skill is a design failure — every
+# artefact type must have a review atom.
+
+version: 1
+
+map:
+  # Requirement emission
+  pharaoh-req-draft: pharaoh-req-review
+  pharaoh-req-from-code:
+    - pharaoh-req-review
+    - pharaoh-req-code-grounding-check
+  pharaoh-req-regenerate: pharaoh-req-review
+
+  # Architecture emission
+  pharaoh-arch-draft: pharaoh-arch-review
+
+  # Verification plan emission
+  pharaoh-vplan-draft: pharaoh-vplan-review
+
+  # Feature emission
+  pharaoh-feat-draft-from-docs: pharaoh-feat-review
+
+  # FMEA emission
+  pharaoh-fmea: pharaoh-fmea-review
+
+  # Decision emission
+  pharaoh-decision-record: pharaoh-decision-review
+
+  # Diagram emission — extractors
+  pharaoh-feat-component-extract: pharaoh-diagram-review
+  pharaoh-feat-flow-extract: pharaoh-diagram-review
+
+  # Diagram emission — drafts (one entry per *-diagram-draft skill)
+  pharaoh-use-case-diagram-draft: pharaoh-diagram-review
+  pharaoh-sequence-diagram-draft: pharaoh-diagram-review
+  pharaoh-component-diagram-draft: pharaoh-diagram-review
+  pharaoh-class-diagram-draft: pharaoh-diagram-review
+  pharaoh-state-diagram-draft: pharaoh-diagram-review
+  pharaoh-activity-diagram-draft: pharaoh-diagram-review
+  pharaoh-block-diagram-draft: pharaoh-diagram-review
+  pharaoh-deployment-diagram-draft: pharaoh-diagram-review
+  pharaoh-fault-tree-diagram-draft: pharaoh-diagram-review
+
+# Skills intentionally NOT in the map (no artefact emission, no review needed):
+# pharaoh-output-validate, pharaoh-diagram-lint, pharaoh-quality-gate,
+# pharaoh-id-allocate, pharaoh-papyrus-non-empty-check,
+# pharaoh-dispatch-signal-check, pharaoh-self-review-coverage-check,
+# pharaoh-lifecycle-check, pharaoh-review-completeness,
+# pharaoh-context-gather, pharaoh-toctree-emit, pharaoh-req-codelink-annotate.

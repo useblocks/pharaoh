@@ -1,0 +1,49 @@
+{
+  "need_id": "CREQ_csv_import_01",
+  "source_doc": "input-source.py",
+  "axes": {
+    "exception_raise_sites_exist": {
+      "passed": "n/a",
+      "reason": "body describes 'a read error' abstractly without naming a class"
+    },
+    "trigger_condition_literal_match": {
+      "passed": "n/a",
+      "reason": "no literal == / is trigger in body"
+    },
+    "named_symbol_exists": {
+      "passed": "n/a",
+      "reason": "no verb-prefixed [A-Z]\\w+ symbol and no function-call shape in body \u2014 fully abstract prose"
+    },
+    "type_framework_matches_imports": {
+      "passed": "n/a",
+      "reason": "no type-framework claim in body"
+    },
+    "backtick_symbol_in_source_doc": {
+      "passed": "n/a",
+      "reason": "no backtick-quoted tokens in body"
+    },
+    "no_weasel_adjectives": {
+      "passed": true
+    },
+    "quantifier_enumerated": {
+      "passed": "n/a",
+      "reason": "no unbounded quantifier matches the narrow noun list"
+    },
+    "source_doc_resolves": {
+      "passed": false,
+      "evidence": "source_doc file exists, but no symbols from the CREQ body are named in it \u2014 CREQ is too abstract to verify against the file"
+    },
+    "branch_count_aligned": {
+      "score": 1,
+      "evidence": "function read_csv has 2 branches (success / error wrapping); CREQ is one shall-clause fusing them, no enumeration"
+    }
+  },
+  "overall": "fail",
+  "blockers": [
+    "source_doc_resolves",
+    "branch_count_aligned"
+  ],
+  "actions": [
+    "Rewrite CREQ to cite at least one concrete symbol that appears in input-source.py: the function name (``read_csv``), the parameter names (``delimiter``, ``encoding``), and the raised exception class (``CSVReadError``). Pure abstract prose cannot be verified against code and provides no review value."
+  ]
+}

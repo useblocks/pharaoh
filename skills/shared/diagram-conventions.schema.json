@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://useblocks.com/pharaoh/diagram-conventions.schema.json",
+  "title": "Pharaoh diagram conventions (per-project tailoring)",
+  "description": "Schema for .pharaoh/project/diagram-conventions.yaml. Consumed by pharaoh-write-plan and every *-diagram-draft skill.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {"type": "integer", "const": 1},
+    "renderer": {
+      "type": "string",
+      "enum": ["mermaid", "plantuml"],
+      "default": "mermaid",
+      "description": "Default renderer for all diagram blocks emitted by this project."
+    },
+    "view_map": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "description": "Skill name overriding the shared/diagram-view-selection.md default for a given view."
+      },
+      "description": "Per-view override. Keys are view names (e.g. 'feat_arc_sta'); values are Pharaoh skill names (e.g. 'pharaoh-component-diagram-draft'). Missing keys fall back to the shared default."
+    },
+    "dynamic_view_scenarios": {
+      "type": "array",
+      "items": {"type": "string"},
+      "default": ["default"],
+      "description": "Scenarios for which dynamic views emit one diagram each. Example: ['success_path', 'error_handling', 'operation_lifecycle']."
+    },
+    "stereotype_aliases": {
+      "type": "object",
+      "additionalProperties": {"type": "string"},
+      "description": "Maps canonical names to renderer-specific stereotype tokens. Example: {'block': '<<block>>', 'component': '<<component>>'}."
+    },
+    "element_count_max": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 7,
+      "description": "Default maximum element count per diagram (mechanized axis in shared/checklists/diagram.md). Above this, diagram-review flags as over-decomposed."
+    },
+    "safety_markers": {
+      "type": "object",
+      "additionalProperties": {"type": "string"},
+      "description": "Project-specific safety classification → visual marker map. Example: {'ASIL_B': 'red', 'ASIL_D': 'red_bold'}."
+    }
+  },
+  "required": ["version"]
+}

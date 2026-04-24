@@ -1,0 +1,24 @@
+{
+  "needs": {
+    "CREQ_reqif_cli_load": {
+      "id": "CREQ_reqif_cli_load",
+      "type": "comp_req",
+      "title": "New-style prefix — matches the first branch of the alternation"
+    },
+    "CREQ_csv_reader_parse": {
+      "id": "CREQ_csv_reader_parse",
+      "type": "comp_req",
+      "title": "Another new-style id"
+    },
+    "gd_req__brake_activation": {
+      "id": "gd_req__brake_activation",
+      "type": "comp_req",
+      "title": "Legacy prefix — matches the second branch of the alternation"
+    },
+    "gd_req__safety_goal_1": {
+      "id": "gd_req__safety_goal_1",
+      "type": "comp_req",
+      "title": "Another legacy id"
+    }
+  }
+}

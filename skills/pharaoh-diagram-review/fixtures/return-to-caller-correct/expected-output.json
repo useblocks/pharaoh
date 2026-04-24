@@ -1,0 +1,15 @@
+{
+  "parent_need_id": "FEAT_settings_update",
+  "diagram_type": "sequence",
+  "renderer": "mermaid",
+  "axes": {
+    "conditional_branches_marked":  {"passed": "n/a", "reason": "source function has 0 conditional branches"},
+    "external_library_participant": {"passed": "n/a", "reason": "no non-stdlib imports called in update_setting"},
+    "returns_match_call_stack": {
+      "passed": true,
+      "evidence": "4 returns checked; each terminates at the participant that issued the preceding call (Store->SettingsService, SettingsService->CLI, CLI->User — User is the declared entrypoint and made the first call)"
+    }
+  },
+  "overall": "pass",
+  "blockers": []
+}

@@ -1,0 +1,15 @@
+{
+  "parent_need_id": "FEAT_weather_fetch",
+  "diagram_type": "sequence",
+  "renderer": "mermaid",
+  "axes": {
+    "conditional_branches_marked":  {"passed": "n/a", "reason": "source function has 0 conditional branches"},
+    "external_library_participant": {
+      "passed": false,
+      "evidence": "requests imported and called at fetch_report:L7 (requests.get); absent from participant list"
+    },
+    "returns_match_call_stack":     {"passed": true, "reason": "single return to CLI; CLI is prior caller"}
+  },
+  "overall": "fail",
+  "blockers": ["external_library_participant"]
+}

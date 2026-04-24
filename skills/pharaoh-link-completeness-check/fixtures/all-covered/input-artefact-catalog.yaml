@@ -1,0 +1,13 @@
+# all-covered/input-artefact-catalog.yaml
+# Canonical catalog: feat is a top-level capability (no outgoing links required),
+# comp_req must satisfy a parent feat and be verified by at least one tc,
+# tc must verify at least one comp_req.
+feat:
+  required_links: []
+  optional_links: [refines]
+comp_req:
+  required_links: [satisfies, verifies]
+  optional_links: []
+tc:
+  required_links: [verifies]
+  optional_links: []

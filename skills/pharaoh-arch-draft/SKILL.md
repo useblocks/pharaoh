@@ -291,3 +291,9 @@ to .pharaoh/project/artefact-catalog.yaml before promoting this element beyond d
 
 Consider running `pharaoh-arch-review arch__abs_pump_driver` to audit against ISO 26262-8 §6 axes.
 ```
+
+## Last step
+
+After emitting the artefact, invoke `pharaoh-arch-review` on it. Pass the emitted artefact (or its `need_id`) as `target`. Attach the returned review JSON to the skill's output under the key `review`. If the review emits any axis with `score: 0` or `severity: critical`, return a non-success status with the review findings verbatim and do NOT finalize the artefact — the caller must regenerate (via `pharaoh-arch-regenerate` if available, or by re-invoking this skill with the findings as input).
+
+See [`shared/self-review-invariant.md`](../shared/self-review-invariant.md) for the rationale and enforcement mechanism. Coverage is mechanically enforced by `pharaoh-self-review-coverage-check` in `pharaoh-quality-gate`.

@@ -1,0 +1,11 @@
+{
+  "passed": false,
+  "uncovered": [
+    {
+      "artefact_id": "CREQ_fixture_01",
+      "draft_skill": "pharaoh-req-from-code",
+      "expected_review_skill": "pharaoh-req-code-grounding-check",
+      "reason": "review skill mapped in self-review-map list not invoked in emission skill's ## Last step"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "detected": {
+    "languages": ["python"],
+    "cli_framework": "click",
+    "config_default_idiom": "python_dataclass",
+    "env_var_style": "none",
+    "detected_env_prefix": null
+  },
+  "emitted_filters": [
+    "click_kebab",
+    "python_import",
+    "python_dataclass_default"
+  ],
+  "warnings": []
+}

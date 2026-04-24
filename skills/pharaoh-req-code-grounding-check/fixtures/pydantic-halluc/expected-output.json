@@ -1,0 +1,47 @@
+{
+  "need_id": "CREQ_row_record",
+  "source_doc": "input-source.py",
+  "axes": {
+    "exception_raise_sites_exist": {
+      "passed": "n/a",
+      "reason": "no exception raise claim in body"
+    },
+    "trigger_condition_literal_match": {
+      "passed": "n/a",
+      "reason": "no literal == / is trigger in body"
+    },
+    "named_symbol_exists": {
+      "passed": true,
+      "evidence": "RowRecord found as class def; parse_row found as def"
+    },
+    "type_framework_matches_imports": {
+      "passed": false,
+      "evidence": "CREQ claims 'Pydantic model'; source imports dataclasses and uses @dataclass \u2014 no pydantic import present"
+    },
+    "backtick_symbol_in_source_doc": {
+      "passed": "n/a",
+      "reason": "no backtick-quoted tokens in body"
+    },
+    "no_weasel_adjectives": {
+      "passed": true
+    },
+    "quantifier_enumerated": {
+      "passed": "n/a",
+      "reason": "no unbounded quantifier in body"
+    },
+    "source_doc_resolves": {
+      "passed": true
+    },
+    "branch_count_aligned": {
+      "score": 3,
+      "evidence": "function parse_row has 1 branch (unconditional construction); CREQ matches"
+    }
+  },
+  "overall": "fail",
+  "blockers": [
+    "type_framework_matches_imports"
+  ],
+  "actions": [
+    "Rewrite 'Pydantic model' as 'dataclass' to match the source imports, OR migrate RowRecord to pydantic BaseModel if Pydantic semantics are actually required"
+  ]
+}

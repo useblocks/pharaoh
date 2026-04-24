@@ -1,0 +1,8 @@
+{
+  "needs_by_status": {"draft": 0, "reviewed": 1, "approved": 1, "released": 1},
+  "draft_count": 0,
+  "enforce": true,
+  "overall": "pass",
+  "blockers": [],
+  "notes": []
+}

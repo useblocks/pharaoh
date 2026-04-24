@@ -1,0 +1,18 @@
+{
+  "needs": {
+    "comp_req__login_ok": {
+      "id": "comp_req__login_ok",
+      "type": "comp_req",
+      "title": "Login succeeds on valid credentials",
+      "content": "The system shall authenticate when credentials match the store.",
+      "generated_run_id": "run_b18d4f22"
+    },
+    "comp_req__logout_ok": {
+      "id": "comp_req__logout_ok",
+      "type": "comp_req",
+      "title": "Logout clears session",
+      "content": "The system shall discard the session token on logout.",
+      "generated_run_id": "run_9c0ea6f1"
+    }
+  }
+}

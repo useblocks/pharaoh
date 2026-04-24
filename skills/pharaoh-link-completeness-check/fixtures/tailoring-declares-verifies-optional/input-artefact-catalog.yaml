@@ -1,0 +1,9 @@
+# tailoring-declares-verifies-optional/input-artefact-catalog.yaml
+# Project-level decision: `verifies` is advisory during early-stage authoring.
+# Catalog marks it optional for comp_req; its absence must NOT fail the gate.
+feat:
+  required_links: []
+  optional_links: []
+comp_req:
+  required_links: [satisfies]
+  optional_links: [verifies]

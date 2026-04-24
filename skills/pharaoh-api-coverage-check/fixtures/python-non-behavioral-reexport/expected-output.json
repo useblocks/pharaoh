@@ -1,0 +1,19 @@
+{
+  "source_file": "input-source.py",
+  "language": "python",
+  "classification": "non-behavioral",
+  "file_coverage": {
+    "passed": null,
+    "citing_creqs": []
+  },
+  "raise_site_coverage": {
+    "total": 0,
+    "project_defined": 0,
+    "covered": [],
+    "uncovered": [],
+    "external": [],
+    "passed": null
+  },
+  "overall": "skipped",
+  "blockers": []
+}

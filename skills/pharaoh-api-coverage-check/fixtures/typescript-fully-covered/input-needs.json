@@ -1,0 +1,32 @@
+{
+  "needs": {
+    "CREQ_ts_session": {
+      "id": "CREQ_ts_session",
+      "type": "comp_req",
+      "title": "Session interface shape",
+      "content": "The interface Session shall declare token and user fields as strings.",
+      "source_doc": "input-source.ts"
+    },
+    "CREQ_ts_session_manager": {
+      "id": "CREQ_ts_session_manager",
+      "type": "comp_req",
+      "title": "SessionManager opens sessions",
+      "content": "The class SessionManager shall expose open() and throw SessionError when the manager is not ready.",
+      "source_doc": "input-source.ts"
+    },
+    "CREQ_ts_create_session": {
+      "id": "CREQ_ts_create_session",
+      "type": "comp_req",
+      "title": "createSession factory",
+      "content": "The function createSession shall throw InvalidUserError when the user argument is empty.",
+      "source_doc": "input-source.ts"
+    },
+    "CREQ_ts_default_timeout": {
+      "id": "CREQ_ts_default_timeout",
+      "type": "comp_req",
+      "title": "DEFAULT_TIMEOUT constant",
+      "content": "The constant DEFAULT_TIMEOUT shall default the session-open timeout to 30 seconds.",
+      "source_doc": "input-source.ts"
+    }
+  }
+}

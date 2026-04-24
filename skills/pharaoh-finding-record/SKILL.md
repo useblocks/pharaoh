@@ -22,7 +22,7 @@ Do NOT invoke for new audit categories not in the known list — category must b
 ## Input
 
 - `category`: one of the known categories listed above.
-- `subject_id`: the Score need ID affected by the finding (e.g. `arch__orphan_0`).
+- `subject_id`: the project need ID affected by the finding (e.g. `arch__orphan_0`).
 - `finding_text`: 1-3 sentence description. Used as the Papyrus need body.
 - `reporter_id`: the calling subagent's area tag (e.g. `coverage-gap`, `lifecycle-check`). Stored in the Papyrus need `source` field for traceability.
 

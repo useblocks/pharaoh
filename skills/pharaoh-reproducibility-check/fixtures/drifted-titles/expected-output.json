@@ -1,0 +1,17 @@
+{
+  "baseline": "baseline/",
+  "rerun": "rerun/",
+  "drifted_files": [
+    "needs.json"
+  ],
+  "drift_summary": {
+    "needs.json": {
+      "fields_changed": [
+        "needs.comp_req__login_ok.title",
+        "needs.comp_req__logout_ok.title"
+      ],
+      "count": 2
+    }
+  },
+  "overall": "fail"
+}

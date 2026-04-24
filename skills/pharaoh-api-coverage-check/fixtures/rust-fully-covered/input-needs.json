@@ -1,0 +1,39 @@
+{
+  "needs": {
+    "CREQ_rust_catalog": {
+      "id": "CREQ_rust_catalog",
+      "type": "comp_req",
+      "title": "Catalog struct holds catalogue metadata",
+      "content": "The struct Catalog shall carry the catalogue name as a public field.",
+      "source_doc": "input-source.rs"
+    },
+    "CREQ_rust_catalog_error": {
+      "id": "CREQ_rust_catalog_error",
+      "type": "comp_req",
+      "title": "CatalogError enumerates catalogue failures",
+      "content": "The enum CatalogError shall enumerate the NotFound and Unreadable failure variants.",
+      "source_doc": "input-source.rs"
+    },
+    "CREQ_rust_readable": {
+      "id": "CREQ_rust_readable",
+      "type": "comp_req",
+      "title": "Readable trait exposes read()",
+      "content": "The trait Readable shall declare one method read() returning a String.",
+      "source_doc": "input-source.rs"
+    },
+    "CREQ_rust_load_catalog": {
+      "id": "CREQ_rust_load_catalog",
+      "type": "comp_req",
+      "title": "load_catalog loads by path",
+      "content": "The function load_catalog shall return a Catalog populated from the given path.",
+      "source_doc": "input-source.rs"
+    },
+    "CREQ_rust_save_catalog": {
+      "id": "CREQ_rust_save_catalog",
+      "type": "comp_req",
+      "title": "save_catalog persists to disk",
+      "content": "The function save_catalog shall return true when the write succeeded.",
+      "source_doc": "input-source.rs"
+    }
+  }
+}

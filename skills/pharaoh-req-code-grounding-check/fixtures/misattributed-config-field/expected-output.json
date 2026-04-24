@@ -1,0 +1,49 @@
+{
+  "need_id": "CREQ_export_archive_pack",
+  "source_doc": "input-source.py",
+  "axes": {
+    "exception_raise_sites_exist": {
+      "passed": "n/a",
+      "reason": "no exception raise claim in body"
+    },
+    "trigger_condition_literal_match": {
+      "passed": "n/a",
+      "reason": "no literal == / is trigger in body"
+    },
+    "named_symbol_exists": {
+      "passed": "n/a",
+      "reason": "no verb-prefixed symbol or function-call shape in body"
+    },
+    "type_framework_matches_imports": {
+      "passed": "n/a",
+      "reason": "no type-framework claim in body"
+    },
+    "backtick_symbol_in_source_doc": {
+      "passed": false,
+      "evidence": "3 backtick tokens checked: '.archive' ✗ (universal filter #2 does not match — no slash, no space; no tailored filter resolves; token not in input-source.py), 'outpath' ✗ (not in input-source.py; source uses 'target_path' attribute), 'default_format' ✗ (tailored filter 'python_dataclass_default' matched: literal default of a dataclass field discovered in config/export_config.py; consumer source_doc only accesses self.config.uuid_target). Cite the consumer-side attribute form (e.g. 'uuid_target' via 'self.config.uuid_target') or retarget :source_doc: to config/export_config.py"
+    },
+    "no_weasel_adjectives": {
+      "passed": true
+    },
+    "quantifier_enumerated": {
+      "passed": "n/a",
+      "reason": "no unbounded quantifier in body"
+    },
+    "source_doc_resolves": {
+      "passed": true
+    },
+    "branch_count_aligned": {
+      "score": 2,
+      "evidence": "Exporter.export has 1 observable branch (iteration over needs); CREQ is a single shall-clause describing the export — acceptable umbrella"
+    }
+  },
+  "overall": "fail",
+  "blockers": [
+    "backtick_symbol_in_source_doc"
+  ],
+  "actions": [
+    "Replace 'outpath' with the consumer-side attribute form 'target_path' (accessed via self.config.target_path) OR change :source_doc: to config/export_config.py",
+    "Replace 'default_format' (default-value literal) with 'uuid_target' (the config field name the consumer actually reads via self.config.uuid_target)",
+    "Drop '.archive' from the CREQ body and move it into a config-scoped CREQ whose :source_doc: is config/export_config.py"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "source_file": "input-source.cpp",
+  "language": "cpp",
+  "classification": "behavioral",
+  "file_coverage": {
+    "passed": true,
+    "citing_creqs": [
+      "CREQ_cpp_catalog",
+      "CREQ_cpp_catalog_config",
+      "CREQ_cpp_load_catalog",
+      "CREQ_cpp_save_catalog"
+    ]
+  },
+  "raise_site_coverage": {
+    "total": 2,
+    "project_defined": 2,
+    "covered": [
+      "CatalogError",
+      "InvalidPathError"
+    ],
+    "uncovered": [],
+    "external": [],
+    "passed": true
+  },
+  "overall": "pass",
+  "blockers": []
+}

@@ -1,0 +1,11 @@
+{
+  "needs": {
+    "CREQ_lua_load": {
+      "id": "CREQ_lua_load",
+      "type": "comp_req",
+      "title": "load_catalog reads inventory",
+      "content": "The function load_catalog shall return the catalogue at the given path.",
+      "source_doc": "input-source.lua"
+    }
+  }
+}

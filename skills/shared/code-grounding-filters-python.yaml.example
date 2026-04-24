@@ -1,0 +1,45 @@
+# Reference tailoring file for a Python + Typer project.
+# Drop this into .pharaoh/project/code-grounding-filters.yaml and adjust to
+# your project's conventions. Strategies and their parameters are documented
+# in shared/code-grounding-filters.md.
+
+filters:
+  # Typer / Click style CLI — kebab flags and bare kebab subcommands.
+  # Covers --license-key ↔ license_key = typer.Option(...)
+  #      and from-csv ↔ def from_csv(...)
+  #      and --license-key ↔ OptLicenseKey: TypeAlias = Annotated[...]
+  - name: typer_kebab
+    strategy: kebab_to_snake_or_pascal
+    token_regex: "^(--)?[a-z][a-z0-9]*(-[a-z0-9]+)+$"
+    strip_leading: ["--"]
+    morphology_prefixes: ["Opt"]
+
+  # Uppercase env-var families cited via trailing * (JAMA_*).
+  - name: env_var_glob
+    strategy: prefix_glob_expansion
+    token_regex: "^[A-Z][A-Z0-9_]*_?\\*$"
+    separator_character: "_"
+
+  # External imports cited via dotted path (rich.console.Console).
+  # Resolves when source contains `from rich.console import Console`, plain
+  # `import rich.console`, or the literal `rich.console.Console` attribute
+  # access.
+  - name: python_import
+    strategy: dotted_import_resolution
+    token_regex: "^[a-z][\\w.]*\\.[A-Z]\\w+$"
+    separator: "."
+    import_patterns:
+      - "from\\s+${mod}\\s+import\\s+${attr}"
+      - "import\\s+${mod}\\b"
+      - "${tok}"
+
+  # Dataclass default literal vs. consumer-side attribute access.
+  # Catches the CREQ pattern where the body cites `reqif_uuid` (a literal
+  # string default of a dataclass field) while :source_doc: points at the
+  # consumer module that only reads `self.config.uuid_target`.
+  - name: python_dataclass_default
+    strategy: cross_file_literal_default
+    token_regex: "^[a-z_][a-z0-9_]*$"
+    hint_dir_pattern: "config/"
+    field_regex: "field\\(default=[\"']${tok}[\"']\\)"
+    search_root: ""  # inferred from :source_doc: package root

@@ -1,0 +1,50 @@
+{
+  "need_id": "CREQ_diagnostic_report",
+  "source_doc": "input-source.py",
+  "axes": {
+    "exception_raise_sites_exist": {
+      "passed": "n/a",
+      "reason": "no exception raise claim in body"
+    },
+    "trigger_condition_literal_match": {
+      "passed": "n/a",
+      "reason": "no literal == / is trigger in body"
+    },
+    "named_symbol_exists": {
+      "passed": true,
+      "evidence": "write_report found as def in source"
+    },
+    "type_framework_matches_imports": {
+      "passed": "n/a",
+      "reason": "no type-framework claim in body"
+    },
+    "backtick_symbol_in_source_doc": {
+      "passed": "n/a",
+      "reason": "no backtick-quoted tokens in body"
+    },
+    "no_weasel_adjectives": {
+      "passed": false,
+      "evidence": "'structured diagnostic' \u2014 'structured' blacklisted; 'full set' \u2014 'full' blacklisted; 'comprehensive per-row detail' \u2014 'comprehensive' blacklisted"
+    },
+    "quantifier_enumerated": {
+      "passed": "n/a",
+      "reason": "no unbounded quantifier matches the narrow noun list"
+    },
+    "source_doc_resolves": {
+      "passed": true
+    },
+    "branch_count_aligned": {
+      "score": 3,
+      "evidence": "function write_report has 1 branch (unconditional write); CREQ matches"
+    }
+  },
+  "overall": "fail",
+  "blockers": [
+    "no_weasel_adjectives"
+  ],
+  "actions": [
+    "Replace 'structured diagnostic' with a concrete term (e.g. list[dict] of per-row outcomes)",
+    "Replace 'full set' with enumerated outcomes or a specific count",
+    "Replace 'comprehensive per-row detail' with named fields (sku, quantity, price, status)"
+  ]
+}

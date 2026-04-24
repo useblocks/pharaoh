@@ -1,0 +1,7 @@
+# alternation-regex fixture — the tailoring author explicitly allows two
+# legal forms via an alternation. Both forms must pass.
+
+id_regex: "^[a-z][a-z_]*__[a-z0-9_]+$"
+
+id_regex_by_type:
+  comp_req: "^CREQ_.+$|^gd_req__.+$"

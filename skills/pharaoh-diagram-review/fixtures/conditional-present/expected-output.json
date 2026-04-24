@@ -1,0 +1,15 @@
+{
+  "parent_need_id": "FEAT_order_submit",
+  "diagram_type": "sequence",
+  "renderer": "plantuml",
+  "axes": {
+    "conditional_branches_marked": {
+      "passed": true,
+      "evidence": "source has 3 conditional branches (if/elif/else); diagram body contains alt block with 2 else clauses"
+    },
+    "external_library_participant": {"passed": "n/a", "reason": "no non-stdlib imports called in submit_order"},
+    "returns_match_call_stack":     {"passed": true, "reason": "returns to OrderService and CLI are prior callers"}
+  },
+  "overall": "pass",
+  "blockers": []
+}

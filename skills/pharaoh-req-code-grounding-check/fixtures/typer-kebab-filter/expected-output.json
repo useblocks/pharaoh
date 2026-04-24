@@ -1,0 +1,43 @@
+{
+  "need_id": "CREQ_cli_license_options",
+  "source_doc": "input-source.py",
+  "axes": {
+    "exception_raise_sites_exist": {
+      "passed": "n/a",
+      "reason": "no exception raise claim in body"
+    },
+    "trigger_condition_literal_match": {
+      "passed": "n/a",
+      "reason": "no literal == / is trigger in body"
+    },
+    "named_symbol_exists": {
+      "passed": "n/a",
+      "reason": "no verb-prefixed symbol; 'LicenseContext' is sentence-internal without a structural verb"
+    },
+    "type_framework_matches_imports": {
+      "passed": "n/a",
+      "reason": "no type-framework claim in body"
+    },
+    "backtick_symbol_in_source_doc": {
+      "passed": true,
+      "evidence": "4 backtick tokens checked: '--license-key' \u2713 (tailored filter 'typer_kebab' \u2192 'license_key' resolves as parameter), '--license-user' \u2713 (\u2192 'license_user'), '--license-stage' \u2713 (\u2192 'license_stage'), 'LicenseContext' \u2713 (class def present, universal substring match)"
+    },
+    "no_weasel_adjectives": {
+      "passed": true
+    },
+    "quantifier_enumerated": {
+      "passed": "n/a",
+      "reason": "no unbounded quantifier matches the narrow noun list"
+    },
+    "source_doc_resolves": {
+      "passed": true
+    },
+    "branch_count_aligned": {
+      "score": 3,
+      "evidence": "run_command is a single-branch constructor; CREQ is a single shall-clause enumerating three parameters \u2014 matches the source shape"
+    }
+  },
+  "overall": "pass",
+  "blockers": [],
+  "actions": []
+}

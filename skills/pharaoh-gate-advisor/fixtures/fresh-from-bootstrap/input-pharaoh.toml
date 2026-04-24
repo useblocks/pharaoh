@@ -1,0 +1,22 @@
+# fresh-from-bootstrap fixture — pre-2026-04-22 default where every gate shipped advisory.
+# Represents what used to land on disk after bootstrap + setup before the ladder-default fix.
+# pharaoh-gate-advisor must recommend step 1 (require_verification = true) as the next gate
+# to enable, because the ladder's lowest-cost step is still off.
+
+[pharaoh]
+strictness = "advisory"
+
+[pharaoh.id_scheme]
+pattern = "{TYPE}-{MODULE}-{NUMBER}"
+auto_increment = true
+
+[pharaoh.workflow]
+require_change_analysis = false
+require_verification = false
+require_mece_on_release = false
+
+[pharaoh.traceability]
+required_links = []
+
+[pharaoh.codelinks]
+enabled = false

@@ -1,0 +1,47 @@
+{
+  "need_id": "CREQ_validation_pipeline",
+  "source_doc": "input-source.py",
+  "axes": {
+    "exception_raise_sites_exist": {
+      "passed": "n/a",
+      "reason": "no exception raise claim in body"
+    },
+    "trigger_condition_literal_match": {
+      "passed": "n/a",
+      "reason": "no literal == / is trigger in body"
+    },
+    "named_symbol_exists": {
+      "passed": true,
+      "evidence": "validate found as def in source"
+    },
+    "type_framework_matches_imports": {
+      "passed": "n/a",
+      "reason": "no type-framework claim in body"
+    },
+    "backtick_symbol_in_source_doc": {
+      "passed": "n/a",
+      "reason": "no backtick-quoted tokens in body"
+    },
+    "no_weasel_adjectives": {
+      "passed": true
+    },
+    "quantifier_enumerated": {
+      "passed": false,
+      "evidence": "'all validation errors' \u2014 unbounded 'all' before 'errors' without enumeration colon, 'namely / specifically / including' marker, or list directive in the same or next sentence"
+    },
+    "source_doc_resolves": {
+      "passed": true
+    },
+    "branch_count_aligned": {
+      "score": 2,
+      "evidence": "validate iterates 13 validators; CREQ groups them under a single quantifier rather than enumerating \u2014 justified umbrella, but missing enumeration elsewhere"
+    }
+  },
+  "overall": "fail",
+  "blockers": [
+    "quantifier_enumerated"
+  ],
+  "actions": [
+    "Enumerate the 13 validators (e.g. 'namely: sku, quantity_positive, quantity_int, price_positive, price_float, currency_set, currency_iso, supplier_set, supplier_known, category_set, category_known, timestamp_set, timestamp_iso') or split the CREQ into one shall-clause per validator class"
+  ]
+}

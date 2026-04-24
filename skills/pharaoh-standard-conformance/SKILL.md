@@ -145,8 +145,8 @@ Supply either a need-id or an RST directive block.
 Read `.pharaoh/project/artefact-catalog.yaml` and `.pharaoh/project/id-conventions.yaml`.
 Extract `required_fields` for the artefact type and `id_regex` for the type prefix.
 
-If tailoring files are missing, apply Score defaults:
-- `gd_req` required fields: `[id, status, satisfies]`
+If tailoring files are missing, apply the built-in defaults (bundled example profile):
+- `req` required fields: `[id, status, satisfies]`
 - `arch` required fields: `[id, status, satisfies, type]`
 - `tc` required fields: `[id, status, verifies]`
 

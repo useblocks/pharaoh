@@ -1,0 +1,12 @@
+{
+  "needs_by_status": {"draft": 2, "reviewed": 1, "approved": 1, "released": 0},
+  "draft_count": 2,
+  "enforce": true,
+  "overall": "fail",
+  "blockers": [
+    "2 needs still in draft status; release gate requires zero drafts",
+    "CREQ_inventory_validate",
+    "CREQ_inventory_checksum"
+  ],
+  "notes": []
+}
