@@ -1,0 +1,126 @@
+---
+template_name: reverse-engineer-module
+description: |
+  Single-module reverse-engineering: caller supplies a file list and
+  optional parent feat ids, plan emits preseed, id-allocate, per-file
+  req-from-code, quality-gate. No feat-draft, no file-map, no diagrams.
+  Use when feats already exist and you just want comp_reqs for a module.
+
+  Files are UNROLLED into concrete per-file tasks at write time (no
+  runtime foreach), so this template suits small modules (3-12 files).
+  For larger sets use reverse-engineer-project, which discovers files
+  via feat-file-map and foreach-expands.
+required_vars:
+  - project_root
+  - module_name           # slug for plan.name
+  - module_dir            # relative to project_root
+  - docs_root             # relative to project_root (e.g. "docs/source"); used to locate needs.json
+  - files                 # list[{filename, stem}] relative to module_dir; caller supplies stems
+  - comp_req_directive    # from ubproject.toml
+  - comp_req_prefix       # e.g. "CREQ_"
+optional_vars:
+  - parent_feat_ids       # list[str], defaults to empty
+  - papyrus_seeds         # list[{canonical_name, body}], caller-supplied
+  - execution_mode        # default "inline" (small N)
+  - papyrus_workspace     # default <project_root>/.papyrus
+  - workspace_dir         # default <project_root>/.pharaoh/runs/<module_name>-<ts>/
+---
+name: reverse-engineer-{{ module_name }}
+version: 1
+project_root: {{ project_root }}
+{% if workspace_dir %}workspace_dir: {{ workspace_dir }}{% endif %}
+defaults:
+  execution_mode: {{ execution_mode | default("inline") }}
+  retry_on_validation_fail: 1
+
+tasks:
+{% if papyrus_seeds %}
+{% for seed in papyrus_seeds %}
+  - id: preseed_{{ loop.index0 }}
+    skill: pharaoh-decision-record
+    inputs:
+      type: fact
+      canonical_name: "{{ seed.canonical_name }}"
+      body: "{{ seed.body }}"
+      reporter_id: "write-plan:preseed-module"
+      tags: ["origin:preseed"]
+{% endfor %}
+{% endif %}
+
+  - id: id_allocate
+    skill: pharaoh-id-allocate
+    inputs:
+      requests:
+{% for f in files %}
+        - stem: {{ f.stem }}
+          count: 3
+          prefix: {{ comp_req_prefix }}
+          type: {{ comp_req_directive }}
+          parent_feat_id: {{ (parent_feat_ids | default([]))[0] | default("null") }}
+{% endfor %}
+      existing_ids_file: {{ project_root }}/{{ docs_root }}/_build/needs/needs.json
+    depends_on: {% if papyrus_seeds %}[{% for seed in papyrus_seeds %}preseed_{{ loop.index0 }}{% if not loop.last %}, {% endif %}{% endfor %}]{% else %}[]{% endif %}
+    outputs:
+      allocations: mapping
+
+{% for f in files %}
+  - id: reqs_{{ f.stem }}
+    skill: pharaoh-req-from-code
+    inputs:
+      file_path: {{ module_dir }}/{{ f.filename }}
+      parent_feat_ids: {{ parent_feat_ids | default([]) }}
+      target_level: {{ comp_req_directive }}
+      split_strategy: ${heuristics.split_strategy("{{ module_dir }}/{{ f.filename }}")}
+      allowed_ids: ${id_allocate.allocations | by_stem("{{ f.stem }}")}
+      papyrus_workspace: {{ papyrus_workspace | default(project_root + "/.papyrus") }}
+      project_root: {{ project_root }}
+      reporter_id: "write-plan:req-from-code-{{ f.stem }}"
+    depends_on: [id_allocate]
+    parallel_group: reqs_from_code
+    expected_output_schema: json_obj
+    outputs:
+      reqs: list  # [{id, title, type, body, source_doc, satisfies, verification, raw_rst}, ...]
+{% endfor %}
+
+  # Per-comp_req reviews and grounding checks — rendered per-stem since
+  # the module template has no aggregate `reqs_from_code` task (each file
+  # gets its own `reqs_<stem>`). Each stem gets its own review + grounding
+  # task foreach-ing over that stem's reqs list.
+{% for f in files %}
+  - id: review_{{ f.stem }}
+    skill: pharaoh-req-review
+    foreach: "{% raw %}${reqs_{% endraw %}{{ f.stem }}{% raw %}.reqs}{% endraw %}"
+    execution_mode: subagents
+    depends_on: [reqs_{{ f.stem }}]
+    inputs:
+      target: ${item.raw_rst}
+      checklist_path: skills/shared/checklists/requirement.md
+      tailoring_path: "{{ project_root }}/.pharaoh/project"
+    parallel_group: review_comp_reqs
+
+  - id: grounding_{{ f.stem }}
+    skill: pharaoh-req-code-grounding-check
+    foreach: "{% raw %}${reqs_{% endraw %}{{ f.stem }}{% raw %}.reqs}{% endraw %}"
+    execution_mode: subagents
+    depends_on: [reqs_{{ f.stem }}]
+    inputs:
+      target: ${item.raw_rst}
+      source_doc_path: ${item.source_doc}
+      project_root: ${project_root}
+      tailoring_path: "{{ project_root }}/.pharaoh/project"
+    parallel_group: grounding_check_comp_reqs
+{% endfor %}
+
+  - id: quality_gate
+    skill: pharaoh-quality-gate
+    inputs:
+      artefacts_dir: ${workspace}/artefacts
+      project_root: {{ project_root }}
+    depends_on: [{% for f in files %}reqs_{{ f.stem }}, review_{{ f.stem }}, grounding_{{ f.stem }}{% if not loop.last %}, {% endif %}{% endfor %}]
+
+validation:
+{% for f in files %}
+  - task_output: ${reqs_{{ f.stem }}}
+    schema: json_obj
+    on_fail: skip_dependents
+{% endfor %}

@@ -1,0 +1,25 @@
+{
+  "needs": {
+    "CREQ_c_load_catalog": {
+      "id": "CREQ_c_load_catalog",
+      "type": "comp_req",
+      "title": "load_catalog reads inventory",
+      "content": "The function load_catalog shall return 0 when the catalogue at path was loaded successfully.",
+      "source_doc": "input-source.c"
+    },
+    "CREQ_c_save_catalog": {
+      "id": "CREQ_c_save_catalog",
+      "type": "comp_req",
+      "title": "save_catalog persists inventory",
+      "content": "The function save_catalog shall return 0 when the catalogue at path was written successfully.",
+      "source_doc": "input-source.c"
+    },
+    "CREQ_c_count_items": {
+      "id": "CREQ_c_count_items",
+      "type": "comp_req",
+      "title": "count_items counts records",
+      "content": "The function count_items shall return the number of records available at the given path.",
+      "source_doc": "input-source.c"
+    }
+  }
+}

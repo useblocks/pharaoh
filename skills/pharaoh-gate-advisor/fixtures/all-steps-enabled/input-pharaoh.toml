@@ -1,0 +1,24 @@
+# all-steps-enabled fixture — every ladder step satisfied. strictness = "enforcing" plus every
+# individual gate flag set to true plus codelinks enabled. pharaoh-gate-advisor must return
+# recommended_next_gate: null with rationale "ladder complete".
+
+[pharaoh]
+strictness = "enforcing"
+
+[pharaoh.id_scheme]
+pattern = "{TYPE}-{MODULE}-{NUMBER}"
+auto_increment = true
+
+[pharaoh.workflow]
+require_change_analysis = true
+require_verification = true
+require_mece_on_release = true
+
+[pharaoh.traceability]
+required_links = [
+    "req -> spec",
+    "spec -> impl",
+]
+
+[pharaoh.codelinks]
+enabled = true

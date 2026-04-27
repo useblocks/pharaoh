@@ -1,0 +1,24 @@
+{
+  "source_file": "input-source.go",
+  "language": "go",
+  "classification": "behavioral",
+  "file_coverage": {
+    "passed": true,
+    "citing_creqs": [
+      "CREQ_go_catalog",
+      "CREQ_go_load_catalog",
+      "CREQ_go_reader",
+      "CREQ_go_save_catalog"
+    ]
+  },
+  "raise_site_coverage": {
+    "total": 0,
+    "project_defined": 0,
+    "covered": [],
+    "uncovered": [],
+    "external": [],
+    "passed": true
+  },
+  "overall": "pass",
+  "blockers": []
+}

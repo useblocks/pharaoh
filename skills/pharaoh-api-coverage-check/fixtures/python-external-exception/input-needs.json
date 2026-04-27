@@ -1,0 +1,15 @@
+{
+  "versions": {
+    "1.0": {
+      "needs": {
+        "CREQ_load_entry": {
+          "id": "CREQ_load_entry",
+          "type": "comp_req",
+          "title": "Validate catalog row on load",
+          "content": "The Catalog Loader shall raise CatalogError when a catalog row is missing the id field.",
+          "source_doc": "input-source.py"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "needs": {
+    "CREQ_reqif_cli_load": {
+      "id": "CREQ_reqif_cli_load",
+      "type": "comp_req",
+      "title": "Well-formed comp_req"
+    },
+    "CREQ_reqif_cli": {
+      "id": "CREQ_reqif_cli",
+      "type": "comp_req",
+      "title": "Only two underscore-separated segments — one short of the required three"
+    },
+    "CREQ_a": {
+      "id": "CREQ_a",
+      "type": "comp_req",
+      "title": "Single-segment tail — rejected"
+    },
+    "tc__reqif_cli_load_happy_path": {
+      "id": "tc__reqif_cli_load_happy_path",
+      "type": "test_case",
+      "title": "Well-formed test_case"
+    },
+    "TC_REQIF_CLI_LOAD": {
+      "id": "TC_REQIF_CLI_LOAD",
+      "type": "test_case",
+      "title": "Upper-case prefix — violates the tc__ convention"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "source_file": "input-source.ts",
+  "language": "typescript",
+  "classification": "behavioral",
+  "file_coverage": {
+    "passed": true,
+    "citing_creqs": [
+      "CREQ_ts_create_session",
+      "CREQ_ts_default_timeout",
+      "CREQ_ts_session",
+      "CREQ_ts_session_manager"
+    ]
+  },
+  "raise_site_coverage": {
+    "total": 2,
+    "project_defined": 2,
+    "covered": [
+      "InvalidUserError",
+      "SessionError"
+    ],
+    "uncovered": [],
+    "external": [],
+    "passed": true
+  },
+  "overall": "pass",
+  "blockers": []
+}

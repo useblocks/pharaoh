@@ -23,7 +23,7 @@ Do NOT invoke for artefact types whose project tailoring does NOT list `:reviewe
 
 ### Step 1: Load artefact catalog
 
-Read `<project_dir>/.pharaoh/project/artefact-catalog.yaml` (or `examples/score/.pharaoh/project/artefact-catalog.yaml` if testing against Score). For each artefact type, extract `required_roles` — which may include `reviewer`, `approved_by`, or be absent (no review required).
+Read `<project_dir>/.pharaoh/project/artefact-catalog.yaml`. For each artefact type, extract `required_roles` — which may include `reviewer`, `approved_by`, or be absent (no review required).
 
 ### Step 2: Load needs
 

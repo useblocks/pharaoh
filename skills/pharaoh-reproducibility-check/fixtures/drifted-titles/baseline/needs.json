@@ -1,0 +1,22 @@
+{
+  "needs": {
+    "comp_req__login_ok": {
+      "id": "comp_req__login_ok",
+      "type": "comp_req",
+      "title": "Login succeeds on valid credentials",
+      "content": "The system shall authenticate when credentials match the store."
+    },
+    "comp_req__logout_ok": {
+      "id": "comp_req__logout_ok",
+      "type": "comp_req",
+      "title": "Logout clears session",
+      "content": "The system shall discard the session token on logout."
+    },
+    "comp_req__lock_ok": {
+      "id": "comp_req__lock_ok",
+      "type": "comp_req",
+      "title": "Lock after five failed attempts",
+      "content": "The system shall lock the account after five consecutive failed logins."
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "needs": {
+    "feat__inventory": {
+      "id": "feat__inventory",
+      "type": "feat",
+      "title": "Inventory management",
+      "status": "valid"
+    },
+    "comp_req__inventory_read": {
+      "id": "comp_req__inventory_read",
+      "type": "comp_req",
+      "title": "Read inventory file",
+      "status": "valid",
+      "satisfies": ["feat__inventory"],
+      "verifies": ["tc__inventory_read_ok"]
+    },
+    "comp_req__inventory_write": {
+      "id": "comp_req__inventory_write",
+      "type": "comp_req",
+      "title": "Write inventory file",
+      "status": "valid",
+      "satisfies": ["feat__inventory"],
+      "verifies": ["tc__inventory_write_ok"]
+    },
+    "tc__inventory_read_ok": {
+      "id": "tc__inventory_read_ok",
+      "type": "tc",
+      "title": "Read inventory happy path",
+      "status": "valid",
+      "verifies": ["comp_req__inventory_read"]
+    },
+    "tc__inventory_write_ok": {
+      "id": "tc__inventory_write_ok",
+      "type": "tc",
+      "title": "Write inventory happy path",
+      "status": "valid",
+      "verifies": ["comp_req__inventory_write"]
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "needs": {
+    "CREQ_unrelated_client": {
+      "id": "CREQ_unrelated_client",
+      "type": "comp_req",
+      "title": "Unrelated client",
+      "content": "The module shall expose a session handle against the upstream service.",
+      "source_doc": "other_module.py"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "needs_checked": 6,
+  "coverage_by_link_type": {
+    "satisfies": {"required": true, "covered": 4, "missing": 0},
+    "verifies":  {"required": true, "covered": 3, "missing": 2}
+  },
+  "uncovered_needs": ["comp_req__billing_dispute", "comp_req__billing_refund"],
+  "unresolved_targets": [
+    {"need_id": "comp_req__billing_export", "link": "verifies", "target": "tc__does_not_exist", "reason": "target id not in needs.json"}
+  ],
+  "overall": "fail"
+}

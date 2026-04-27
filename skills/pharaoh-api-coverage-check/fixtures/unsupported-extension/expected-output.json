@@ -1,0 +1,21 @@
+{
+  "source_file": "input-source.lua",
+  "language": "unknown",
+  "classification": "non-behavioral",
+  "file_coverage": {
+    "passed": null,
+    "citing_creqs": []
+  },
+  "raise_site_coverage": {
+    "total": 0,
+    "project_defined": 0,
+    "covered": [],
+    "uncovered": [],
+    "external": [],
+    "passed": null
+  },
+  "overall": "fail",
+  "blockers": [
+    "unsupported language: .lua"
+  ]
+}

@@ -1,0 +1,8 @@
+# all-conform fixture — two types, each with its own per-type regex.
+# Every id in input-needs.json matches the regex for its type.
+
+id_regex: "^[a-z][a-z_]*__[a-z0-9_]+$"
+
+id_regex_by_type:
+  comp_req: "^CREQ_[a-z]+_[a-z]+_[a-z]+$"
+  test_case: "^tc__[a-z0-9_]+$"

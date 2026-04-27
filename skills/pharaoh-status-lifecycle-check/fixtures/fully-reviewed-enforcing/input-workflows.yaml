@@ -1,0 +1,10 @@
+initial_state: draft
+lifecycle_states:
+  draft: {}
+  reviewed: {}
+  approved: {}
+  released: {}
+transitions:
+  - {from: draft, to: reviewed, requires: [independent_review_complete]}
+  - {from: reviewed, to: approved, requires: [inspection_record_present]}
+  - {from: approved, to: released, requires: []}

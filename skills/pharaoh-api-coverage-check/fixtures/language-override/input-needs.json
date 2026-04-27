@@ -1,0 +1,25 @@
+{
+  "needs": {
+    "CREQ_greet": {
+      "id": "CREQ_greet",
+      "type": "comp_req",
+      "title": "greet produces a greeting",
+      "content": "The function greet shall return a greeting for the given name and raise GreetError when the name is empty.",
+      "source_doc": "input-source.txt"
+    },
+    "CREQ_greeter": {
+      "id": "CREQ_greeter",
+      "type": "comp_req",
+      "title": "Greeter class",
+      "content": "The class Greeter shall expose a say() method returning a fixed greeting string.",
+      "source_doc": "input-source.txt"
+    },
+    "CREQ_greet_error": {
+      "id": "CREQ_greet_error",
+      "type": "comp_req",
+      "title": "GreetError class",
+      "content": "The class GreetError shall be raised when greet is called with an empty name.",
+      "source_doc": "input-source.txt"
+    }
+  }
+}

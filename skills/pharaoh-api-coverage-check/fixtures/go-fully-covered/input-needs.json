@@ -1,0 +1,32 @@
+{
+  "needs": {
+    "CREQ_go_catalog": {
+      "id": "CREQ_go_catalog",
+      "type": "comp_req",
+      "title": "Catalog struct definition",
+      "content": "The type Catalog shall declare a Name field of type string.",
+      "source_doc": "input-source.go"
+    },
+    "CREQ_go_reader": {
+      "id": "CREQ_go_reader",
+      "type": "comp_req",
+      "title": "Reader interface",
+      "content": "The interface Reader shall declare a single Read() method returning a string.",
+      "source_doc": "input-source.go"
+    },
+    "CREQ_go_load_catalog": {
+      "id": "CREQ_go_load_catalog",
+      "type": "comp_req",
+      "title": "LoadCatalog factory",
+      "content": "The function LoadCatalog shall return a Catalog populated from the given path.",
+      "source_doc": "input-source.go"
+    },
+    "CREQ_go_save_catalog": {
+      "id": "CREQ_go_save_catalog",
+      "type": "comp_req",
+      "title": "SaveCatalog persistence",
+      "content": "The function SaveCatalog shall return true when the write succeeded.",
+      "source_doc": "input-source.go"
+    }
+  }
+}

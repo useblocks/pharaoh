@@ -1,0 +1,15 @@
+{
+  "parent_need_id": "FEAT_weather_fetch",
+  "diagram_type": "sequence",
+  "renderer": "mermaid",
+  "axes": {
+    "conditional_branches_marked":  {"passed": "n/a", "reason": "source function has 0 conditional branches"},
+    "external_library_participant": {
+      "passed": true,
+      "evidence": "requests imported and called; participant 'requests as Requests' present in diagram body"
+    },
+    "returns_match_call_stack":     {"passed": true, "reason": "returns to WeatherService and CLI are prior callers"}
+  },
+  "overall": "pass",
+  "blockers": []
+}

@@ -322,3 +322,9 @@ failure_mode = "no ABS pump activation on slip threshold exceedance"
   }
 }
 ```
+
+## Last step
+
+After emitting the artefact, invoke `pharaoh-fmea-review` on it. Pass the emitted artefact (or its `need_id`) as `target`. Attach the returned review JSON to the skill's output under the key `review`. If the review emits any axis with `score: 0` or `severity: critical`, return a non-success status with the review findings verbatim and do NOT finalize the artefact — the caller must regenerate (via `pharaoh-fmea-regenerate` if available, or by re-invoking this skill with the findings as input).
+
+See [`shared/self-review-invariant.md`](../shared/self-review-invariant.md) for the rationale and enforcement mechanism. Coverage is mechanically enforced by `pharaoh-self-review-coverage-check` in `pharaoh-quality-gate`.

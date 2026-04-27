@@ -1,0 +1,39 @@
+{
+  "needs": {
+    "CREQ_jama_authenticate": {
+      "id": "CREQ_jama_authenticate",
+      "type": "comp_req",
+      "title": "authenticate establishes a Jama session",
+      "content": "The function authenticate shall raise JamaAuthError when the user argument is empty.",
+      "source_doc": "input-source.py"
+    },
+    "CREQ_jama_fetch_artifact": {
+      "id": "CREQ_jama_fetch_artifact",
+      "type": "comp_req",
+      "title": "fetch_artifact retrieves an artifact",
+      "content": "The function fetch_artifact shall return the record for the given id.",
+      "source_doc": "input-source.py"
+    },
+    "CREQ_jama_fetch_value_map": {
+      "id": "CREQ_jama_fetch_value_map",
+      "type": "comp_req",
+      "title": "fetch_value_map retrieves a value map",
+      "content": "The function fetch_value_map shall return the value-map record for the given map id.",
+      "source_doc": "input-source.py"
+    },
+    "CREQ_jama_skip_artifact": {
+      "id": "CREQ_jama_skip_artifact",
+      "type": "comp_req",
+      "title": "skip_artifact flags an artifact as skipped",
+      "content": "The function skip_artifact shall signal that the given artifact is intentionally not processed.",
+      "source_doc": "input-source.py"
+    },
+    "CREQ_jama_client": {
+      "id": "CREQ_jama_client",
+      "type": "comp_req",
+      "title": "JamaClient API handle",
+      "content": "The class JamaClient shall provide a call() method for arbitrary endpoint access.",
+      "source_doc": "input-source.py"
+    }
+  }
+}

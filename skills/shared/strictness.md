@@ -18,9 +18,9 @@ consult `.pharaoh/session.json`, and do **not** block on gate conditions. This k
 indivisible (atomicity criterion a) and composable into arbitrary flows.
 
 **Orchestrator / composite skills** (`pharaoh:flow`, `pharaoh:audit-fanout`,
-`pharaoh:reqs-from-module`, `pharaoh:plan`, `pharaoh:change`, `pharaoh:release`, and the
-legacy top-level skills `pharaoh:decide`, `pharaoh:spec`, `pharaoh:mece`, `pharaoh:trace`,
-`pharaoh:setup`) are responsible for:
+`pharaoh:plan`, `pharaoh:change`, `pharaoh:release`, and the legacy top-level skills
+`pharaoh:decide`, `pharaoh:spec`, `pharaoh:mece`, `pharaoh:trace`, `pharaoh:setup`)
+are responsible for:
 
 1. Reading `pharaoh.toml` and determining the strictness level (Section 1).
 2. Reading `.pharaoh/session.json` to check whether gate prerequisites are met
@@ -354,3 +354,15 @@ Warning: Skipping change analysis gate at user request. Workflow compliance is n
 ```
 
 Then execute the skill normally. Do not update session state to indicate the prerequisite was met.
+
+---
+
+## Required-link chains with empty targets
+
+`pharaoh.toml`'s `[pharaoh.traceability].required_links` declares chains like `"comp_req -> test"`. If the target type (`test`) has zero needs in the project — because no test case has been authored yet — a naive check flags 100% of `comp_req` needs as unverified. That is false alarm, not signal.
+
+**Rule for `pharaoh-mece` and `pharaoh-coverage-gap`:** treat chains whose target type has zero declared needs as **inactive**. Warn once at project init (`"chain <chain> is declared but target type <type> has no needs yet — chain is inactive"`), but do not flag individual source-type needs as unverified. As soon as the first need of the target type lands, the chain becomes active and starts flagging.
+
+**Rule for `pharaoh-quality-gate` defaults:** the `unverified_rate_max` threshold defaults to `1.00` (inactive gate) — projects opt into stricter thresholds as their test corpus grows. The quality-gate evaluator skips any threshold whose observed rate corresponds to an inactive chain.
+
+**Reason this rule exists:** an observed dogfooding pattern declared `test` + `verifies` link before any test cases were written. Day-one `pharaoh-mece` would have flagged every `comp_req` need as unverified — noise, not signal. The fix ships in two parts: `pharaoh-bootstrap` stops declaring speculative types (only types with immediate use), and `pharaoh.toml` generation in `pharaoh-setup` filters out chains whose target type is not declared. The inactive-chain rule above protects projects that legitimately have the target type declared but no needs of that type yet.

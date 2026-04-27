@@ -1,0 +1,6 @@
+filters:
+  - name: python_dataclass_default
+    strategy: cross_file_literal_default
+    token_regex: "^[a-z_][a-z0-9_]*$"
+    hint_dir_pattern: "config/"
+    field_regex: "field\\(default=[\"']${tok}[\"']\\)"

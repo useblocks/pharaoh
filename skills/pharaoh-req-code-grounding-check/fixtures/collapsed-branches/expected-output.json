@@ -1,0 +1,47 @@
+{
+  "need_id": "CREQ_csv_read",
+  "source_doc": "input-source.py",
+  "axes": {
+    "exception_raise_sites_exist": {
+      "passed": "n/a",
+      "reason": "no exception raise claim in body"
+    },
+    "trigger_condition_literal_match": {
+      "passed": "n/a",
+      "reason": "no literal == / is trigger in body"
+    },
+    "named_symbol_exists": {
+      "passed": true,
+      "evidence": "read_csv found as def in source"
+    },
+    "type_framework_matches_imports": {
+      "passed": "n/a",
+      "reason": "no type-framework claim in body"
+    },
+    "backtick_symbol_in_source_doc": {
+      "passed": "n/a",
+      "reason": "no backtick-quoted tokens in body"
+    },
+    "no_weasel_adjectives": {
+      "passed": true
+    },
+    "quantifier_enumerated": {
+      "passed": "n/a",
+      "reason": "no unbounded quantifier in body"
+    },
+    "source_doc_resolves": {
+      "passed": true
+    },
+    "branch_count_aligned": {
+      "score": 1,
+      "evidence": "function read_csv has 4 visible branches (encoding err / csv.Error / empty / success) producing observably different outputs; CREQ is one shall-clause covering only the success path"
+    }
+  },
+  "overall": "fail",
+  "blockers": [
+    "branch_count_aligned"
+  ],
+  "actions": [
+    "Split into four CREQs (success path plus three error classes), or rewrite this CREQ to enumerate the four observable branches explicitly"
+  ]
+}

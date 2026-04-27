@@ -1,0 +1,43 @@
+{
+  "need_id": "CREQ_format_cli_commands",
+  "source_doc": "input-source.py",
+  "axes": {
+    "exception_raise_sites_exist": {
+      "passed": "n/a",
+      "reason": "no exception raise claim in body"
+    },
+    "trigger_condition_literal_match": {
+      "passed": "n/a",
+      "reason": "no literal == / is trigger in body"
+    },
+    "named_symbol_exists": {
+      "passed": "n/a",
+      "reason": "no verb-prefixed symbol in body"
+    },
+    "type_framework_matches_imports": {
+      "passed": "n/a",
+      "reason": "no type-framework claim in body"
+    },
+    "backtick_symbol_in_source_doc": {
+      "passed": true,
+      "evidence": "3 backtick tokens checked: 'to_format' ✓ (function def present), '[myapp.to_format]' ✓ (TOML-section filter — skipped from Python-symbol resolution), 'ExportConfig' ✓ (class def present)"
+    },
+    "no_weasel_adjectives": {
+      "passed": true
+    },
+    "quantifier_enumerated": {
+      "passed": "n/a",
+      "reason": "no unbounded quantifier in body"
+    },
+    "source_doc_resolves": {
+      "passed": true
+    },
+    "branch_count_aligned": {
+      "score": 3,
+      "evidence": "to_format has 1 branch; CREQ matches"
+    }
+  },
+  "overall": "pass",
+  "blockers": [],
+  "actions": []
+}

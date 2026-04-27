@@ -1,0 +1,7 @@
+# graph-all-metadata-present/input-artefact-catalog.yaml
+# Both governed types declare non-empty required_metadata_fields; every need
+# in the corpus carries every listed field.
+feat:
+  required_metadata_fields: [tags]
+comp_req:
+  required_metadata_fields: [tags, priority]

@@ -1,0 +1,11 @@
+# partial-coverage/input-artefact-catalog.yaml
+# Same policy as all-covered: comp_req must satisfies + verifies, tc must verifies.
+feat:
+  required_links: []
+  optional_links: []
+comp_req:
+  required_links: [satisfies, verifies]
+  optional_links: []
+tc:
+  required_links: [verifies]
+  optional_links: []

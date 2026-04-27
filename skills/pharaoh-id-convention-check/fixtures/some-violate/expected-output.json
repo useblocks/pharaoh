@@ -1,0 +1,24 @@
+{
+  "needs_checked": 5,
+  "violations": [
+    {
+      "need_id": "CREQ_a",
+      "type": "comp_req",
+      "expected_regex": "^CREQ_[a-z]+_[a-z]+_[a-z]+$",
+      "reason": "does not match"
+    },
+    {
+      "need_id": "CREQ_reqif_cli",
+      "type": "comp_req",
+      "expected_regex": "^CREQ_[a-z]+_[a-z]+_[a-z]+$",
+      "reason": "does not match"
+    },
+    {
+      "need_id": "TC_REQIF_CLI_LOAD",
+      "type": "test_case",
+      "expected_regex": "^tc__[a-z0-9_]+$",
+      "reason": "does not match"
+    }
+  ],
+  "overall": "fail"
+}

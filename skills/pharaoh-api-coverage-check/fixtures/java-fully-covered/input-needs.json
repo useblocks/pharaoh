@@ -1,0 +1,25 @@
+{
+  "needs": {
+    "CREQ_java_catalog": {
+      "id": "CREQ_java_catalog",
+      "type": "comp_req",
+      "title": "Catalog class definition",
+      "content": "The class Catalog shall declare a public name field of type String.",
+      "source_doc": "input-source.java"
+    },
+    "CREQ_java_reader": {
+      "id": "CREQ_java_reader",
+      "type": "comp_req",
+      "title": "Reader interface",
+      "content": "The interface Reader shall declare a single read() method returning a String.",
+      "source_doc": "input-source.java"
+    },
+    "CREQ_java_catalog_service": {
+      "id": "CREQ_java_catalog_service",
+      "type": "comp_req",
+      "title": "CatalogService orchestrates persistence",
+      "content": "The class CatalogService shall expose loadCatalog() and saveCatalog(). loadCatalog shall throw CatalogError when path is null; saveCatalog shall throw InvalidPathError when path is null.",
+      "source_doc": "input-source.java"
+    }
+  }
+}

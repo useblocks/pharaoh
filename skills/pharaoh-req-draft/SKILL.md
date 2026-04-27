@@ -67,7 +67,7 @@ Read the entry for the resolved prefix key. Record:
 - `optional_fields` — fields that may appear
 - `lifecycle` — valid values for `:status:`
 
-For Score `gd_req`: required = `[id, status, satisfies]`; optional = `[complies, tags, rationale, verification]`; lifecycle = `[draft, valid, inspected]`.
+Built-in default profile (bundled example): required = `[id, status, satisfies]`; optional = `[complies, tags, rationale, verification]`; lifecycle = `[draft, valid, inspected]`.
 
 **1c. `checklists/requirement.md`**
 
@@ -161,16 +161,19 @@ Write a single sentence that:
 3. Specifies a condition or measurable criterion where the feature_context provides one
 4. Contains no coordinating conjunctions (`and`, `or`, `but`) within the `shall` clause
 5. Does not interpret or expand the feature_context beyond what is stated — if the context is too vague to write a specific shall clause, see Guardrails
+6. Describes **observable behavior at the component boundary**, not internal mechanism. Do NOT name internal methods, classes, private variables, field names, or module-local symbols inside the shall body. External API names (published HTTP routes, CLI flags, pypi packages, protocol names, algorithm names) ARE observable and are fine. Rationale: the prior dogfooding audit showed ~7% (3/40) of LLM-drafted shall clauses named internal symbols AND got the described mechanism wrong — internal-name mentions rot on rename and are a primary accuracy-failure class. Keep traceability to internal symbols in `pharaoh-req-codelink-annotate` output, not in the shall body.
 
 Good patterns:
 - `The <system> shall <action> when <condition>.`
 - `The <system> shall <action> within <measurable criterion>.`
 - `The <component> shall <provide/reject/signal> <object> <constraint>.`
+- `The exporter shall use HMAC-SHA256 to sign each outgoing request.` ← algorithm is observable at the boundary, fine to name.
 
 Bad patterns (reject these in Step 6):
 - Two verbs joined by `and`: `The system shall detect and report...` → FAIL
 - Implicit plural: `The system shall check all sensors...` → acceptable only if "all" is intentional scope
 - Vague quantity: `The system shall respond quickly` → too vague; note in output
+- Internal symbol in the shall body: `The system shall use global_id to drive create-vs-update.` → internal variable name, will rot; rewrite as `The exporter shall decide create-vs-update based on whether a tracked identifier is already known for the need.`
 
 ---
 
@@ -194,6 +197,17 @@ Extract the shall clause (text from `shall` to end of sentence). Check for `, an
 
 If found: split into the primary action only. Re-draft.
 
+**Check B.bis — no internal symbol in shall clause**
+
+Flag any of the following patterns inside the shall body:
+- An identifier in backticks (`` `foo_bar` ``) that is NOT one of the external-surface classes whitelisted for backticks: CLI flags (``--host``), env vars (``APP_LICENSE_KEY``), TOML config keys / section headers (``[myapp.export_config]``, ``links_delimiter``), protocol tokens (``HMAC-SHA256``), HTTP routes (``/itemtypes``). Internal function / method names, private variables, and implementation identifiers (`lower_snake` / `camelCase` symbols not in the whitelist) stay bare.
+- A function-call shape like `some_func(...)` in the shall body.
+- A private-looking variable reference (`self.x`, `obj._y`).
+
+The whitelist mirrors `pharaoh-req-from-code` Rule 7. Project-internal TOML keys that never appear in public docs are still acceptable in backticks — a tester must copy-paste them verbatim — so do NOT require public-doc evidence on the whitelisted classes.
+
+If found, re-draft to describe the observable behavior without naming the internal symbol (see Step 5 guideline 6). After 2 retries, emit with `[DIAGNOSTIC] shall body names internal symbol — post-emit revision required.`
+
 **Check C — parent resolves**
 
 Confirm `satisfies` ID is present in needs.json (already checked in Step 3, re-confirm before emit).
@@ -205,7 +219,7 @@ Confirm chosen ID does not appear in needs.json (already checked in Step 4, re-c
 **Check E — required fields present**
 
 Verify the directive block includes every field from `required_fields` in artefact-catalog.yaml.
-For Score `gd_req`: `id`, `status`, `satisfies` must all be present.
+For the built-in default profile: `id`, `status`, `satisfies` must all be present.
 
 ---
 
@@ -332,3 +346,9 @@ Do not show this if the emit included a `[DIAGNOSTIC]` (the user has a more urge
 
 Consider running `pharaoh-req-review gd_req__abs_pump_activation` to audit against ISO 26262-8 §6 axes.
 ```
+
+## Last step
+
+After emitting the artefact, invoke `pharaoh-req-review` on it. Pass the emitted artefact (or its `need_id`) as `target`. Attach the returned review JSON to the skill's output under the key `review`. If the review emits any axis with `score: 0` or `severity: critical`, return a non-success status with the review findings verbatim and do NOT finalize the artefact — the caller must regenerate (via `pharaoh-req-regenerate` if available, or by re-invoking this skill with the findings as input).
+
+See [`shared/self-review-invariant.md`](../shared/self-review-invariant.md) for the rationale and enforcement mechanism. Coverage is mechanically enforced by `pharaoh-self-review-coverage-check` in `pharaoh-quality-gate`.

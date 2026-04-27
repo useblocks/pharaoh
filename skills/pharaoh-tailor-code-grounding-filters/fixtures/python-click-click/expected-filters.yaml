@@ -1,0 +1,21 @@
+filters:
+  - name: click_kebab
+    strategy: kebab_to_snake_or_pascal
+    token_regex: "^(--)?[a-z][a-z0-9]*(-[a-z0-9]+)+$"
+    strip_leading: ["--"]
+    morphology_prefixes: []
+
+  - name: python_import
+    strategy: dotted_import_resolution
+    token_regex: "^[a-z][\\w.]*\\.[A-Z]\\w+$"
+    separator: "."
+    import_patterns:
+      - "from\\s+${mod}\\s+import\\s+${attr}"
+      - "import\\s+${mod}\\b"
+      - "${tok}"
+
+  - name: python_dataclass_default
+    strategy: cross_file_literal_default
+    token_regex: "^[a-z_][a-z0-9_]*$"
+    hint_dir_pattern: "config/"
+    field_regex: "field\\(default=[\"']${tok}[\"']\\)"

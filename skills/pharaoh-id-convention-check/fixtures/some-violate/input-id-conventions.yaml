@@ -1,0 +1,7 @@
+# some-violate fixture — same schema as all-conform, but some ids diverge.
+
+id_regex: "^[a-z][a-z_]*__[a-z0-9_]+$"
+
+id_regex_by_type:
+  comp_req: "^CREQ_[a-z]+_[a-z]+_[a-z]+$"
+  test_case: "^tc__[a-z0-9_]+$"

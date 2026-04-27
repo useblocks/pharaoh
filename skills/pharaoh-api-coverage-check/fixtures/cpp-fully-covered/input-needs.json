@@ -1,0 +1,32 @@
+{
+  "needs": {
+    "CREQ_cpp_catalog": {
+      "id": "CREQ_cpp_catalog",
+      "type": "comp_req",
+      "title": "Catalog class holds metadata",
+      "content": "The class Catalog shall expose a public name field of type std::string.",
+      "source_doc": "input-source.cpp"
+    },
+    "CREQ_cpp_catalog_config": {
+      "id": "CREQ_cpp_catalog_config",
+      "type": "comp_req",
+      "title": "CatalogConfig carries tuning knobs",
+      "content": "The struct CatalogConfig shall declare max_items as an integer.",
+      "source_doc": "input-source.cpp"
+    },
+    "CREQ_cpp_load_catalog": {
+      "id": "CREQ_cpp_load_catalog",
+      "type": "comp_req",
+      "title": "load_catalog reads catalogue",
+      "content": "The function load_catalog shall throw CatalogError when the path argument is empty.",
+      "source_doc": "input-source.cpp"
+    },
+    "CREQ_cpp_save_catalog": {
+      "id": "CREQ_cpp_save_catalog",
+      "type": "comp_req",
+      "title": "save_catalog writes catalogue",
+      "content": "The function save_catalog shall throw InvalidPathError when the path argument is empty.",
+      "source_doc": "input-source.cpp"
+    }
+  }
+}

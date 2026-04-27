@@ -1,0 +1,25 @@
+{
+  "source_file": "input-source.rs",
+  "language": "rust",
+  "classification": "behavioral",
+  "file_coverage": {
+    "passed": true,
+    "citing_creqs": [
+      "CREQ_rust_catalog",
+      "CREQ_rust_catalog_error",
+      "CREQ_rust_load_catalog",
+      "CREQ_rust_readable",
+      "CREQ_rust_save_catalog"
+    ]
+  },
+  "raise_site_coverage": {
+    "total": 0,
+    "project_defined": 0,
+    "covered": [],
+    "uncovered": [],
+    "external": [],
+    "passed": true
+  },
+  "overall": "pass",
+  "blockers": []
+}

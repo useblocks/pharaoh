@@ -1,0 +1,10 @@
+{
+  "needs_checked": 3,
+  "coverage_by_link_type": {
+    "satisfies": {"required": true,  "covered": 2, "missing": 0},
+    "verifies":  {"required": false, "covered": 0, "missing": 2}
+  },
+  "uncovered_needs": [],
+  "unresolved_targets": [],
+  "overall": "pass"
+}

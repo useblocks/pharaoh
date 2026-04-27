@@ -38,7 +38,7 @@ A single JSON document — no prose wrapper. Shape:
 
 ```json
 {
-  "project_path": "examples/score",
+  "project_path": "examples/my-project",
   "needs_total": 401,
   "gaps": [
     {
@@ -224,7 +224,7 @@ After the gap report, if `gaps` is non-empty:
 
 ## Worked example
 
-**Input:** `project_root = examples/score`
+**Input:** `project_root = examples/my-project`
 
 **Step 0:** `.pharaoh/project/` found; needs.json found with 401 needs total.
 
@@ -253,7 +253,7 @@ After the gap report, if `gaps` is non-empty:
 
 ```json
 {
-  "project_path": "examples/score",
+  "project_path": "examples/my-project",
   "needs_total": 401,
   "gaps": [
     {
@@ -321,6 +321,6 @@ After the gap report, if `gaps` is non-empty:
 }
 ```
 
-Run `pharaoh-coverage-gap examples/score broken_back_link` for the full match list.
-Run `pharaoh-coverage-gap examples/score orphan_arch` for the full match list.
-Run `pharaoh-coverage-gap examples/score unverified_req` for the full match list.
+Run `pharaoh-coverage-gap examples/my-project broken_back_link` for the full match list.
+Run `pharaoh-coverage-gap examples/my-project orphan_arch` for the full match list.
+Run `pharaoh-coverage-gap examples/my-project unverified_req` for the full match list.

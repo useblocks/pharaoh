@@ -63,14 +63,15 @@ Extract for the artefact type matching the directive prefix (e.g. `gd_req`):
 - `required_fields` — every field that must be present
 - `id_regex` — regex the output id must match
 
-If tailoring files are missing, fall back to Score defaults (`gd_req` required:
-`[id, status, satisfies]`, id_regex: `^[a-z][a-z_]*__[a-z0-9_]+$`).
+If tailoring files are missing, fall back to built-in defaults (bundled example
+requirement profile — `req` required: `[id, status, satisfies]`, id_regex:
+`^[a-z][a-z_]*__[a-z0-9_]+$`).
 
 ---
 
 ### Step 2: Parse findings_json
 
-Parse the findings JSON. If malformed (missing `axes` key, invalid JSON syntax, axis count < 10),
+Parse the findings JSON. If malformed (missing `axes` key, invalid JSON syntax, axis count < 11),
 FAIL immediately — do not attempt partial regeneration:
 
 ```
@@ -152,7 +153,7 @@ After rewriting, run the same checks as `pharaoh-req-review` Step 3 (binary axes
 - Atomicity: exactly one `shall`, no conjunction in shall clause
 - Internal consistency: no self-contradiction
 - Schema: all required fields present and non-empty
-- Verifiability: `:verification:` present (it is acceptable for it to point to `tc__TBD`)
+- Verifiability: `:verification:` present. On a `status: draft` requirement, a placeholder value matching `^(tc|test_case)__TBD$` (or the project's `tailoring.verification_placeholder_regex`) scores 0.5 on review's verifiability axis — passing the binary gate and terminating the regen loop. Once status advances past draft, the placeholder stops passing and a real test-case id is required.
 
 If any binary check still fails after one rewrite attempt, attempt one further rewrite targeting
 only the still-failing axis. If it still fails after two total attempts, emit the directive with:

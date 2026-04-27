@@ -1,0 +1,20 @@
+{
+  "current_state": {
+    "strictness": "enforcing",
+    "require_verification": true,
+    "require_change_analysis": true,
+    "require_mece_on_release": true,
+    "codelinks_enabled": true
+  },
+  "recommended_next_gate": null,
+  "rationale": "ladder complete",
+  "ladder": [
+    {"step": 1, "gate": "require_verification = true", "blocker": "none — safe to enable now"},
+    {"step": 2, "gate": "require_change_analysis = true", "blocker": "needs pharaoh-change to be tailored"},
+    {"step": 3, "gate": "require_mece_on_release = true", "blocker": "needs release-gate workflow"},
+    {"step": 4, "gate": "codelinks.enabled = true", "blocker": "needs codelink annotations in source"},
+    {"step": 5, "gate": "strictness = enforcing", "blocker": "requires steps 1-4 satisfied"}
+  ],
+  "overall": "pass",
+  "notes": []
+}

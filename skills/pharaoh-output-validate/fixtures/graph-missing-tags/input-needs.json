@@ -1,0 +1,30 @@
+{
+  "needs": {
+    "feat__billing": {
+      "id": "feat__billing",
+      "type": "feat",
+      "title": "Billing",
+      "status": "valid"
+    },
+    "comp_req__billing_charge": {
+      "id": "comp_req__billing_charge",
+      "type": "comp_req",
+      "title": "Charge the customer card",
+      "status": "valid",
+      "tags": ["billing", "payment"]
+    },
+    "comp_req__billing_refund": {
+      "id": "comp_req__billing_refund",
+      "type": "comp_req",
+      "title": "Refund a settled charge",
+      "status": "valid"
+    },
+    "comp_req__billing_void": {
+      "id": "comp_req__billing_void",
+      "type": "comp_req",
+      "title": "Void a pending charge",
+      "status": "valid",
+      "tags": []
+    }
+  }
+}

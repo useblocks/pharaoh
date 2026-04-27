@@ -1,0 +1,49 @@
+{
+  "need_id": "CREQ_upload_errors",
+  "source_doc": "input-source.py",
+  "axes": {
+    "exception_raise_sites_exist": {
+      "passed": false,
+      "evidence": "UploadAuthError cited, 1 raise site \u2014 PASS; UploadTransportError cited, 1 raise site \u2014 PASS; UploadArtifactTypeError cited as raised, 0 raise sites \u2014 FAIL; UploadSkippedValueError cited as raised, 0 raise sites \u2014 FAIL; UploadValueMapError cited as raised, 0 raise sites \u2014 FAIL"
+    },
+    "trigger_condition_literal_match": {
+      "passed": "n/a",
+      "reason": "no literal == / is trigger in body"
+    },
+    "named_symbol_exists": {
+      "passed": true,
+      "evidence": "all cited exception class names resolve as class defs in source"
+    },
+    "type_framework_matches_imports": {
+      "passed": "n/a",
+      "reason": "no type-framework claim in body"
+    },
+    "backtick_symbol_in_source_doc": {
+      "passed": "n/a",
+      "reason": "no backtick-quoted tokens in body"
+    },
+    "no_weasel_adjectives": {
+      "passed": true
+    },
+    "quantifier_enumerated": {
+      "passed": "n/a",
+      "reason": "no unbounded quantifier in body"
+    },
+    "source_doc_resolves": {
+      "passed": true
+    },
+    "branch_count_aligned": {
+      "score": 3,
+      "evidence": "CREQ enumerates 5 distinct exception cases; covers each branch explicitly"
+    }
+  },
+  "overall": "fail",
+  "blockers": [
+    "exception_raise_sites_exist"
+  ],
+  "actions": [
+    "Remove 'UploadArtifactTypeError raised' claim OR add a raise site for UploadArtifactTypeError in input-source.py",
+    "Remove 'UploadSkippedValueError raised' claim OR add a raise site for UploadSkippedValueError in input-source.py",
+    "Remove 'UploadValueMapError raised' claim OR add a raise site for UploadValueMapError in input-source.py"
+  ]
+}

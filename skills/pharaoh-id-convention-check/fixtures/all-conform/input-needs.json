@@ -1,0 +1,29 @@
+{
+  "needs": {
+    "CREQ_reqif_cli_load": {
+      "id": "CREQ_reqif_cli_load",
+      "type": "comp_req",
+      "title": "Load a ReqIF file via the CLI"
+    },
+    "CREQ_reqif_cli_export": {
+      "id": "CREQ_reqif_cli_export",
+      "type": "comp_req",
+      "title": "Export a ReqIF file via the CLI"
+    },
+    "CREQ_csv_reader_parse": {
+      "id": "CREQ_csv_reader_parse",
+      "type": "comp_req",
+      "title": "Parse a CSV file into needs"
+    },
+    "tc__reqif_cli_load_happy_path": {
+      "id": "tc__reqif_cli_load_happy_path",
+      "type": "test_case",
+      "title": "Happy path for ReqIF CLI load"
+    },
+    "tc__csv_reader_parse_empty": {
+      "id": "tc__csv_reader_parse_empty",
+      "type": "test_case",
+      "title": "CSV reader on empty input"
+    }
+  }
+}

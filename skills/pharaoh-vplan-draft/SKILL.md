@@ -338,3 +338,9 @@ concrete ("ABS pump output signal activates within 50 ms"). All pass.
 
 Consider running `pharaoh-vplan-review tc__abs_pump_activation_system` to audit against per-axis criteria.
 ```
+
+## Last step
+
+After emitting the artefact, invoke `pharaoh-vplan-review` on it. Pass the emitted artefact (or its `need_id`) as `target`. Attach the returned review JSON to the skill's output under the key `review`. If the review emits any axis with `score: 0` or `severity: critical`, return a non-success status with the review findings verbatim and do NOT finalize the artefact — the caller must regenerate (via `pharaoh-vplan-regenerate` if available, or by re-invoking this skill with the findings as input).
+
+See [`shared/self-review-invariant.md`](../shared/self-review-invariant.md) for the rationale and enforcement mechanism. Coverage is mechanically enforced by `pharaoh-self-review-coverage-check` in `pharaoh-quality-gate`.

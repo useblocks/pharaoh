@@ -1,0 +1,26 @@
+{
+  "source_file": "input-source.java",
+  "language": "java",
+  "classification": "behavioral",
+  "file_coverage": {
+    "passed": true,
+    "citing_creqs": [
+      "CREQ_java_catalog",
+      "CREQ_java_catalog_service",
+      "CREQ_java_reader"
+    ]
+  },
+  "raise_site_coverage": {
+    "total": 2,
+    "project_defined": 2,
+    "covered": [
+      "CatalogError",
+      "InvalidPathError"
+    ],
+    "uncovered": [],
+    "external": [],
+    "passed": true
+  },
+  "overall": "pass",
+  "blockers": []
+}

@@ -1,0 +1,25 @@
+{
+  "source_file": "input-source.txt",
+  "language": "python",
+  "classification": "behavioral",
+  "file_coverage": {
+    "passed": true,
+    "citing_creqs": [
+      "CREQ_greet",
+      "CREQ_greet_error",
+      "CREQ_greeter"
+    ]
+  },
+  "raise_site_coverage": {
+    "total": 1,
+    "project_defined": 1,
+    "covered": [
+      "GreetError"
+    ],
+    "uncovered": [],
+    "external": [],
+    "passed": true
+  },
+  "overall": "pass",
+  "blockers": []
+}

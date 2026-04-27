@@ -1,0 +1,21 @@
+filters:
+  - name: clap_kebab
+    strategy: kebab_to_snake_or_pascal
+    token_regex: "^(--)?[a-z][a-z0-9]*(-[a-z0-9]+)+$"
+    strip_leading: ["--"]
+    morphology_prefixes: []
+
+  - name: rust_use_clause
+    strategy: dotted_import_resolution
+    token_regex: "^[a-z][\\w]*(::[\\w]+)+$"
+    separator: "::"
+    import_patterns:
+      - "use\\s+${tok}"
+      - "use\\s+${mod}::\\{[^}]*\\b${attr}\\b[^}]*\\}"
+      - "${tok}"
+
+  - name: rust_serde_default
+    strategy: cross_file_literal_default
+    token_regex: "^[a-z_][a-z0-9_]*$"
+    hint_dir_pattern: "config/|src/config/"
+    field_regex: "#\\[serde\\(default\\s*=\\s*\"${tok}\"\\)\\]"

@@ -1,0 +1,43 @@
+{
+  "need_id": "CREQ_jama_cli_env_fallback",
+  "source_doc": "input-source.py",
+  "axes": {
+    "exception_raise_sites_exist": {
+      "passed": "n/a",
+      "reason": "no exception raise claim in body"
+    },
+    "trigger_condition_literal_match": {
+      "passed": "n/a",
+      "reason": "no literal == / is trigger in body"
+    },
+    "named_symbol_exists": {
+      "passed": "n/a",
+      "reason": "no verb-prefixed symbol in body"
+    },
+    "type_framework_matches_imports": {
+      "passed": "n/a",
+      "reason": "no type-framework claim in body"
+    },
+    "backtick_symbol_in_source_doc": {
+      "passed": true,
+      "evidence": "2 backtick tokens checked: 'JAMA_*' \u2713 (tailored filter 'env_var_glob' expanded to /\\bJAMA_\\w+\\b/ and matched JAMA_URL_ENV + 3 siblings in source), 'jama check' \u2014 universal filter #2 (file path / command string) applied, skipped as user-facing command"
+    },
+    "no_weasel_adjectives": {
+      "passed": true
+    },
+    "quantifier_enumerated": {
+      "passed": "n/a",
+      "reason": "no unbounded quantifier matches the narrow noun list"
+    },
+    "source_doc_resolves": {
+      "passed": true
+    },
+    "branch_count_aligned": {
+      "score": 3,
+      "evidence": "resolve_credential has 2 branches (cli_value truthy / env fallback); CREQ describes the fallback branch explicitly"
+    }
+  },
+  "overall": "pass",
+  "blockers": [],
+  "actions": []
+}

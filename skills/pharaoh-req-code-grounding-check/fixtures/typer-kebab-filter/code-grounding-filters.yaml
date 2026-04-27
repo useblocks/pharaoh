@@ -1,0 +1,6 @@
+filters:
+  - name: typer_kebab
+    strategy: kebab_to_snake_or_pascal
+    token_regex: "^(--)?[a-z][a-z0-9]*(-[a-z0-9]+)+$"
+    strip_leading: ["--"]
+    morphology_prefixes: ["Opt"]

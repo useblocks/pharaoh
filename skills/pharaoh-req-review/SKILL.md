@@ -1,6 +1,6 @@
 ---
 name: pharaoh-req-review
-description: Use when auditing a single sphinx-needs requirement against the 10 ISO 26262 Part 8 §6 axes. Emits structured findings JSON — per-axis pass/fail for mechanized axes, 0-3 score for subjective axes, with action items for any failure.
+description: Use when auditing a single sphinx-needs requirement against the 11 ISO 26262 Part 8 §6 axes. Emits structured findings JSON — per-axis pass/fail for mechanized axes, 0-3 score for subjective axes, with action items for any failure.
 chains_from: [pharaoh-req-draft, pharaoh-req-regenerate]
 chains_to: [pharaoh-req-regenerate]
 ---
@@ -22,7 +22,7 @@ Do NOT re-author or fix — invoke `pharaoh-req-regenerate` after reviewing.
 - **target**: either an RST directive block (from `pharaoh-req-draft`) OR a need-id present in
   needs.json
 - **tailoring** (from `.pharaoh/project/`):
-  - `checklists/requirement.md` — 10 ISO 26262-8 §6 axes
+  - `checklists/requirement.md` — 11 ISO 26262-8 §6 axes
   - `artefact-catalog.yaml` — required/optional fields per artefact type
   - `id-conventions.yaml` — ID regex and prefix map
 - **needs.json**: required for link resolution on the verifiability axis
@@ -63,8 +63,10 @@ description and records its verdict; the harness compares skill verdict to score
 |---|---|---|
 | `atomicity` | body contains more than one `shall`, or a coordinating conjunction joins modal verbs within the shall clause | body contains exactly one `shall`; no `, and`/`, or`/` and `/ or ` within the shall clause |
 | `internal_consistency` | body contains a self-contradictory statement (e.g. "shall always … unless required not to") | no self-contradiction detectable within this requirement |
-| `verifiability` | `:verification:` field absent, empty, or link does not resolve in needs.json | `:verification:` present and resolves to a real need-id in needs.json |
+| `verifiability` | `:verification:` field absent, empty, or link does not resolve in needs.json (and does not match a recognised placeholder) | `:verification:` present and resolves to a real need-id in needs.json |
 | `schema` | any field listed under `required_fields` in artefact-catalog.yaml is missing from the directive | all required fields present and non-empty |
+
+**Verifiability placeholder pathway (score 0.5):** a drafted req with `status: draft` AND `:verification:` set to a recognised placeholder (matching `^(tc|test_case)__TBD$` by default, or the pattern declared under `tailoring.verification_placeholder_regex` in `checklists/requirement.md`) scores 0.5, not 0. This lets a regenerate loop terminate on an iteratively improved draft that still lacks a concrete test-case id. The placeholder pathway does not apply once status has advanced past `draft`. For `overall`, treat 0.5 as passing the binary gate but append `"verifiability: placeholder-only"` to `action_items`.
 
 **Ordinal (0–3) — subjective LLM-judge axes:**
 
@@ -93,7 +95,7 @@ and observing convergence. Record as `{"score": null, "reason": "chain-level axi
 Computed from the non-deferred, non-null axes only (atomicity, internal_consistency, verifiability,
 schema, unambiguity_prose, comprehensibility, feasibility):
 
-- `"pass"` — all binary axes score 1, all subjective axes score ≥ 2
+- `"pass"` — all binary axes score 1 (or `verifiability` scores 0.5 via the placeholder pathway), all subjective axes score ≥ 2
 - `"needs_work"` — no binary axis fails, but ≥ 1 subjective axis scores < 2
 - `"fail"` — ≥ 1 binary axis scores 0
 
@@ -106,12 +108,13 @@ schema, unambiguity_prose, comprehensibility, feasibility):
 Read `.pharaoh/project/checklists/requirement.md`, `.pharaoh/project/artefact-catalog.yaml`, and
 `.pharaoh/project/id-conventions.yaml`. Extract:
 
-- Axis definitions (confirm the 10 axes match the expected set)
+- Axis definitions (confirm the 11 axes match the expected set)
 - `required_fields` for the target artefact type (used in schema axis)
 - `id_regex` (used to verify the need-id format if target is an RST block)
 
-If any tailoring file is missing, proceed with Score defaults (gd_req required fields:
-`[id, status, satisfies]`). Note the fallback in the output.
+If any tailoring file is missing, proceed with built-in defaults (bundled example
+profile — generic `req` required fields: `[id, status, satisfies]`). Note the
+fallback in the output.
 
 ### Step 2: Resolve target
 
@@ -151,8 +154,8 @@ need-id in needs.json. Score 1 if present and resolves; score 0 otherwise.
 
 **Schema:**
 Check that every field in `required_fields` from artefact-catalog.yaml is present and non-empty in
-the directive. For Score `gd_req`: `id`, `status`, `satisfies` must all be present. Score 1 if all
-present; score 0 with reason listing the missing field(s).
+the directive. For the built-in default profile: `id`, `status`, `satisfies` must all be present.
+Score 1 if all present; score 0 with reason listing the missing field(s).
 
 ### Step 4: Evaluate subjective axes
 
@@ -210,7 +213,7 @@ Do not emit partial JSON. Return only the FAIL message.
 
 **G2 — Malformed JSON output**
 
-If the emitted JSON is syntactically invalid or missing any of the 10 axis keys, self-correct once:
+If the emitted JSON is syntactically invalid or missing any of the 11 axis keys, self-correct once:
 re-emit the full JSON document. If still malformed after one self-correction attempt, emit:
 
 ```json

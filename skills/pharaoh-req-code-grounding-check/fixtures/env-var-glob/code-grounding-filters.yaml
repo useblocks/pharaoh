@@ -1,0 +1,5 @@
+filters:
+  - name: env_var_glob
+    strategy: prefix_glob_expansion
+    token_regex: "^[A-Z][A-Z0-9_]*_?\\*$"
+    separator_character: "_"

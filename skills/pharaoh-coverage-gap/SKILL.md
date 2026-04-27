@@ -306,7 +306,7 @@ Use `pharaoh-process-audit` to run all 10 gap categories in one pass.
 
 ### Category 1: `unverified_req`
 
-**Inputs:** `project_root = examples/score`, `category = unverified_req`
+**Inputs:** `project_root = examples/my-project`, `category = unverified_req`
 
 **Step 2:** tailoring loaded; needs.json found with 185 `gd_req` needs and 63 `tc` needs.
 
@@ -346,7 +346,7 @@ Use `pharaoh-process-audit` to run all 10 gap categories in one pass.
 
 ### Category 2: `schema_violation`
 
-**Inputs:** `project_root = examples/score`, `category = schema_violation`
+**Inputs:** `project_root = examples/my-project`, `category = schema_violation`
 
 **Step 3:** artefact-catalog.yaml loaded. For `gd_req`, required fields are `[id, status, satisfies]`.
 After scanning all needs: 1 `gd_req` missing `:satisfies:` field; 2 `arch` needs missing
