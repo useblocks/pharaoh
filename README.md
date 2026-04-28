@@ -65,7 +65,7 @@ prefix: `@pharaoh.<name>`.
 | Skill | Purpose |
 |-------|---------|
 | `pharaoh:pharaoh-setup` | Set up Pharaoh in a sphinx-needs project -- detect structure, scaffold Copilot agents |
-| `pharaoh:pharaoh-change` | Analyse the impact of a requirement change, including traceability to code via codelinks |
+| `pharaoh:pharaoh-change` | Analyze the impact of a requirement change, including traceability to code via codelinks |
 | `pharaoh:pharaoh-trace` | Navigate traceability links across requirements, specs, implementations, tests, and code |
 | `pharaoh:pharaoh-mece` | Gap and redundancy analysis -- orphans, missing links, MECE violations |
 | `pharaoh:pharaoh-plan` | Break requirement changes into structured implementation tasks with workflow enforcement |
@@ -173,21 +173,24 @@ prefix: `@pharaoh.<name>`.
 
 ## Workflow
 
-Authoring orchestration is plan-driven: `pharaoh:pharaoh-write-plan` emits a `plan.yaml`,
-`pharaoh:pharaoh-execute-plan` runs it as a DAG dispatching atomic skills.
+Authoring orchestration is plan-driven. `pharaoh:pharaoh-write-plan` is a
+pure transformation -- it returns plan.yaml content as text without
+touching the filesystem. The caller saves it (anywhere) and hands the
+path to `pharaoh:pharaoh-execute-plan`, which runs the DAG dispatching
+atomic skills.
 
 ```
 pharaoh:pharaoh-spec       -> pharaoh:pharaoh-decide (for gaps)
-                   -> produces spec doc with plan table
+                              -> produces spec doc with plan table
 
-pharaoh:pharaoh-write-plan -> emits .pharaoh/plans/<intent>.yaml
-                   -> pharaoh:pharaoh-execute-plan
-                          |-- pharaoh:pharaoh-req-draft   -> pharaoh:pharaoh-req-review
-                          |-- pharaoh:pharaoh-arch-draft  -> pharaoh:pharaoh-arch-review
-                          |-- pharaoh:pharaoh-vplan-draft -> pharaoh:pharaoh-vplan-review
-                          |-- pharaoh:pharaoh-fmea        -> pharaoh:pharaoh-fmea-review
-                          |-- pharaoh:pharaoh-*-diagram-draft -> pharaoh:pharaoh-diagram-review
-                          |-- pharaoh:pharaoh-quality-gate (terminal)
+pharaoh:pharaoh-write-plan -> returns plan.yaml text (caller saves to a path)
+                              -> pharaoh:pharaoh-execute-plan <plan_path>
+                                    |-- pharaoh:pharaoh-req-draft   -> pharaoh:pharaoh-req-review
+                                    |-- pharaoh:pharaoh-arch-draft  -> pharaoh:pharaoh-arch-review
+                                    |-- pharaoh:pharaoh-vplan-draft -> pharaoh:pharaoh-vplan-review
+                                    |-- pharaoh:pharaoh-fmea        -> pharaoh:pharaoh-fmea-review
+                                    |-- pharaoh:pharaoh-*-diagram-draft -> pharaoh:pharaoh-diagram-review
+                                    |-- pharaoh:pharaoh-quality-gate (terminal)
 
 pharaoh:pharaoh-flow       -> shortcut for the V-model chain on one feature context
 pharaoh:pharaoh-change     -> impact analysis, feeds plan inputs
