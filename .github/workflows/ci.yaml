@@ -89,6 +89,15 @@ jobs:
           done
           exit $status
 
+      - name: Marketplace manifests in sync
+        run: |
+          if ! diff -q .claude-plugin/marketplace.json .github/plugin/marketplace.json; then
+            echo "ERROR: .claude-plugin/marketplace.json and .github/plugin/marketplace.json must be identical"
+            echo "Source of truth: .claude-plugin/marketplace.json"
+            echo "Run: cp .claude-plugin/marketplace.json .github/plugin/marketplace.json"
+            exit 1
+          fi
+
       - name: Cross-reference skills and agents
         run: |
           status=0

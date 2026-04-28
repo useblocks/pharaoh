@@ -36,12 +36,3 @@ required_links = [
 [pharaoh.codelinks]
 # Follow sphinx-codelinks in change analysis
 enabled = true
-
-[pharaoh.decisions]
-# Default file for new decision needs (relative to docs source root)
-# If absent, decisions go to decisions.rst in same directory as affected requirement
-default_file = "decisions.rst"
-# Default status for decisions created standalone
-default_status = "proposed"
-# Default status for decisions created during pharaoh:spec
-spec_status = "accepted"
