@@ -1,18 +1,1 @@
-{
-  "name": "pharaoh-dev",
-  "description": "Development marketplace for Pharaoh sphinx-needs AI assistant",
-  "owner": {
-    "name": "useblocks"
-  },
-  "plugins": [
-    {
-      "name": "pharaoh",
-      "description": "AI assistant framework for sphinx-needs projects",
-      "version": "0.1.0",
-      "source": "./",
-      "author": {
-        "name": "useblocks"
-      }
-    }
-  ]
-}
+../.github/plugin/marketplace.json
