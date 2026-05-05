@@ -3,6 +3,16 @@ name: pharaoh-change
 description: "Use when analyzing the impact of changing a requirement, specification, or any sphinx-needs item, including traceability to code via codelinks"
 ---
 
+## Output invariant
+
+This skill's visible output is the full **Change Document** as defined in Step 4. The document is mandatory. Every invocation MUST emit the complete document with all sections. The session-state update in Step 5 is internal bookkeeping and MUST NOT replace the document.
+
+Failure modes:
+- Returning only "Acknowledge this change analysis?" -> REGRESSION. Emit the full document.
+- Returning only "Session state written" -> REGRESSION. Emit the full document.
+
+Non-interactive callers cannot reach the document past a follow-up prompt. The skill MUST be self-terminating. Acknowledgment is checked by downstream enforcing-mode authoring skills (`pharaoh-author`, `pharaoh-req-regenerate`, etc.) against the session-state flag. They FAIL with a message naming the file path and the field to flip.
+
 # pharaoh-change: Change Impact Analysis
 
 Analyze the full impact of a proposed change to any sphinx-needs item. Trace through ALL link types -- standard `links`, `extra_links` (implements, tests, etc.), and sphinx-codelinks -- to produce a structured Change Document listing every affected need and code file with a recommended action.
@@ -296,7 +306,7 @@ For each target need ID, add or update an entry in the `changes` dictionary:
 
 Key points:
 - Set `change_analysis` to the current timestamp.
-- Set `acknowledged` to `false`. The user must explicitly acknowledge before this gate is satisfied.
+- Set `acknowledged` to `false`. Downstream enforcing-mode authoring skills check this flag and the user flips it by editing the session-state file directly.
 - Do not overwrite `authored` or `verified` if the entry already exists -- preserve those values.
 - Update the top-level `updated` timestamp.
 
@@ -306,35 +316,16 @@ Write the updated JSON to `.pharaoh/session.json`. Ensure the JSON is properly f
 
 ---
 
-## 6. Ask for Acknowledgment
+## 6. End the turn
 
-After presenting the Change Document and updating session state, ask the user to acknowledge the analysis.
+After emitting the Change Document and writing session state, end the turn. Do not ask the user any follow-up question.
 
-Present exactly this prompt:
+Acknowledgment is a separate concern handled by downstream authoring skills:
 
-```
-Acknowledge this change analysis? Acknowledging allows proceeding to the authoring skill for the affected needs.
-```
+- In **advisory** strictness, no skill checks `acknowledged`. The user proceeds freely.
+- In **enforcing** strictness, downstream authoring skills check `.pharaoh/session.json[changes][<id>].acknowledged` and FAIL with a message naming the file path and the field to flip. The user edits the session-state file directly to acknowledge.
 
-### If the user acknowledges
-
-Update `.pharaoh/session.json`: set `acknowledged` to `true` for each target need ID analyzed in this invocation. Update the `updated` timestamp.
-
-Respond with:
-
-```
-Change analysis for <TARGET_ID(s)> acknowledged. You may now proceed with the appropriate authoring skill.
-```
-
-### If the user does not acknowledge
-
-Do not update the session state. The `acknowledged` field remains `false`.
-
-If the user asks questions about the Change Document, answer them. If the user requests modifications to the analysis (e.g., "also check the impact on module X"), re-run the relevant parts of the analysis and present an updated Change Document. Then ask for acknowledgment again.
-
-### If the user ignores the acknowledgment prompt
-
-Do not force the issue. The session state remains with `acknowledged: false`. In advisory mode this has no effect. In enforcing mode, any authoring skill will check and block if acknowledgment is missing.
+This split keeps `pharaoh-change` non-interactive and CI-safe.
 
 ---
 
@@ -346,13 +337,13 @@ Follow the instructions in `skills/shared/strictness.md` for strictness handling
 
 - Always produce the full Change Document regardless of workflow state.
 - No gating -- this skill has no prerequisites.
-- After completing the analysis, the acknowledgment step is optional. If the user skips it, other skills will show a tip but will not block.
+- The `acknowledged` flag in session state remains `false`. Other skills will show a tip but will not block.
 
 ### Enforcing mode
 
 - This skill itself has no prerequisites (it is gate-free per `skills/shared/strictness.md` Section 3, "Skills with no gates").
 - However, its output gates any authoring skill. In enforcing mode, authoring skills check `.pharaoh/session.json` for `acknowledged: true` on the relevant need IDs.
-- Always perform the full analysis. Always update session state. Always ask for acknowledgment.
+- Always perform the full analysis. Always update session state. Always end the turn after emitting the document.
 
 ### Strictness has no effect on analysis depth
 
@@ -494,4 +485,4 @@ Code impact: Not applicable (codelinks not configured).
 
 **Step 5** -- Session state written: `REQ_001` entry with `acknowledged: false`.
 
-**Step 6** -- User asked to acknowledge. User says "yes". Session updated: `acknowledged: true`.
+**Step 6** -- Turn ends after the Change Document and session-state write. Session state holds `acknowledged: false`. The user edits `.pharaoh/session.json` directly to flip the flag before invoking an enforcing-mode authoring skill.
