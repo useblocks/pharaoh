@@ -40,11 +40,15 @@ Known prior failures this rule catches:
 
 A clean behavioral shall with zero backticks and one `:source_doc:` is preferred over a code-narration shall with ten backticks.
 
-### Rule 3 — `:source_doc:` must point at the implementing source code file
+### Rule 3 -- `:source_doc:` emission is tailoring-driven
 
-Every emitted CREQ carries `:source_doc:` pointing at a real source file — typically `.py`, `.rs`, `.ts`, `.go`, `.c`, `.cpp`, `.java` under the project's source tree (e.g. `src/<project>/csv/csv2needs.py`). Pointing `:source_doc:` at the spec RST file itself or at a prose feature doc is a validation failure — the spec RST is where the requirement lives, not where the behavior is implemented.
+If the project's `<tailoring_path>/artefact-catalog.yaml` declares `source_doc` in `optional_fields` or `required_fields` for the directive's type (`target_level`), emit it pointing at the implementing source code file. If the project does NOT declare `source_doc` for the type, do NOT emit it.
 
-When a CREQ's behavior spans multiple source files, pick the file that owns the primary observable (usually the converter module, not a CLI dispatcher). `pharaoh-req-code-grounding-check` axis #8 (`source_doc_resolves`) fails if the cited file is the spec RST or missing entirely.
+Rationale: emitting undeclared fields produces sphinx-build warnings under `-W` and breaks the build. Section 8 of #13 wired `pharaoh-setup` to populate the catalog from `[needs.fields.X]` declarations. This skill MUST honour the catalog on output.
+
+When the project declares `source_doc` and the CREQ behavior spans multiple source files, pick the file that owns the primary observable (usually the converter module, not a CLI dispatcher). `pharaoh-req-code-grounding-check` axis #8 (`source_doc_resolves`) fails if the cited file is the spec RST or missing entirely.
+
+When the project does NOT declare `source_doc`, code grounding moves to a backref comment in the source file via `pharaoh-req-codelink-annotate` (mode: backref). The CREQ stays clean of paths.
 
 ### Rule 4 — CREQ adds constraint beyond the parent feat
 
@@ -68,9 +72,16 @@ Expected floor per typical connector module (200-500 LOC, 3-8 exception classes,
 
 Each emitted block's body has exactly one `shall` clause. Zero intra-clause conjunctions joining modal-verb phrases (`, and shall` / ` and shall` / ` or raise` / `, or ` — all splits). Multiple observable behaviors = multiple CREQs. Intra-clause conjunctions are a hard fail regardless of behavioral quality; split the block before returning.
 
-### Rule 6 — `:verification:` field is required
+### Rule 6 -- `:verification:` emission is tailoring-driven
 
-Every emitted CREQ carries `:verification:` with at minimum the placeholder `tc__TBD`. Absence is a schema failure. If the project uses a different link name for the req→test relation (`verifies`, `covered_by`), declare it in `[[needs.extra_links]]`; the default placeholder stays required.
+`verification` in this skill names whichever of two tailoring slots the project declares it as:
+
+1. **As a link** in `<project_root>/ubproject.toml` under `[[needs.extra_links]]` with name `verification` (or a project-renamed equivalent declared in `pharaoh.toml` under `[skill.req_from_code.verification_link_name]`). When declared, emit `:verification: tc__TBD` (or the project's declared placeholder convention).
+2. **As a field** in `<tailoring_path>/artefact-catalog.yaml` under `optional_fields` or `required_fields` for the directive's type. When declared, emit `:verification: <value>`.
+
+If neither slot declares `verification` for the directive's type, do NOT emit `:verification:`. The req-to-test relation is then declared elsewhere. For example, `pharaoh-vplan-draft` backlinks via `:verifies:` from the test side.
+
+Resolution order: link declaration in `ubproject.toml` takes precedence over field declaration in the catalog. A project declaring both is over-specified. Warn but emit the link form.
 
 ### Rule 7 — Backticks are for code / protocol tokens only
 
@@ -106,7 +117,7 @@ If `on_missing_config == "prompt"` (default) AND tailoring is missing (no `targe
 ## Atomicity
 
 - (a) Indivisible — one file in → N reqs out. No I/O beyond file read + optional Papyrus query/write + req emit. Emits in exactly one representation per call (`rst` OR `codelinks_comment`).
-- (b) Input: `{file_path, target_level, shared_context_path?, papyrus_workspace?, reporter_id, parent_feat_ids?, emit_override?, codelinks_project_name?, on_missing_config?, allowed_ids?, split_strategy?}`. Output: single JSON object `{"reqs": [{"id", "title", "type", "body", "source_doc", "satisfies", "verification", "raw_rst"}, ...]}` for `emit=rst`, or `{"codelinks": [str, ...]}` for `emit=codelinks_comment`. On missing tailoring with `on_missing_config=prompt`: single JSON object `{status: "needs_confirmation", proposal}`.
+- (b) Input: `{file_path, target_level, tailoring_path, shared_context_path?, papyrus_workspace?, reporter_id, parent_feat_ids?, emit_override?, codelinks_project_name?, on_missing_config?, allowed_ids?, split_strategy?}`. Output: single JSON object `{"reqs": [{"id", "title", "type", "body", "source_doc", "satisfies", "verification", "raw_rst"}, ...]}` for `emit=rst`, or `{"codelinks": [str, ...]}` for `emit=codelinks_comment`. On missing tailoring with `on_missing_config=prompt`: single JSON object `{status: "needs_confirmation", proposal}`.
 - (c) Reward: language-parametric fixture — given `test_fixture.<ext>` (`.py` / `.cpp` / `.rs` / `.ts`) containing exactly 3 named symbols (`FooBar`, `BazQux`, `Quux`), emitted reqs must mention all 3 by canonical name. Directive name must equal `target_level`. If `parent_feat_ids` is non-empty, every emitted block MUST contain `:satisfies: <id1>, <id2>, ...` with all parents comma-joined.
 - (d) Reusable across reverse-engineering workflows, spec drafting, standalone CI "are there reqs for this code?" gates.
 - (e) Composable — strictly one phase. Never invokes `pharaoh-arch-draft`, `pharaoh-fmea`, `pharaoh-plan`.
@@ -115,6 +126,7 @@ If `on_missing_config == "prompt"` (default) AND tailoring is missing (no `targe
 
 - `file_path`: absolute path to the source file (any language).
 - `target_level`: requirement artefact directive name as declared in the consumer project's `ubproject.toml` (e.g. `"comp_req"`, `"impl"`, `"spec"`). ID prefix is `target_level` + `__` unless `[[needs.types]].prefix` overrides.
+- `tailoring_path`: absolute path to the project's `.pharaoh/project/` directory. Resolved per `skills/shared/tailoring-access.md`. Used by Step 1 to read `artefact-catalog.yaml` and the project's `ubproject.toml` once and cache the per-`target_level` declarations of `source_doc` and `verification` consumed by Rules 3 and 6.
 - `shared_context_path` (optional): companion source file read by all agents in the fan-out (e.g. `common.cpp`). Read but NOT reverse-engineered.
 - `papyrus_workspace` (optional): path to `.papyrus/` for canonical-term coordination. Absent → no-memory mode (skip Steps 1 and 3).
 - `reporter_id`: short identifier for this agent (e.g. `req-from-code:csv2needs.py`).
@@ -144,6 +156,8 @@ A single JSON object. The top-level key names the emit mode: `reqs` for `emit=rs
   ]
 }
 ```
+
+Both `source_doc` and `verification` are conditional emit. `source_doc` MUST be omitted (from both the JSON object and the `raw_rst` block) if the project's `artefact-catalog.yaml` does not declare `source_doc` for the directive's type. `verification` MUST be omitted if neither `[[needs.extra_links]]` in `ubproject.toml` nor the catalog declares `verification` for the type. See Rules 3 and 6.
 
 Field semantics:
 
@@ -201,7 +215,7 @@ Identifies one directive block bounded by the next `.. ` at column 0 or end of i
 
 1. `raw_rst` matches Stage 1 + Stage 2 — block is well-formed.
 2. `raw_rst` directive name equals `type` and equals input `target_level`.
-3. Stage 2 on `raw_rst` yields at least `id`, `status`, `source_doc`, and `verification`; values match the corresponding top-level fields.
+3. Stage 2 on `raw_rst` yields at least `id` and `status`. Whichever of `source_doc` and `verification` the project's tailoring declares for the directive's type MUST also appear. The other MUST NOT.
 4. If `parent_feat_ids` was provided: `satisfies` field is non-empty and lists every parent id; `raw_rst` `:satisfies:` (or tailored child→parent link name) value matches.
 5. Every option in `raw_rst` is either declared in `ubproject.toml` `[[needs.types]]`, a built-in sphinx-needs option, or a Pharaoh convention option. Reject unknown names (catches typos like `subsatisfies`).
 6. If `allowed_ids` was provided: every `reqs[*].id` is a member of `allowed_ids`.
@@ -211,6 +225,8 @@ Identifies one directive block bounded by the next `.. ` at column 0 or end of i
 ## Process
 
 ### Step 1: Query Papyrus for canonical terms BEFORE naming
+
+Resolve `tailoring_path` per `skills/shared/tailoring-access.md`. Read `<tailoring_path>/artefact-catalog.yaml` and `<project_root>/ubproject.toml` once. Cache the per-`target_level` declarations of `source_doc` (field) and `verification` (link or field) for use by Rules 3 and 6.
 
 Only applies if `papyrus_workspace` is provided. For each type / function / concept you may name in a req:
 
@@ -264,13 +280,15 @@ For each boundary-observable behavior (per Rule 5 enumeration):
 - `:id: <id_prefix><filename_stem>_<n>` — `<id_prefix>` resolved in Step 4. File basename (stem, snake_case) as disambiguator. Examples: `comp_req__csv2needs_01`, `CREQ_csv2needs_01`.
 - `:status: draft`.
 - `:satisfies: <parent_1>, ...` — iff `parent_feat_ids` non-empty. All parents comma-joined. If `[[needs.extra_links]]` declares a different outgoing name (e.g. `realizes`), use that instead.
-- `:source_doc: <path to implementing source file>` — per Rule 3.
-- `:verification: tc__TBD` — per Rule 6.
+- `:source_doc: <path to implementing source file>` -- emit only if the project's `artefact-catalog.yaml` declares `source_doc` for `target_level` per Rule 3.
+- `:verification: tc__TBD` -- emit only if `[[needs.extra_links]]` in `ubproject.toml` declares `verification` (or the catalog declares it as a field) for `target_level` per Rule 6. Use the project's declared placeholder when one is configured.
 - Body — single shall clause, component subject (Rule 1), no internals (Rule 2), adds constraint (Rule 4), atomicity + no conjunctions (Atomicity rule above). Canonical names from Steps 1/3.
 
 ### Step 5b: Emit — `codelinks_comment` mode
 
 For each behavior, emit one line that sphinx-codelinks' oneline parser would read back into a need equivalent to what `rst` mode would produce. Follow tailored `needs_fields` order and escape rules. Do NOT include the language comment prefix — that is `pharaoh-req-codelink-annotate`'s concern.
+
+Rules 3 and 6 do not gate codelinks-mode output. The `:source_doc:` and `:verification:` RST options have no counterpart in the one-line comment string. Code grounding is implicit (the comment lives in the source file itself) and the verification relation is carried via the tailored `needs_fields` (e.g. as a `links` slot or omitted entirely). Project tailoring of which fields appear in the comment is governed by `[codelinks.projects.<name>.analyse.oneline_comment_style]`, not by `artefact-catalog.yaml` or `[[needs.extra_links]]`.
 
 The `links` field renders as `[<parent_1>, ...]` when `parent_feat_ids` non-empty, else `[]` (or omitted if tailored `default = []`). The body shall-clause does NOT fit on a one-line comment — implied by the title and lost in this mode. For full shall-clause text use `emit="rst"`.
 
