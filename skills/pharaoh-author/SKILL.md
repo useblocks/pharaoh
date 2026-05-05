@@ -105,12 +105,20 @@ the fallback in the authoring summary.
 
 Apply the routing table:
 
-| Resolved key | Dispatched skill |
-|---|---|
-| `req`, `gd_req`, `comp_req`, `feat`, or any key whose suffix is `req` | `pharaoh-req-draft` |
-| `arch` | `pharaoh-arch-draft` |
-| `tc` | `pharaoh-vplan-draft` |
-| `decision` | `pharaoh-decide` |
+| Resolved key | Dispatched skill | Notes |
+|---|---|---|
+| `req`, `gd_req`, `comp_req`, `feat`, or any key whose suffix is `req` | `pharaoh-req-draft` | |
+| any catalog key categorised as architecture (e.g. `arch`, `swarch`, `sys-arch`, `module`, `component`, `interface`) | `pharaoh-arch-draft` | type-agnostic; `target_level` forwarded verbatim |
+| any catalog key categorised as verification-plan / test-case (e.g. `tc`, `test`, `vplan`) | `pharaoh-vplan-draft` | type-agnostic; `target_level` forwarded verbatim |
+| `decision` | `pharaoh-decide` | |
+
+Categorisation is read from the `category` field of each entry in
+`.pharaoh/project/artefact-catalog.yaml` when present. When the catalog does not declare
+a category, the resolution table in Step 0 above applies (e.g. `architecture` /
+`specification` / `module` / `component` / `interface` user inputs all resolve to the
+architecture category; `test_case` / `verification_plan` / `vplan` resolve to the
+verification-plan category). The router never matches on a hardcoded type-name allow-list —
+any catalog-declared type in the right category routes correctly.
 
 If the resolved key matches none of the above (typical for safety-V types like `hazard`,
 `safety_goal`, `fsr`, `tsr`), emit a clear pointer to the future safety-V drafting work and
@@ -118,16 +126,19 @@ stop:
 
 ```
 FAIL: no atomic drafter is registered for target_type "<resolved key>" yet.
-The author router covers req, arch, tc, decision today. Safety-V drafters
-(hazard, safety_goal, fsr, tsr) are tracked under issue #13 §9c. Until they
-land, draft this artefact manually or extend pharaoh-author with a new
-dispatch entry once the drafter exists.
+The author router covers req-shaped, arch-shaped, vplan-shaped, and decision types today.
+Safety-V drafters (hazard, safety_goal, fsr, tsr) are tracked under issue #13 §9c. Until
+they land, draft this artefact manually or extend pharaoh-author with a new dispatch entry
+once the drafter exists.
 ```
 
-The dispatch entries for `pharaoh-arch-draft` and `pharaoh-vplan-draft` are deliberately thin
-single-call passthroughs. Their interfaces will be parameterised in a follow-up phase
-(removing the hardcoded `arch_type` allow-list and the `tc__` prefix), at which point the
-routing arguments below will be revisited.
+These routing entries were thin passthroughs in the initial `pharaoh-author` commit. This
+update reflects the parameterised interfaces of the two drafting skills — both
+`pharaoh-arch-draft` and `pharaoh-vplan-draft` now accept any catalog-declared type via
+`target_level` (no more hardcoded `arch_type ∈ {module, component, interface}` allow-list,
+no more hardcoded `tc__` prefix). The router forwards `target_level` verbatim and lets the
+drafter resolve prefix and required fields from `artefact-catalog.yaml` /
+`id-conventions.yaml`.
 
 ---
 
@@ -141,16 +152,22 @@ let the dispatched skill apply its own defaults and FAIL when its inputs are ins
 - `feature_context` ← `draft_seed`
 - `parent_link` ← `parent_link` (may be a workflow-id when drafting a top-level requirement)
 
-**`pharaoh-arch-draft`** *(thin passthrough — interface to be parameterised in a follow-up)*
+**`pharaoh-arch-draft`**
 
 - `parent_req_id` ← `parent_link`
-- `arch_type` ← user-supplied if present; otherwise pass through and let the drafter FAIL
-  with its own `arch_type "<value>" is not recognised` diagnostic
+- `target_level` ← the resolved catalog key from Step 0 (e.g. `arch`, `swarch`, `sys-arch`,
+  `module`, `component`, `interface`). The drafter looks up the entry in
+  `artefact-catalog.yaml` and the prefix in `id-conventions.yaml`; if either is missing it
+  FAILs with a clear "type X not declared" message
 - `element_description` ← `draft_seed`
 
-**`pharaoh-vplan-draft`** *(thin passthrough — interface to be parameterised in a follow-up)*
+**`pharaoh-vplan-draft`**
 
 - `parent_id` ← `parent_link`
+- `target_level` ← the resolved catalog key from Step 0 (e.g. `tc`, `test`, `vplan`). The
+  drafter derives the directive name from `target_level` and the ID prefix from
+  `id-conventions.yaml`'s `prefixes` map — a project whose `test` type uses prefix `T_`
+  emits compliant `T_…` IDs without modifying the skill
 - `verification_level` ← user-supplied if present (`unit` / `integration` / `system`); the
   drafter will FAIL on a missing or unrecognised value
 
@@ -248,13 +265,12 @@ use `pharaoh-req-review` / `pharaoh-arch-review` / `pharaoh-vplan-review`.
 > draft_seed: "Manages the ABS pump drive circuit, including PWM duty-cycle control and
 > over-current protection."
 > parent_link: `gd_req__abs_pump_activation`
-> arch_type: `component`
 
 **Step 0:** `arch` resolves directly to catalog key `arch`.
 
-**Step 1:** routing table → `pharaoh-arch-draft`.
+**Step 1:** routing table → `pharaoh-arch-draft` (architecture category).
 
-**Step 2:** forward `parent_req_id`, `arch_type`, `element_description`.
+**Step 2:** forward `parent_req_id`, `target_level=arch`, `element_description`.
 
 **Step 3:** `pharaoh-arch-draft` returns its RST block for `arch__abs_pump_driver`.
 
@@ -269,7 +285,6 @@ Suggested placement: `docs/requirements/architecture.rst`.
    :id: arch__abs_pump_driver
    :status: draft
    :satisfies: gd_req__abs_pump_activation
-   :type: component
 
    The ABS pump driver component manages the pump drive circuit, controlling
    output PWM duty cycle and providing over-current protection for the pump motor.

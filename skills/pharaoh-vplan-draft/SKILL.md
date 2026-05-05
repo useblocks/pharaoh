@@ -1,6 +1,6 @@
 ---
 name: pharaoh-vplan-draft
-description: Use when drafting a single sphinx-needs test-case (verification plan item) for one requirement. Emits an RST tc__ directive with inputs, steps, and expected outcome, linking to the parent req via :verifies:.
+description: Use when drafting a single sphinx-needs test-case (verification plan item) for one requirement. The artefact type is parameterised via `target_level` (any catalog-declared verification-plan / test-case type — e.g. `tc`, `test`, `vplan`). Emits an RST directive with inputs, steps, and expected outcome, linking to the parent req via `:verifies:`.
 chains_from: [pharaoh-req-draft, pharaoh-req-regenerate, pharaoh-arch-draft]
 chains_to: [pharaoh-vplan-review]
 ---
@@ -10,7 +10,10 @@ chains_to: [pharaoh-vplan-review]
 ## When to use
 
 Invoke when the user has a validated requirement (or architecture element) and wants to derive a
-single test case that verifies it. Each invocation produces exactly one `tc__` directive.
+single test case that verifies it. Each invocation produces exactly one directive of the
+catalog-declared verification-plan type. The directive name and ID prefix are resolved from
+the project's tailoring; this skill is type-agnostic and supports any catalog-declared
+verification-plan type (typical names: `tc`, `test`, `vplan`).
 
 Do NOT draft multiple test cases in one invocation — one test case per call.
 Do NOT draft test cases for requirements that are not verifiable (see Guardrail G3).
@@ -22,11 +25,16 @@ Do NOT review — use `pharaoh-vplan-review` after drafting.
 
 - **parent_id** (from user): need-id of the parent requirement or architecture element to verify
   — must exist in needs.json
+- **target_level** (from user, default `tc`): the artefact-catalog type name to emit. Any
+  verification-plan / test-case type declared in `.pharaoh/project/artefact-catalog.yaml`
+  is accepted. The emitted directive uses `target_level` verbatim as the directive name; the
+  ID prefix is resolved from `id-conventions.yaml`'s `prefixes` map.
 - **verification_level** (from user): one of `unit`, `integration`, or `system`
 - **tailoring** (from `.pharaoh/project/`):
-  - `artefact-catalog.yaml` — look up the `tc` entry if it exists; fall back to prefix `tc__`
-    and default required fields if absent
-  - `id-conventions.yaml` — prefix, separator, id_regex
+  - `artefact-catalog.yaml` — look up the entry for `target_level` to read `required_fields`,
+    `optional_fields`, `lifecycle`, and `required_body_sections`
+  - `id-conventions.yaml` — `prefixes` map (key = type name → value = identifier prefix
+    string), `separator`, `id_regex`
 - **needs.json**: required for parent resolution and ID uniqueness
 
 > Note: A `shared/tailoring-access.md` helper module is planned. Until it exists, Steps 1-2 below
@@ -37,9 +45,10 @@ Do NOT review — use `pharaoh-vplan-review` after drafting.
 
 ## Outputs
 
-A single RST `tc__` directive block containing:
+A single RST directive block of type `target_level` containing:
 
-- Unique ID per id-conventions (prefix `tc__` unless catalog overrides)
+- Unique ID using the prefix resolved for `target_level` from `id-conventions.yaml`'s
+  `prefixes` map
 - `:status: draft`
 - `:verifies:` pointing to parent_id (validated in needs.json)
 - `:level:` set to the requested verification_level (`unit` / `integration` / `system`)
@@ -56,24 +65,37 @@ without reading any other document beyond the referenced parent requirement.
 
 **1a. `artefact-catalog.yaml`**
 
-Look up the `tc` entry. If found, read `required_fields`, `optional_fields`, `lifecycle`,
-and `required_body_sections`.
+Look up the entry whose key equals `target_level`. If found, read `required_fields`,
+`optional_fields`, `lifecycle`, and `required_body_sections`.
 
 **`required_fields` / `optional_fields`** are directive option names (sphinx-needs `:key: value`
 options). **`required_body_sections`** are top-level Markdown/RST section headings that must
 appear in the directive body prose (e.g. `Inputs`, `Steps`, `Expected`).
 
-If the `tc` entry does not exist, use these defaults:
-- `required_fields`: `[id, status, verifies]`
-- `optional_fields`: `[tags, rationale, level]`
-- `required_body_sections`: `[Inputs, Steps, Expected]`
-- `lifecycle`: `[draft, valid, inspected]`
+If the entry is absent, FAIL:
 
-Note the fallback in output if defaults were applied.
+```
+FAIL: target_level "<value>" is not declared in .pharaoh/project/artefact-catalog.yaml.
+Add an entry for "<value>" (with required_fields, required_body_sections, lifecycle) before
+drafting, or pass a target_level that is already declared.
+```
 
 **1b. `id-conventions.yaml`**
 
-Extract `separator` and `id_regex`. Use prefix `tc__` unless the catalog specifies otherwise.
+Read the `prefixes:` map and look up the prefix for `target_level`. Also extract
+`separator` and `id_regex`.
+
+If `prefixes` does not declare `target_level`, FAIL:
+
+```
+FAIL: id-conventions.yaml prefixes map has no entry for "<value>".
+Declare a prefix for "<value>" (e.g. T_ for a type named "test", or TC_ for "tc")
+before drafting.
+```
+
+The resolved prefix is the value of `prefixes[target_level]` — e.g. `tc__` for
+`target_level: tc` on a project that uses the double-underscore convention, `T_` for
+`target_level: test` on a project that uses underscore separators.
 
 **1c. Validate verification_level**
 
@@ -113,7 +135,8 @@ Specify an existing requirement or architecture element ID.
 
 3. Check whether the parent's type is testable:
    - Requirement types (prefix ends in `req`) — always valid
-   - Architecture elements (prefix `arch__`) — valid at integration/system level only
+   - Architecture elements (any catalog-declared architecture type) — valid at
+     integration/system level only
    - Workflow/work-product types (`wf`, `wp`) — warn but do not block:
      ```
      [WARNING] parent_id "<id>" has type "<type>". Verification plans are usually written
@@ -143,19 +166,34 @@ test case.
 
 **5a. Derive local-ID part**
 
-Format: `tc__<local>` where local is derived from the parent_id local part plus a level suffix:
-- Strip the prefix from parent_id: `gd_req__abs_pump_activation` → `abs_pump_activation`
-- Append `_<verification_level>`: → `abs_pump_activation_system`
+Format: `<prefix><tail>` where `<prefix>` is the value resolved in Step 1b. The tail is
+derived from the parent_id local part plus a level suffix:
+
+- Strip the parent's prefix from `parent_id`: `gd_req__abs_pump_activation` → `abs_pump_activation`
+- Append `_<verification_level>` → `abs_pump_activation_system`
+- Compose the full ID by concatenating `<prefix>` + `<tail>`. If `id-conventions.yaml`
+  declares an explicit `separator` distinct from any trailing punctuation in the prefix,
+  insert it between prefix and tail.
+
+Examples:
+
+- `prefixes: {tc: tc__}` → `tc__abs_pump_activation_system`
+- `prefixes: {test: T_}` → `T_abs_pump_activation_system`
 
 Check uniqueness. If taken, append `_2`, `_3`, etc.
 
 **5b. Validate against id_regex**
 
-Confirm the candidate matches `id_regex`. If it does not, FAIL:
+Confirm the candidate matches the `id_regex` declared in `id-conventions.yaml`. If it does
+not, FAIL:
 
 ```
 FAIL: generated ID "<id>" does not match id_regex "<regex>".
 ```
+
+This is the gate that catches a hardcoded prefix mismatch — e.g. emitting `tc__foo_unit`
+on a project whose `test` type uses prefix `T_` and a regex `^T_[A-Za-z0-9_]+$`. Because
+the prefix is read from `prefixes[target_level]`, this case is now caught at draft time.
 
 ---
 
@@ -219,7 +257,7 @@ If any check fails after one rewrite attempt, emit with `[DIAGNOSTIC]`.
 ### Step 8: Emit the directive block
 
 ```rst
-.. tc:: <test case title>
+.. <target_level>:: <test case title>
    :id: <id>
    :status: draft
    :verifies: <parent_id>
@@ -237,13 +275,8 @@ If any check fails after one rewrite attempt, emit with `[DIAGNOSTIC]`.
    <pass criterion>
 ```
 
-If the `tc` entry was absent from artefact-catalog and defaults were applied, append:
-
-```
-[NOTE] artefact-catalog.yaml has no 'tc' entry. Prefix 'tc__' and default required fields
-[id, status, verifies, inputs, steps, expected] were used. Add a 'tc' entry to
-.pharaoh/project/artefact-catalog.yaml before promoting beyond draft.
-```
+The directive name is exactly `target_level`; the `:id:` value uses the prefix resolved from
+`id-conventions.yaml`'s `prefixes` map. Both come from tailoring — neither is hardcoded.
 
 ---
 
@@ -266,6 +299,12 @@ placeholder test case — improve the parent first.
 
 Cannot find needs.json → FAIL (Step 2).
 
+**G5 — target_level not declared**
+
+If `target_level` is not declared in `artefact-catalog.yaml` or has no entry in
+`id-conventions.yaml`'s `prefixes` map, FAIL (Step 1 handles this). The catalog is the
+contract — never silently default to a hardcoded prefix.
+
 ---
 
 ## Advisory chain
@@ -282,14 +321,18 @@ Do not show this if the emit included a `[DIAGNOSTIC]`.
 
 ## Worked example
 
+### Example A — default `target_level: tc`
+
 **User input:**
-> Parent: `gd_req__abs_pump_activation`; level: `system`.
+> Parent: `gd_req__abs_pump_activation`; level: `system`. (`target_level` defaults to `tc`.)
 
 **Parent body (from needs.json):**
 > "The brake controller shall engage the ABS pump when measured wheel slip exceeds the calibrated
 > activation threshold."
 
-**Step 1:** No `tc` entry in artefact-catalog.yaml. Defaults applied. Level `system` is valid.
+**Step 1:** Catalog has a `tc` entry with `required_fields: [id, status, verifies]` and
+`required_body_sections: [Inputs, Steps, Expected]`. `id-conventions.yaml` `prefixes` map
+has `tc: tc__`. Level `system` is valid.
 
 **Step 2:** needs.json found; 185 IDs loaded.
 
@@ -298,8 +341,8 @@ Do not show this if the emit included a `[DIAGNOSTIC]`.
 **Step 4:** Testable claim — "engage the ABS pump when wheel slip exceeds the calibrated
 activation threshold" — discrete activation event, verifiable by observing pump output signal.
 
-**Step 5:** local = `abs_pump_activation_system`; candidate = `tc__abs_pump_activation_system`.
-Not in needs.json. Passes id_regex.
+**Step 5:** prefix = `tc__`; tail = `abs_pump_activation_system`; candidate =
+`tc__abs_pump_activation_system`. Not in needs.json. Passes id_regex.
 
 **Step 6 body drafted** (see output below).
 
@@ -332,12 +375,36 @@ concrete ("ABS pump output signal activates within 50 ms"). All pass.
 ```
 
 ```
-[NOTE] artefact-catalog.yaml has no 'tc' entry. Prefix 'tc__' and default required fields
-[id, status, verifies, inputs, steps, expected] were used. Add a 'tc' entry to
-.pharaoh/project/artefact-catalog.yaml before promoting beyond draft.
-
 Consider running `pharaoh-vplan-review tc__abs_pump_activation_system` to audit against per-axis criteria.
 ```
+
+### Example B — project that uses `test` with prefix `T_`
+
+**User input:**
+> Parent: `req__login_lockout`; target_level: `test`; level: `unit`.
+
+**Step 1:** Catalog has a `test` entry with `required_fields: [id, status, verifies]` and
+`required_body_sections: [Inputs, Steps, Expected]`. `id-conventions.yaml` `prefixes` map
+has `test: T_`. Level `unit` is valid.
+
+**Step 5:** prefix = `T_`; tail = `login_lockout_unit`; candidate = `T_login_lockout_unit`.
+Passes id_regex `^T_[A-Za-z0-9_]+$`.
+
+**Step 8 output (header only):**
+
+```rst
+.. test:: Login lockout — unit test
+   :id: T_login_lockout_unit
+   :status: draft
+   :verifies: req__login_lockout
+   :level: unit
+
+   ...
+```
+
+A skill that hardcoded `tc__` would have emitted `tc__login_lockout_unit`, which fails the
+project's `T_…` `id_regex` at Step 5b. By deriving prefix and directive name from tailoring
+the same skill serves both projects.
 
 ## Last step
 
