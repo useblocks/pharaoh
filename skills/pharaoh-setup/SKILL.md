@@ -248,23 +248,64 @@ Generate the `pharaoh.toml` content using the detected project data. Use `pharao
   ```
 
 **`[pharaoh.traceability]` section:**
-- Build `required_links` from the detected extra link types, but **only for type pairs where BOTH types are declared in `ubproject.toml` `[[needs.types]]`.** A chain `comp_req -> test` where `test` is not a declared type is dead config — it alarms on every `comp_req` from day one. Skip it.
-- For each extra link type, determine the source and target types by examining the link's usage in existing need directives. If the link name is `implements`, and it appears on `impl` directives pointing to `spec` directives, generate `"spec -> impl"` only if both `impl` and `spec` are declared.
-- If usage cannot be determined from existing needs, infer from naming conventions:
-  - `implements` or `realizes` -> `"spec -> impl"`
-  - `tests` or `verifies` -> `"impl -> test"`
-  - `satisfies` or `fulfills` -> `"req -> spec"`
-  - `derives` or `derives_from` -> `"req -> req"` (parent to child)
-- Also check for standard `links` usage to detect implicit traceability chains (e.g., specs linking to reqs via `:links:`).
-- If the project has a clear type hierarchy (e.g., req -> spec -> impl -> test), generate the full chain — but filter out any edges whose target type is not declared:
-  ```toml
-  required_links = [
-      "req -> spec",
-      "spec -> impl",
-      # "impl -> test",  # SKIPPED: 'test' is not declared in [[needs.types]]
-  ]
-  ```
-- If no link types are detected, leave `required_links` as an empty array with a comment explaining how to add entries.
+
+`required_links` declares chains in the form `"source-type -> target-type"`. The semantics enforced by `pharaoh:mece` are: every need of `source-type` must have at least one outgoing link to a need of `target-type` (see `skills/pharaoh-mece/SKILL.md` Step 2). The chain direction is therefore the direction the link option resolves, **not** the direction of the conceptual type hierarchy. Both conventions exist in the wild — some projects put `:implements:` on the `impl` directive (child references parent, chain `impl -> spec`); others put `:specifies:` on the `spec` directive (parent references child, chain `spec -> impl`). Inferring direction from the link option name picks one convention and emits inverted chains for projects on the other; `pharaoh:mece` then reports 100% gaps for the source type. Resolve direction from ground truth instead.
+
+Apply the following sources in priority order. For each link option, stop at the first source that resolves a direction.
+
+**Source 1 — built `needs.json` (preferred, when available).** If the project has a built `needs.json` (typical paths: `<source-dir>/_build/needs/needs.json`, `<source-dir>/_build/html/needs.json`, or any `needs.json` under `_build/`), parse it and inspect the actual edges:
+
+For each declared link option `L` (including the standard `:links:`) and each ordered pair of declared types `(X, Y)`:
+
+1. Let `n_X` = count of needs of type `X` whose `:L:` value is non-empty.
+2. Let `n_X_to_Y` = count of those needs whose `:L:` resolves to at least one need of type `Y`.
+3. Emit `"X -> Y"` only if `n_X >= 3` and `n_X_to_Y / n_X >= 0.9`.
+
+The thresholds (`>= 3` instances, `>= 90%` coverage) suppress chains inferred from a single accidental edge while still emitting chains the project consistently produces. Include a comment recording the sample size:
+
+```toml
+required_links = [
+    "spec -> req",   # needs.json: 18/18 spec needs link to req via :reqs:
+    "impl -> spec",  # needs.json: 35/35 impl needs link to spec via :implements:
+]
+```
+
+**Source 2 — declared semantics from `[needs.links.<name>]` (greenfield, no `needs.json`).** The `outgoing` and `incoming` descriptions identify the verb and which side bears the link option, but they do not, on their own, identify the type pair: any type can carry any link option. Without empirical edges or an explicit hint, the source and target types are unknown.
+
+Use this source only when `ubproject.toml` carries an explicit hint (e.g., a future `[needs.links.<name>] from = "<type>", to = "<type>"` extension). Do not invent the type pair from the link option name.
+
+**Source 3 — refuse to guess.** When neither source resolves a link option to a `(source-type, target-type)` pair, do **not** emit a chain for that link. Emit a TODO comment in its place so the user sees what was skipped and why:
+
+```toml
+required_links = [
+    "spec -> req",  # needs.json: 18/18 spec needs link to req via :reqs:
+    # TODO: link option `implements` is declared but no `needs.json` was
+    #   found. Build the docs once and re-run `pharaoh:setup`, or add an
+    #   explicit chain manually in the form "source-type -> target-type".
+]
+```
+
+The previous heuristic-name table (`implements -> "spec -> impl"`, `tests -> "impl -> test"`, etc.) is removed: it encoded one project convention as universal and produced inverted chains on every project that used the opposite convention.
+
+**Type-pair filter (applied to every source).** Emit a chain only when both the source type and the target type are declared in `ubproject.toml` `[[needs.types]]`. When Source 1 resolves an edge whose target type is not declared, drop it with a comment naming the dropped target — the chain is dead config that would alarm on every source need from day one:
+
+```toml
+required_links = [
+    "req -> spec",
+    "spec -> impl",
+    # "impl -> test",  # SKIPPED: 'test' is not declared in [[needs.types]]
+]
+```
+
+**Empty-array fallback.** If no link option resolves to a chain by any source, emit:
+
+```toml
+required_links = [
+    # No traceability chains inferred. Add entries of the form
+    # "source-type -> target-type" once the link conventions stabilise,
+    # or build the docs and re-run `pharaoh:setup` to infer from `needs.json`.
+]
+```
 
 **`[pharaoh.codelinks]` section:**
 - Set `enabled = true` if sphinx-codelinks was detected in Step 1e.
