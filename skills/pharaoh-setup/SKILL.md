@@ -182,13 +182,18 @@ If the user does not specify, default to `"advisory"`.
 
 Pharaoh's workflow gates (`require_change_analysis`, `require_verification`, `require_mece_on_release`) have different natural defaults depending on where the project sits in its lifecycle. Hardcoding the example's values is what produced the pilot feedback: a reverse-engineering project had `require_change_analysis = true` on day one, alarming every newly-drafted need because there was no Pharaoh change issue yet.
 
-Classify the project into one of three modes using the following heuristic (first matching branch wins):
+Classify the project into one of three modes by inspecting **declared types in `ubproject.toml`** and **existing RST content under the source tree** — not by `needs.json` existence. `needs.json` is a gitignored build artefact; using it as a signal misclassifies every fresh clone as `reverse-eng` until `sphinx-build` runs.
 
-| Signal                                                                                           | Inferred mode  |
-| ------------------------------------------------------------------------------------------------ | -------------- |
-| `needs.json` exists (e.g. `docs/_build/needs/needs.json`) and contains ≥10 needs.                 | `steady-state` |
-| No `needs.json` or <10 needs, AND the source tree has ≥5 code files AND `docs/` has prose files with section headers that read like user-facing features (e.g. imperative verbs, capability lists). | `reverse-eng`  |
-| Otherwise (thin project: no needs, minimal src, placeholder docs).                                | `greenfield`   |
+Apply rules in order; the first matching branch wins:
+
+| Signal                                                                                                                                                                                                                          | Inferred mode  |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| `[[needs.types]]` declared **and** the source tree has at least one `.. <directive>::` block in any `.rst` file under the source dir **and** ≥10% of those needs carry a status from a "matured" set (`approved`, `closed`, `reviewed`, `passed`). | `steady-state` |
+| `[[needs.types]]` declared **and** the source tree has at least one `.. <directive>::` block in any `.rst` file. (Active drafting; not enough matured-status needs to qualify as steady-state yet.)                              | `reverse-eng`  |
+| `[[needs.types]]` declared **but** no `.. <directive>::` blocks found in any `.rst` file. (Types declared, no needs authored.)                                                                                                   | `greenfield`   |
+| `[[needs.types]]` **not** declared. Step 1 already routed this case to `pharaoh-bootstrap`; should not reach here. If it does, FAIL.                                                                                            | (n/a)          |
+
+The classifier reads RST files directly; it does NOT depend on `needs.json` and does NOT depend on prose-feature heuristics. The heuristic "`docs/` has prose files with imperative verbs" was previously used to disambiguate `reverse-eng` vs `greenfield` — it is replaced by the cleaner test "are there sphinx-needs directives in the RST tree".
 
 Present the detected mode and ask the user to confirm or override:
 
@@ -231,10 +236,42 @@ Generate the `pharaoh.toml` content using the detected project data. Use `pharao
 - Set `strictness` to the user's choice from Step 2a.
 
 **`[pharaoh.id_scheme]` section:**
-- Analyze existing need IDs across all project roots to detect the ID pattern.
-- Look for common patterns: `{TYPE}_{NUMBER}` (e.g., `REQ_001`), `{TYPE}-{MODULE}-{NUMBER}` (e.g., `REQ-BRAKE-001`), or other conventions.
-- Set `pattern` to the detected pattern. If no clear pattern is detected, use `"{TYPE}_{NUMBER}"` as a reasonable default.
-- Set `auto_increment = true`.
+
+Detect the ID pattern descriptively from existing IDs in the RST tree. Do NOT default to `{TYPE}_{NUMBER}` without first checking whether observed IDs conform to it.
+
+1. Sample existing need IDs: glob `<source-dir>/**/*.rst`, extract the `:id:` value from every sphinx-needs directive (`.. <directive>:: <ID>` or `:id: <ID>`). Take up to 20 samples (or all if fewer exist).
+2. Classify the dominant shape:
+
+   | Observed shape                                              | Pattern token             | Example                |
+   | ----------------------------------------------------------- | ------------------------- | ---------------------- |
+   | `<TYPE-PREFIX-FROM-needs.types>_<digits>`                   | `{TYPE}_{NUMBER}`         | `REQ_001`, `FEAT_42`   |
+   | `<TYPE-PREFIX>-<UPPER-MODULE>-<digits>`                     | `{TYPE}-{MODULE}-{NUMBER}`| `REQ-BRAKE-001`        |
+   | `<UPPER-DOMAIN>_<digits>` where the leading token is **not** any declared type prefix in `[[needs.types]]` | `{DOMAIN}_{NUMBER}`       | `BRAKE_CTRL_01`, `FSR_POWER_01` |
+   | Heterogeneous / no clear shape                              | (no pattern)              | (mixed)                |
+
+   The `{DOMAIN}_{NUMBER}` test is what catches the `useblocks/sphinx-needs-demo` case: IDs lead with a domain name (e.g. `BRAKE_CTRL`) rather than the directive's declared type prefix.
+
+3. Emit the detected pattern as `pattern = "{TYPE}_{NUMBER}"` / `pattern = "{DOMAIN}_{NUMBER}"` / etc. and a comment recording the sample size:
+
+   ```toml
+   [pharaoh.id_scheme]
+   # Inferred from 20 sampled IDs in source-dir/**/*.rst.
+   # Observed shape: {DOMAIN}_{NUMBER} (e.g. BRAKE_CTRL_01).
+   pattern = "{DOMAIN}_{NUMBER}"
+   auto_increment = true
+   ```
+
+4. **No-evidence fallback.** If zero IDs are found in the RST tree (greenfield), fall back to `pattern = "{TYPE}_{NUMBER}"` with a comment marking the value as a default not derived from observation:
+
+   ```toml
+   pattern = "{TYPE}_{NUMBER}"  # default; no IDs observed in RST tree
+   ```
+
+5. **Heterogeneous fallback.** If observed IDs do not fit any single shape, emit `pattern = "{ANY}"` with a TODO comment asking the user to declare the project's convention manually. Do NOT silently force `{TYPE}_{NUMBER}`.
+
+6. `auto_increment = true` is unchanged.
+
+The matching `id_regex` for `.pharaoh/project/id-conventions.yaml` (Step 5b) is derived from the same observation: for `{DOMAIN}_{NUMBER}` emit `^[A-Z][A-Z0-9_]*_[0-9]+$`; for `{TYPE}_{NUMBER}` emit the union of declared `[[needs.types]] prefix` values + digits anchor; etc.
 
 **`[pharaoh.workflow]` section:**
 - Persist the chosen mode as a real key (`mode = "reverse-eng" | "greenfield" | "steady-state"`). The key lives in `pharaoh.toml` alongside the gate flags so a later reader (and any skill that wants to reason about lifecycle stage) can parse it directly. Do NOT persist it as a comment-only line — comments are not parseable.
@@ -288,6 +325,8 @@ required_links = [
 ```
 
 The previous heuristic-name table (`implements -> "spec -> impl"`, `tests -> "impl -> test"`, etc.) is removed: it encoded one project convention as universal and produced inverted chains on every project that used the opposite convention.
+
+**Coverage note.** Source 1 iterates over **every** link option declared in `[needs.links.<name>]` (and the built-in `:links:`). There is no per-link-name allow-list. A `useblocks/sphinx-needs-demo`-style project declaring `verifies`, `satisfies`, `implements`, `triggers`, `derives_from`, etc. has every option evaluated against the same coverage threshold. This closes the PR #14 follow-up: the direction-inference rule is uniform across the full declared set, not specific to a fixed list of relations.
 
 **Type-pair filter (applied to every source).** Emit a chain only when both the source type and the target type are declared in `ubproject.toml` `[[needs.types]]`. When Source 1 resolves an edge whose target type is not declared, drop it with a comment naming the dropped target — the chain is dead config that would alarm on every source need from day one:
 
@@ -551,13 +590,267 @@ Determine the current tier:
 
 ---
 
-### Step 5b: Bootstrap tailoring from declared types
+### Step 5b: Bootstrap tailoring from declared types and observed RST content
 
-After `pharaoh.toml` is written, invoke `pharaoh-tailor-bootstrap` with `project_root` = the workspace root and `on_missing_config` = `"prompt"` (so the user confirms the generated content).
+After `pharaoh.toml` is written, generate `.pharaoh/project/{workflows,id-conventions,artefact-catalog}.yaml` plus `checklists/<type>.md` per declared type. The bootstrap is **descriptive**: it captures what the project already declares and what existing RST content already uses, falling back to Pharaoh-internal defaults only when no project signal is available.
 
-This produces `.pharaoh/project/{workflows,id-conventions,artefact-catalog}.yaml` plus `checklists/<type>.md` per declared type. Without this step, every emitted need has `:status: draft` forever with no defined lifecycle transitions.
+The base shapes and fallbacks are documented in `pharaoh-tailor-bootstrap` — invoke it for the structural emission. Before invoking it, gather the project-state inputs below and pass them as overrides so the emitted tailoring matches the project's reality, not a Pharaoh-internal placeholder set.
 
-If the user rejects the proposal, skip — the caller may run `pharaoh-tailor-fill` later (after needs exist) as the alternative path.
+#### 5b.1. Read `[needs.fields.X]` from `ubproject.toml` (artefact-catalog `optional_fields` and `required_metadata_fields`)
+
+For each declared `[needs.fields.<name>]` table in `ubproject.toml`:
+
+- The `<name>` is a sphinx-needs option key (e.g. `asil`, `severity`, `exposure`, `controllability`, `safe_state`).
+- If the table declares `required = true` (or any explicit-required marker the project uses), add `<name>` to that type's `required_metadata_fields`.
+- Otherwise, add `<name>` to that type's `optional_fields`.
+- Scope: if `[needs.fields.<name>]` declares `applies_to = ["<type1>", "<type2>"]`, restrict to those types. Without an `applies_to`, treat as global and add to every declared type's `optional_fields`.
+
+When `[needs.fields.X]` is **declared** in `ubproject.toml`, the Pharaoh-internal placeholder set (`reviewer`, `approved_by`, `source_doc`) is appended only for types that do not already have at least one project-declared field — i.e., we add Pharaoh defaults on top of the project's own fields, never as a replacement.
+
+When `[needs.fields.X]` is **absent**, fall back to `pharaoh-tailor-bootstrap`'s built-in default (`optional_fields: [reviewer, approved_by, source_doc]`).
+
+#### 5b.2. Compute lifecycle from RST status histogram (`workflows.yaml lifecycle_states`)
+
+Glob `<source-dir>/**/*.rst` and parse `:status: <value>` from every sphinx-needs directive. Build a histogram of observed values.
+
+- If the histogram is non-empty and at least two distinct values appear, set `lifecycle_states` to the observed values, ordered by frequency descending. Emit a comment recording the histogram counts.
+- If only one distinct value appears (e.g. every need has `:status: open`), still emit it as the first lifecycle state but append the Pharaoh defaults (`draft`, `reviewed`, `approved`) so transitions are at least defined.
+- If no `:status:` fields are found anywhere, fall back to `pharaoh-tailor-bootstrap`'s default `[draft, reviewed, approved]`.
+
+Worked example for `useblocks/sphinx-needs-demo`-style histogram (`open: 145, closed: 16, passed: 7, approved: 2`):
+
+```yaml
+# workflows.yaml — generated by pharaoh-setup with histogram override
+# Observed status counts in <source-dir>/**/*.rst:
+#   open: 145, closed: 16, passed: 7, approved: 2
+lifecycle_states:
+  - open
+  - closed
+  - passed
+  - approved
+
+transitions:
+  - {from: open, to: passed, requires: []}
+  - {from: open, to: closed, requires: []}
+  - {from: passed, to: approved, requires: []}
+  # Add the inverse (passed -> open, approved -> open) only if the histogram or
+  # explicit project policy suggests they are reachable. The default is to
+  # leave the state machine as observed.
+```
+
+The transition graph is **not** inferred from the histogram (the histogram does not record transitions). The skill emits a permissive forward-only chain `state[i] -> state[i+1]`. The user is expected to edit transitions to match project policy; emit a comment naming this expectation.
+
+#### 5b.3. Detect ID-prefix collisions (`id-conventions.yaml prefixes`)
+
+Read `[[needs.types]]` from `ubproject.toml`. Build a map `prefix -> [directive...]`. Any prefix mapping to ≥2 directives is a collision.
+
+Real-world example from `useblocks/sphinx-needs-demo`:
+- `R_` declared on both `req` and `release`
+- `T_` declared on both `test` and `team`
+- (empty prefix `""`) declared on both `arch` and `need`
+
+Behaviour by strictness mode (the value chosen in Step 2a):
+
+- **`advisory`** — emit a WARN to the user listing each collision with a remediation hint, and proceed with the prefixes as-declared (`pharaoh-id-convention-check` will then surface ambiguous IDs at runtime). The warning text:
+
+  ```
+  WARNING: ID-prefix collisions detected in [[needs.types]]:
+    - R_ used for: req, release
+    - T_ used for: test, team
+    - "" (empty) used for: arch, need
+
+  Disambiguate by giving each declared type a unique prefix in
+  ubproject.toml, e.g. release -> REL_, team -> TEAM_, need -> NEED_.
+  Until disambiguated, pharaoh-id-convention-check cannot tell a release
+  ID from a requirement ID and pharaoh-id-allocate may emit colliding IDs.
+  ```
+
+- **`enforcing`** — FAIL with the same message and refuse to write `id-conventions.yaml`. The user must fix `[[needs.types]]` first.
+
+When no collisions are detected, emit `prefixes` directly from `[[needs.types]]` as today.
+
+#### 5b.4. Detect ID regex from observed IDs (`id-conventions.yaml id_regex`)
+
+Use the same sample collected in Step 2b's `[pharaoh.id_scheme]` detection:
+
+- If the dominant observed shape is `{TYPE}_{NUMBER}` and observed IDs match the union of declared prefixes + digits, emit the union-of-prefixes regex (current default).
+- If the dominant shape is `{DOMAIN}_{NUMBER}` (leading token does not match any declared type prefix), emit a regex matching the observation:
+
+  ```yaml
+  id_regex: "^[A-Z][A-Z0-9_]*_[0-9]+$"
+  ```
+
+  with a comment naming the sampled IDs.
+
+- If the observed shape is `{TYPE}-{MODULE}-{NUMBER}`, emit:
+
+  ```yaml
+  id_regex: "^(REQ|SPEC|IMPL|TEST)-[A-Z]+-[0-9]+$"
+  ```
+
+  (substituting actually-declared prefixes).
+
+- If observed IDs don't conform to a single shape, emit `id_regex: ".+"` with a TODO comment asking the user to declare the convention manually.
+
+Reject the heuristic union-of-prefixes regex when observed IDs do not match it — the regex would fail validation on every existing need.
+
+#### 5b.5. Emit Phase-5 release-gate fields per type (artefact-catalog)
+
+For each declared type, emit `required_links`, `optional_links`, `required_metadata_fields`, `required_roles` per the canonical schema (see `schemas/artefact-catalog.schema.json`):
+
+- **`required_links`:** for each `[needs.links.<name>]` (also written `[needs.extra_links]` in older sphinx-needs configs) declared with `required = true` — or, when the project has a built `needs.json`, for each link option that 100% of existing needs of this type carry (per Source 1 in `[pharaoh.traceability]` direction inference) — include the option name.
+- **`optional_links`:** every other declared link option that is legal on this type (per `[needs.links.<name>] applies_to`, or default to "any declared option not in `required_links`"). Drop overlap with `required_links`.
+- **`required_metadata_fields`:** every `[needs.fields.<name>]` declared with `required = true` for this type, plus `status` (every governed type has a lifecycle, so `status` is always required). When the project declares no required fields, emit `[status]`.
+- **`required_roles`:** if the project declares any field whose name implies a role (`reviewer`, `approver`, `approved_by`, `responsible`, `assignee`), include the matching options. Otherwise emit `[]` — explicit "no policy", surfaced by `pharaoh-tailor-review` C6 if the user later wants to enforce a review gate.
+
+`pharaoh-tailor-bootstrap` handles the structural emission; `pharaoh-setup` supplies the derived inputs above.
+
+#### 5b.6. Invoke `pharaoh-tailor-bootstrap`
+
+After gathering 5b.1 through 5b.5, invoke `pharaoh-tailor-bootstrap` with:
+- `project_root` = the workspace root.
+- `on_missing_config` = `"prompt"` (so the user confirms the generated content).
+- An overrides bundle carrying the descriptive values from 5b.1–5b.5. When `pharaoh-tailor-bootstrap` does not yet support an explicit overrides input, the caller is responsible for editing the emitted YAML in place to apply the overrides before showing the user the final form. Document this gap; the structural shape is unchanged.
+
+If the user rejects the proposal, skip — the caller may run `pharaoh-tailor-fill` later (after needs exist) as the alternative path. The `pharaoh-tailor-fill` skill is in fact the canonical descriptive author for matured projects (≥10 needs); `pharaoh-setup` here only seeds the file with what's available at setup time so the project doesn't sit with placeholder defaults.
+
+#### 5b.7. Worked example — `useblocks/sphinx-needs-demo`
+
+Concrete walk-through showing how Steps 2 through 5b together emit descriptive tailoring on a project that exposes every defect listed in issue #13 §8.
+
+**Input — `ubproject.toml` excerpt (paraphrased):**
+
+```toml
+[[needs.types]]
+directive = "req"
+prefix = "R_"
+
+[[needs.types]]
+directive = "release"
+prefix = "R_"          # collision with req
+
+[[needs.types]]
+directive = "test"
+prefix = "T_"
+
+[[needs.types]]
+directive = "team"
+prefix = "T_"          # collision with test
+
+[[needs.types]]
+directive = "fsr"
+prefix = "FSR_"
+
+[needs.fields.asil]
+applies_to = ["fsr", "safety_goal", "hazard"]
+required = true
+
+[needs.fields.severity]
+applies_to = ["hazard"]
+
+[needs.fields.scenario]
+[needs.fields.safe_state]
+[needs.fields.customer]
+
+[needs.links.satisfies]
+[needs.links.verifies]
+[needs.links.derives_from]
+```
+
+**Input — observed RST IDs and statuses:**
+
+- `BRAKE_CTRL_01`, `BRAKE_CTRL_02`, `FSR_POWER_01`, `FSR_POWER_02`, ... (20 sampled, all matching `^[A-Z][A-Z0-9_]*_[0-9]+$`, none matching `^(R_|T_|FSR_)[0-9]+$`)
+- Status histogram: `open: 145, closed: 16, passed: 7, approved: 2`.
+
+**Output — `pharaoh.toml`:**
+
+```toml
+[pharaoh]
+strictness = "advisory"
+
+[pharaoh.id_scheme]
+# Inferred from 20 sampled IDs in source-dir/**/*.rst.
+# Observed shape: {DOMAIN}_{NUMBER} (e.g. BRAKE_CTRL_01, FSR_POWER_01).
+# Note: declared type prefixes (R_, T_, FSR_) do not match the leading
+# token of observed IDs — IDs lead with a domain name, not a type prefix.
+pattern = "{DOMAIN}_{NUMBER}"
+auto_increment = true
+
+[pharaoh.workflow]
+mode = "reverse-eng"
+# Gates tuned for reverse-eng — tighten as the catalogue stabilises.
+require_change_analysis = false
+require_verification = true
+require_mece_on_release = false
+
+[pharaoh.traceability]
+# Direction inferred from needs.json edges (Source 1).
+required_links = [
+    "spec -> req",          # 100% of spec needs link to req via :satisfies:
+    "fsr -> safety_goal",   # 100% of fsr needs link to safety_goal via :derives_from:
+]
+
+[pharaoh.codelinks]
+enabled = false
+```
+
+**Output — pre-bootstrap WARNINGS (advisory mode):**
+
+```
+WARNING: ID-prefix collisions detected in [[needs.types]]:
+  - R_ used for: req, release
+  - T_ used for: test, team
+
+Disambiguate by giving each declared type a unique prefix in
+ubproject.toml, e.g. release -> REL_, team -> TEAM_.
+```
+
+**Output — `.pharaoh/project/workflows.yaml`:**
+
+```yaml
+# Observed status counts in <source-dir>/**/*.rst:
+#   open: 145, closed: 16, passed: 7, approved: 2
+lifecycle_states:
+  - open
+  - closed
+  - passed
+  - approved
+
+transitions:
+  - {from: open, to: passed, requires: []}
+  - {from: open, to: closed, requires: []}
+  - {from: passed, to: approved, requires: []}
+```
+
+**Output — `.pharaoh/project/id-conventions.yaml`:**
+
+```yaml
+prefixes:
+  req: R_
+  release: R_      # COLLISION — flagged, not silently merged
+  test: T_
+  team: T_         # COLLISION — flagged
+  fsr: FSR_
+id_regex: "^[A-Z][A-Z0-9_]*_[0-9]+$"
+separator: "_"
+```
+
+**Output — `.pharaoh/project/artefact-catalog.yaml` excerpt for `fsr`:**
+
+```yaml
+fsr:
+  required_fields: [id, status, title, asil]
+  optional_fields: [scenario, safe_state, customer, reviewer, approved_by, source_doc]
+  lifecycle: [open, closed, passed, approved]
+  required_links: [derives_from]
+  optional_links: [satisfies, verifies]
+  required_metadata_fields: [status, asil]
+  required_roles: []
+```
+
+Compare to the prescriptive default this skill emitted before the rewrite, which would have produced `optional_fields: [reviewer, approved_by, source_doc]` (Pharaoh-internal placeholder set), `lifecycle: [draft, reviewed, approved]` (Pharaoh-internal default), `required_metadata_fields: [status]` (no `asil` despite the project declaring it required), `id_regex: "^(R_|T_|FSR_)[0-9]+$"` (which fails on every actual ID in the project), and `pattern = "{TYPE}_{NUMBER}"` (which assumes the project's IDs lead with a declared type prefix).
+
+The descriptive emission captures what the project already declares and uses; the prescriptive emission imposed a Pharaoh-internal world-view onto a project that had never agreed to it.
 
 ---
 
