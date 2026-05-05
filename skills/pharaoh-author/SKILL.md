@@ -33,8 +33,9 @@ Do NOT use when:
 
 - **target_type** (from user or inferred): the artefact type to draft. Recognised values come
   from `.pharaoh/project/artefact-catalog.yaml`. Common values: `req`, `gd_req`, `arch`,
-  `tc`, `decision`. Synonyms are tolerated — e.g. `requirement` → `req`/`gd_req`,
-  `architecture` / `spec` → `arch`, `test_case` / `verification` → `tc`.
+  `tc`, `decision`, plus ISO 26262 safety-V types `hazard`, `safety_goal`, `fsr`, `tsr`.
+  Synonyms are tolerated — e.g. `requirement` → `req`/`gd_req`, `architecture` / `spec` →
+  `arch`, `test_case` / `verification` → `tc`, `safety_requirement` → `fsr`/`tsr`.
 - **target_id** (optional): if the user is modifying an existing need, the need-id to update.
   When absent, the dispatched drafter generates a fresh ID.
 - **draft_seed** (from user): short prose describing what to author. Forwarded as
@@ -82,7 +83,11 @@ Normalise the user-supplied type to a catalog key:
 
 | User input (any case) | Resolves to |
 |---|---|
-| `req`, `requirement`, `gd_req`, `comp_req`, `feat` | first matching key in artefact-catalog whose suffix is `req` (or `feat` for feature-level) |
+| `req`, `requirement`, `gd_req`, `comp_req`, `sysreq`, `swreq`, `feat` | first matching key in artefact-catalog whose suffix is `req` (or `feat` for feature-level) |
+| `hazard` | `hazard` (catalog key) |
+| `safety_goal`, `sg` | `safety_goal` (catalog key) |
+| `fsr`, `safety_requirement_functional`, `functional_safety_requirement` | `fsr` (catalog key) |
+| `tsr`, `safety_requirement_technical`, `technical_safety_requirement` | `tsr` (catalog key) |
 | `arch`, `architecture`, `spec`, `specification`, `module`, `component`, `interface` | `arch` |
 | `tc`, `test_case`, `test`, `verification_plan`, `vplan` | `tc` |
 | `decision`, `dec`, `adr` | `decision` |
@@ -107,7 +112,7 @@ Apply the routing table:
 
 | Resolved key | Dispatched skill | Notes |
 |---|---|---|
-| `req`, `gd_req`, `comp_req`, `feat`, or any key whose suffix is `req` | `pharaoh-req-draft` | |
+| `req`, `gd_req`, `comp_req`, `sysreq`, `swreq`, `feat`, or any key whose suffix is `req`; ISO 26262 safety-V types (`hazard`, `safety_goal`, `fsr`, `tsr`) | `pharaoh-req-draft` | type-agnostic; `target_level` forwarded verbatim. Safety-V types route here because `pharaoh-req-draft` is the canonical drafter for any requirement-shaped artefact and reads required fields / links / metadata fields from the catalog. |
 | any catalog key categorised as architecture (e.g. `arch`, `swarch`, `sys-arch`, `module`, `component`, `interface`) | `pharaoh-arch-draft` | type-agnostic; `target_level` forwarded verbatim |
 | any catalog key categorised as verification-plan / test-case (e.g. `tc`, `test`, `vplan`) | `pharaoh-vplan-draft` | type-agnostic; `target_level` forwarded verbatim |
 | `decision` | `pharaoh-decide` | |
@@ -117,28 +122,19 @@ Categorisation is read from the `category` field of each entry in
 a category, the resolution table in Step 0 above applies (e.g. `architecture` /
 `specification` / `module` / `component` / `interface` user inputs all resolve to the
 architecture category; `test_case` / `verification_plan` / `vplan` resolve to the
-verification-plan category). The router never matches on a hardcoded type-name allow-list —
-any catalog-declared type in the right category routes correctly.
-
-If the resolved key matches none of the above (typical for safety-V types like `hazard`,
-`safety_goal`, `fsr`, `tsr`), emit a clear pointer to the future safety-V drafting work and
-stop:
-
-```
-FAIL: no atomic drafter is registered for target_type "<resolved key>" yet.
-The author router covers req-shaped, arch-shaped, vplan-shaped, and decision types today.
-Safety-V drafters (hazard, safety_goal, fsr, tsr) are tracked under issue #13 §9c. Until
-they land, draft this artefact manually or extend pharaoh-author with a new dispatch entry
-once the drafter exists.
-```
+verification-plan category; `hazard` / `safety_goal` / `fsr` / `tsr` resolve to the
+requirement category and route to `pharaoh-req-draft`). The router never matches on a
+hardcoded type-name allow-list — any catalog-declared type in the right category routes
+correctly.
 
 These routing entries were thin passthroughs in the initial `pharaoh-author` commit. This
-update reflects the parameterised interfaces of the two drafting skills — both
-`pharaoh-arch-draft` and `pharaoh-vplan-draft` now accept any catalog-declared type via
-`target_level` (no more hardcoded `arch_type ∈ {module, component, interface}` allow-list,
-no more hardcoded `tc__` prefix). The router forwards `target_level` verbatim and lets the
-drafter resolve prefix and required fields from `artefact-catalog.yaml` /
-`id-conventions.yaml`.
+update reflects the parameterised interfaces of the three drafting skills —
+`pharaoh-req-draft`, `pharaoh-arch-draft`, and `pharaoh-vplan-draft` all now accept any
+catalog-declared type via `target_level` (no more hardcoded `arch_type ∈ {module,
+component, interface}` allow-list, no more hardcoded `tc__` prefix, no more "no drafter for
+type X yet" FAIL on safety-V types). The router forwards `target_level` verbatim and lets
+the drafter resolve prefix, required fields, required links, and required metadata fields
+from `artefact-catalog.yaml` / `id-conventions.yaml`.
 
 ---
 
@@ -230,8 +226,13 @@ artefact type at runtime.
 
 **G2 — No drafter for known type**
 
-If the resolved key is in the catalog but the routing table has no entry, FAIL with a pointer
-to the future safety-V drafting work (Step 1). Do not silently fall back to `pharaoh-req-draft`.
+If the resolved key is in the catalog but does not match any of the four router categories
+(requirement-shaped, architecture, verification-plan, decision), FAIL with the catalog
+key and the four supported categories listed. Do not silently fall back to a drafter.
+This guardrail is rarely hit in practice — the four categories cover every artefact type
+declared in the bundled catalogs and every safety-V type — but stays in place to make
+"my catalog declared a type the router does not classify" a loud error rather than a
+silent miscategorisation.
 
 **G3 — Dispatched drafter failed**
 
