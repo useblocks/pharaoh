@@ -1,5 +1,5 @@
 ---
-description: Scaffold Pharaoh into a sphinx-needs project. Detects project structure, generates pharaoh.toml, installs Copilot agents, and recommends tooling.
+description: Use when setting up Pharaoh in a sphinx-needs project for the first time, scaffolding Copilot agents, or reconfiguring project detection. Reads project state (declared types, fields, links, observed RST IDs and statuses) before imposing Pharaoh-internal defaults.
 handoffs:
   - label: Run MECE Check
     agent: pharaoh.mece
@@ -11,7 +11,7 @@ handoffs:
 
 # @pharaoh.setup
 
-Scaffold Pharaoh into a sphinx-needs project. Detect the project structure, generate a `pharaoh.toml` configuration file, and recommend tooling for the best experience.
+Scaffold Pharaoh into a sphinx-needs project. Detect the project structure, read its declared conventions and existing artefacts, generate a `pharaoh.toml` configuration file, seed `.pharaoh/project/` tailoring descriptively from observation, and recommend tooling for the best experience.
 
 ## Data Access
 
@@ -57,17 +57,42 @@ Data access:
   ubCode MCP: <available | not available>
 ```
 
-### Step 2: Generate pharaoh.toml
+### Step 2: Generate pharaoh.toml and seed .pharaoh/project/ descriptively
 
 1. Ask the user for strictness preference: `advisory` (default, suggests but never blocks) or `enforcing` (checks prerequisites, blocks if not met).
-2. Analyze existing need IDs to detect the ID pattern (e.g., `{TYPE}_{NUMBER}` or `{TYPE}-{MODULE}-{NUMBER}`).
-3. Build `required_links` from detected extra link types and their usage.
-4. Check if `pharaoh.toml` already exists. If so, show a diff and ask what to do.
-5. Present the generated content and get confirmation before writing.
+2. **Classify project mode from declared types and RST content** — not from `needs.json` existence (a gitignored build artefact). `[[needs.types]]` declared + RST has needs with ≥10% in matured statuses → `steady-state`; types declared + RST has needs → `reverse-eng`; types declared + no needs → `greenfield`.
+3. **Detect the ID pattern from up to 20 sampled IDs** in `<source-dir>/**/*.rst`. Recognise `{TYPE}_{NUMBER}`, `{TYPE}-{MODULE}-{NUMBER}`, and `{DOMAIN}_{NUMBER}` (leading token is not a declared type prefix — e.g. `BRAKE_CTRL_01`). Reject the heuristic `{TYPE}_{NUMBER}` default when observed IDs do not conform.
+4. **Read `[needs.fields.X]` and `[needs.links.X]` from `ubproject.toml`** to populate `optional_fields`, `required_metadata_fields`, `required_links`, `optional_links`, `required_roles` per declared type for `.pharaoh/project/artefact-catalog.yaml`. Fall back to Pharaoh-internal defaults (`reviewer`, `approved_by`, `source_doc`) only when the project declares no fields.
+5. **Compute `lifecycle_states` from a status histogram** of `:status:` values in existing RST files. Fall back to `[draft, reviewed, approved]` only when no `:status:` is observed anywhere.
+6. **Detect ID-prefix collisions in `[[needs.types]]`.** In `advisory` strictness, WARN with a remediation hint and proceed; in `enforcing`, FAIL and refuse to write `id-conventions.yaml`.
+7. **Direction-infer `required_links` from edges**, not link names. Apply the rule uniformly to every link option declared in `[needs.links.<name>]` (no per-name allow-list). Source 1 (built `needs.json` ≥3 instances + ≥90% coverage) → Source 2 (declared `from`/`to` hint) → Source 3 (refuse to guess; emit TODO comment).
+8. Check if `pharaoh.toml` already exists. If so, show a diff and ask what to do.
+9. Present the generated content and get confirmation before writing.
+
+After writing `pharaoh.toml`, invoke `pharaoh-tailor-bootstrap` with the descriptive overrides from steps 4-7 above so `.pharaoh/project/{workflows,id-conventions,artefact-catalog}.yaml` capture what the project declares and uses, not Pharaoh-internal placeholders.
 
 ### Step 3: Configure .gitignore
 
-Add `.pharaoh/` to `.gitignore` if not already present. Create `.gitignore` if needed.
+`.pharaoh/` contains a mix of committed tailoring and ephemeral run state. Ignoring the whole tree is wrong — it hides `.pharaoh/project/` tailoring which IS shared across the team. Ignore only the ephemeral subpaths:
+
+| Path                    | Purpose                                                  | Commit? |
+| ----------------------- | -------------------------------------------------------- | ------- |
+| `.pharaoh/project/`     | Tailoring: workflows, id-conventions, artefact-catalog, checklists | **yes** |
+| `.pharaoh/runs/`        | `pharaoh-execute-plan` run artefacts (report.yaml, staged RST) | no     |
+| `.pharaoh/plans/`       | plan.yaml files emitted by `pharaoh-write-plan`           | no      |
+| `.pharaoh/session.json` | Session / gate state                                      | no      |
+| `.pharaoh/cache/`       | Derived caches                                            | no      |
+
+Entries to add (create `.gitignore` if missing):
+
+```
+.pharaoh/runs/
+.pharaoh/plans/
+.pharaoh/session.json
+.pharaoh/cache/
+```
+
+If `.gitignore` already contains a bare `.pharaoh/` (or `.pharaoh`) line, leave it alone and warn the user that the wide form hides `.pharaoh/project/` tailoring which should be committed; recommend narrowing to the four ephemeral entries above. Do not auto-migrate — respect user control.
 
 ### Step 4: Recommend Tooling
 
@@ -87,8 +112,13 @@ Present everything configured and list available agents:
 
 ```
 Available agents (GitHub Copilot):
-  @pharaoh.setup    @pharaoh.change   @pharaoh.trace   @pharaoh.mece
-  @pharaoh.author   @pharaoh.verify   @pharaoh.release @pharaoh.plan
+  <enumerate from the `.github/agents/pharaoh.*.agent.md` files installed
+   in this project, one entry per file in alphabetical order, formatted as
+   @pharaoh.<name>. Do not hardcode this list — the skill set has grown
+   beyond the original happy-path agents to include atomic skills like
+   pharaoh.req-draft, pharaoh.req-review, pharaoh.arch-draft,
+   pharaoh.tailor-detect, pharaoh.tailor-fill, pharaoh.audit-fanout, and
+   others.>
 
 Workflow: @pharaoh.change -> @pharaoh.author -> @pharaoh.verify -> @pharaoh.release
 ```

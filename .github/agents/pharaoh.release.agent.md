@@ -1,5 +1,5 @@
 ---
-description: Prepare a release by generating changelogs from requirements, release summaries, and traceability coverage metrics.
+description: Use when preparing a release, generating changelogs from requirements, or summarizing requirement changes for version management
 handoffs:
   - label: MECE Check
     agent: pharaoh.mece

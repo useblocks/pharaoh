@@ -121,6 +121,8 @@ Each delegated check returns either `{passed: bool, ...}` or the atom's native `
 
 `metadata_fields_present` delegates to the existing `pharaoh-output-validate` atom invoked in `mode: "graph"` (see that skill's `## Graph mode`). The tailored `required_metadata_fields` list is declared per-type in `artefact-catalog.yaml`; empty list disables the check for that type, absent key is treated as empty. No new atom is introduced for this invariant — graph mode is a second input-shape on the existing block-validator.
 
+The four release-gate fields backing `link_types_covered`, `metadata_fields_present`, and the `pharaoh-review-completeness` invariant (`required_links`, `optional_links`, `required_metadata_fields`, `required_roles`) are declared per-type in `artefact-catalog.yaml`. Their canonical schema lives at `schemas/artefact-catalog.schema.json` (see `schemas/README.md`); the absence of any of the three required-* keys is surfaced as a finding by `pharaoh-tailor-review` rule C6, so a project running the gate after a clean `pharaoh-tailor-review` has explicitly declared (possibly as empty arrays) what every consumer reads.
+
 If a delegated check is not yet implemented in the skill tree, the gate records a warning in the report but does not fail — so that adding new invariants in future is a config-only change.
 
 ## Output

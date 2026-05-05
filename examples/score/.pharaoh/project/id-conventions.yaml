@@ -1,12 +1,15 @@
 # examples/score/.pharaoh/project/id-conventions.yaml
+# Values are the literal identifier-prefix strings prepended to the local-part
+# to form an id (e.g. gd_req__abs_pump_activation). Human descriptions of each
+# prefix live in artefact-catalog.yaml entries, not here.
 prefixes:
-  gd_req: requirement (guide-level)
-  wp: work product
-  wf: workflow
-  std_req: external standard requirement (ISO/ASPICE)
-  gd_chklst: checklist
-  arch: architecture
-  tc: test case
+  gd_req: gd_req
+  wp: wp
+  wf: wf
+  std_req: std_req
+  gd_chklst: gd_chklst
+  arch: arch
+  tc: tc
 # NOTE: std_req IDs embed source-standard codes that may contain uppercase and hyphens,
 # e.g. std_req__aspice_40__MAN-3-BP1.  The regex below applies to all other prefixes;
 # std_req is intentionally exempt because the local-part mirrors upstream identifier

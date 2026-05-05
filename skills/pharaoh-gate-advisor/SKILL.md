@@ -30,16 +30,18 @@ Do NOT invoke to modify `pharaoh.toml` — this skill is advisory, read-only. Au
 
 - `pharaoh_toml_path`: absolute path to the project's `pharaoh.toml`. The skill reads exactly five keys:
   - `[pharaoh].strictness` — string; treated as `"advisory"` unless the value is exactly `"enforcing"`.
-  - `[pharaoh.workflow].require_verification` — boolean; default `false` when absent.
-  - `[pharaoh.workflow].require_change_analysis` — boolean; default `false` when absent.
-  - `[pharaoh.workflow].require_mece_on_release` — boolean; default `false` when absent.
-  - `[pharaoh.codelinks].enabled` — boolean; default `false` when absent.
+  - `[pharaoh.workflow].require_verification` — boolean.
+  - `[pharaoh.workflow].require_change_analysis` — boolean.
+  - `[pharaoh.workflow].require_mece_on_release` — boolean.
+  - `[pharaoh.codelinks].enabled` — boolean.
+
+  Default values are NOT redeclared in this skill. If a flag is absent from the project's `pharaoh.toml`, the skill treats it as the value declared in `pharaoh.toml.example` at the Pharaoh repo root. The example currently sets `(require_change_analysis=true, require_verification=true, require_mece_on_release=false)` and `codelinks.enabled=true`; for absent strictness the example sets `"advisory"`. To change the defaults this skill walks against, edit `pharaoh.toml.example` only — never reintroduce competing defaults here.
 
 Edge cases:
 - `pharaoh_toml_path` missing or unreadable → emit `overall: "error"` with `errors: ["pharaoh.toml unresolved: <path>"]` and no other keys. Callers branch on `overall` first. No ladder array is emitted on this path — the ladder is meaningful only when the file parsed.
 - TOML parse error (syntax bad) → same `overall: "error"` shape with the parser message included.
-- Keys present but with unexpected types (e.g. `require_verification = "yes"` as a string) → treat as their typed default (`false` for booleans, `"advisory"` for strictness) and add a note `"unexpected type for <key>; treated as default"` in `notes`.
-- Entire `[pharaoh.workflow]` or `[pharaoh.codelinks]` section absent → every flag in that section resolves to its `false` default; no error.
+- Keys present but with unexpected types (e.g. `require_verification = "yes"` as a string) → treat as the typed default declared in `pharaoh.toml.example` (`true`/`false`/`"advisory"` per the example) and add a note `"unexpected type for <key>; treated as default"` in `notes`.
+- Entire `[pharaoh.workflow]` or `[pharaoh.codelinks]` section absent → every flag in that section resolves to its example default; no error.
 
 ## Output
 

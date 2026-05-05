@@ -23,9 +23,16 @@ Do NOT invoke to author or repair tailoring files — use `pharaoh-tailor-fill` 
 
 - **tailoring_dir** (from user): path to `.pharaoh/project/` containing the four tailoring
   files
-- **schemas_dir** (from user, optional): path to JSON schema files. Defaults to
-  `<tailoring_dir>/schemas/` if that directory exists; otherwise applies built-in structural
-  checks (see Step 2).
+- **schemas_dir** (from user, optional): path to JSON schema files. Resolved in
+  this order:
+    1. The explicit value if provided.
+    2. `<tailoring_dir>/schemas/` if that directory exists (per-project overrides).
+    3. The Pharaoh-shipped `schemas/` directory at the package root
+       (`<pharaoh_repo>/schemas/`). This is the default and ships with the four
+       canonical schemas (`artefact-catalog.schema.json`, `workflows.schema.json`,
+       `id-conventions.schema.json`, `checklists-frontmatter.schema.json`).
+    4. If none of the above resolve, falls back to built-in structural rules and
+       emits a `degraded_mode: true` flag in the output.
 
 The four expected files:
 - `<tailoring_dir>/id-conventions.yaml`
@@ -117,9 +124,10 @@ but do not replace them.
 | `prefixes` | map | Must be present; must contain at least one entry |
 | `id_regex_exceptions` | map | Optional; if present must be a map of `<prefix>: <regex>` where `<prefix>` is declared in the `prefixes` map |
 
-For each entry in `prefixes`, the key must be a non-empty string and the value must be a
-non-empty string (the description). See
-`examples/my-project/.pharaoh/project/schemas/id-conventions.schema.json` for the authoritative
+For each entry in `prefixes`, the key must be a non-empty string and the value must be
+a literal identifier-prefix token (matches schema pattern `^[A-Za-z][A-Za-z0-9_]*$`);
+not a human description. See
+`<pharaoh_repo>/schemas/id-conventions.schema.json` for the authoritative
 JSON Schema.
 
 **workflows.yaml required keys:**
@@ -134,7 +142,7 @@ For each transition in `transitions`:
 - `from` and `to` must be non-empty strings.
 - `requires` must be a list (may be empty).
 
-See `examples/my-project/.pharaoh/project/schemas/workflows.schema.json` for the authoritative
+See `<pharaoh_repo>/schemas/workflows.schema.json` for the authoritative
 JSON Schema.
 
 **artefact-catalog.yaml required structure:**
@@ -147,15 +155,19 @@ Top level must be a map of artefact-type keys. For each artefact type:
 | `optional_fields` | list | Optional; may be empty. Entries are sphinx-needs *option* keys. |
 | `required_body_sections` | list | Optional; entries are top-level heading names that must appear inside the directive body prose (e.g. `Inputs`, `Steps`, `Expected` for `tc`). Validated as body prose, not as `:key:` options. |
 | `lifecycle` | list | Optional; if present must be non-empty |
+| `required_links` | list | Optional; entries are link-relation option names (e.g. `satisfies`). Empty list disables the release-gate check for this type; absent key is treated as empty by `pharaoh-link-completeness-check` but flagged by C6 below. |
+| `optional_links` | list | Optional; entries are link-relation option names. Must not overlap with `required_links` (enforced by C6). |
+| `required_metadata_fields` | list | Optional; entries are sphinx-needs option keys. Empty list disables the release-gate check; absent key is flagged by C6. |
+| `required_roles` | list | Optional; entries are role-bearing option keys (e.g. `reviewer`, `approved_by`). Empty list explicitly declares no review/approval gate; absent key is flagged by C6. |
 
-See `examples/my-project/.pharaoh/project/schemas/artefact-catalog.schema.json` for the
+See `<pharaoh_repo>/schemas/artefact-catalog.schema.json` for the
 authoritative JSON Schema.
 
 **checklists/*.md frontmatter:**
 
 YAML frontmatter (delimited by `---`) at the top of a checklist file is **optional**. When
 present, it is validated against
-`examples/my-project/.pharaoh/project/schemas/checklists-frontmatter.schema.json`:
+`<pharaoh_repo>/schemas/checklists-frontmatter.schema.json`:
 
 | Key | Rule |
 |---|---|
@@ -224,6 +236,40 @@ Violation (error):
 Field '<field>' appears in both required_fields and optional_fields for artefact type '<type>' in artefact-catalog.yaml.
 ```
 
+**C6 — Release-gate fields declared explicitly**
+
+The four release-gate fields on each per-type entry of `artefact-catalog.yaml` are
+consumed by `pharaoh-link-completeness-check` (`required_links`, `optional_links`),
+`pharaoh-output-validate` (`required_metadata_fields`), and `pharaoh-review-completeness`
+(`required_roles`); all four are aggregated by `pharaoh-quality-gate`. Each consumer
+treats an absent key as an empty list, so a project that omits all four fields ships a
+release gate that silently does nothing. C6 makes the choice explicit:
+
+For every artefact type entry in `artefact-catalog.yaml`, three of the four fields must
+be **present as keys** (the value may be an empty array). The three keys are
+`required_links`, `required_metadata_fields`, `required_roles`. `optional_links` is
+not part of C6 — it is purely informational and absent-equals-empty is fine.
+
+Violation (warning) for each missing key:
+```
+Release-gate key '<field>' is absent from artefact-catalog.yaml for type '<type>'. Empty array declares an explicit "no requirement"; missing key is treated as empty by consumers but means the project never made the choice. Add the key with an empty list `[]` if no requirement applies.
+```
+
+Where `<field>` is one of `required_links`, `required_metadata_fields`, `required_roles`.
+
+Additionally — when both `required_links` and `optional_links` are present, no link
+name may appear in both lists.
+
+Violation (error):
+```
+Link name '<link>' appears in both required_links and optional_links for artefact type '<type>' in artefact-catalog.yaml.
+```
+
+The missing-key part of C6 is a `severity: warning` rather than `error` so that legacy
+tailoring continues to validate while the project decides; the overlap-check part is
+`severity: error` because consumers cannot reconcile a link declared as both required
+and optional.
+
 ---
 
 ### Step 4: Compute overall and emit
@@ -239,22 +285,26 @@ Emit the JSON document. No prose before or after.
 
 ## Schema validation
 
-Four JSON Schema (draft 2020-12) files live alongside the tailoring files and make structural
+Four JSON Schema (draft 2020-12) files ship with Pharaoh and make structural
 validation deterministic:
 
 | Tailoring file | Schema |
 |---|---|
-| `id-conventions.yaml` | `<tailoring_dir>/schemas/id-conventions.schema.json` |
-| `workflows.yaml` | `<tailoring_dir>/schemas/workflows.schema.json` |
-| `artefact-catalog.yaml` | `<tailoring_dir>/schemas/artefact-catalog.schema.json` |
-| `checklists/*.md` (frontmatter) | `<tailoring_dir>/schemas/checklists-frontmatter.schema.json` |
+| `id-conventions.yaml` | `<schemas_dir>/id-conventions.schema.json` |
+| `workflows.yaml` | `<schemas_dir>/workflows.schema.json` |
+| `artefact-catalog.yaml` | `<schemas_dir>/artefact-catalog.schema.json` |
+| `checklists/*.md` (frontmatter) | `<schemas_dir>/checklists-frontmatter.schema.json` |
+
+`<schemas_dir>` is resolved per the order documented in Inputs above; the
+default is the Pharaoh-shipped `schemas/` directory at the package root. See
+`schemas/README.md` for the full resolution order and per-file responsibilities.
 
 Schema `$id` values are anchored under `https://pharaoh.useblocks.com/schemas/` and do not
 need to resolve at runtime.
 
-The `pharaoh-validation` harness runs `python harness/validate_tailoring.py` to execute
-these checks mechanically (exits 0 on all-PASS). Cross-file consistency rules C1–C5 are
-**not** expressible in JSON Schema and remain implemented in Step 3 of this skill.
+These checks can be executed by any JSON Schema validator against the canonical
+schemas in `schemas/`. Cross-file consistency rules C1–C6 are **not** expressible in
+JSON Schema and remain implemented in Step 3 of this skill.
 
 ---
 
@@ -307,6 +357,8 @@ All four files present and well-formed. Cross-file check results:
 - C4: all six prefixes in id-conventions also appear in artefact-catalog. No orphan prefixes.
   Pass.
 - C5: no field appears in both required and optional for any type. Pass.
+- C6: every artefact type declares `required_links`, `required_metadata_fields`, and
+  `required_roles` keys (empty arrays permitted). Pass.
 
 **Output:**
 

@@ -1,10 +1,10 @@
 ---
-description: Draft a single use-case diagram for one feat — actors, use cases, system boundary.
+description: Use when drafting one use-case diagram for a single feat — actors (primary, secondary, external systems), use cases (one per user-facing capability), and system boundary. Renderer-aware (mermaid or plantuml per `.pharaoh/project/diagram-conventions.yaml`). First concrete `*-diagram-draft` skill — others follow the same shape.
 handoffs: [pharaoh.diagram-review]
 ---
 
 # @pharaoh.use-case-diagram-draft
 
-Draft a single use-case diagram for one feat — actors, use cases, system boundary.
+Use when drafting one use-case diagram for a single feat — actors (primary, secondary, external systems), use cases (one per user-facing capability), and system boundary. Renderer-aware (mermaid or plantuml per `.pharaoh/project/diagram-conventions.yaml`). First concrete `*-diagram-draft` skill — others follow the same shape.
 
-See [`skills/pharaoh-use-case-diagram-draft/SKILL.md`](../../skills/pharaoh-use-case-diagram-draft/SKILL.md) for the full atomic specification.
+See [`skills/pharaoh-use-case-diagram-draft/SKILL.md`](../../skills/pharaoh-use-case-diagram-draft/SKILL.md) for the full atomic specification — inputs, outputs, atomicity contract, and composition patterns.

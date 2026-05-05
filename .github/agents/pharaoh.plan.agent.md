@@ -1,9 +1,15 @@
 ---
-description: Break requirement changes into structured implementation tasks with workflow enforcement and dependency ordering.
+description: Use when breaking requirement changes into structured implementation tasks with workflow enforcement and dependency ordering
 handoffs:
   - label: Start Change Analysis
     agent: pharaoh.change
     prompt: Analyze the impact of the planned changes
+  - label: Author the planned needs
+    agent: pharaoh.author
+    prompt: Author the needs identified in this plan, one per task
+  - label: Verify the authored needs
+    agent: pharaoh.verify
+    prompt: Verify the authored needs against their parents and review axes
 ---
 
 # @pharaoh.plan

@@ -1,6 +1,6 @@
 ---
 name: pharaoh-arch-draft
-description: Use when drafting a single sphinx-needs architecture element (component / interface / module) from one parent requirement. Emits an RST directive block linking back to the parent via :satisfies:.
+description: Use when drafting a single sphinx-needs architecture element from one parent requirement. The artefact type is parameterised via `target_level` (any catalog-declared architecture type — e.g. `arch`, `swarch`, `sys-arch`, `module`, `component`, `interface`). Emits an RST directive block linking back to the parent via `:satisfies:`.
 chains_from: [pharaoh-req-draft, pharaoh-req-regenerate]
 chains_to: [pharaoh-arch-review]
 ---
@@ -10,8 +10,10 @@ chains_to: [pharaoh-arch-review]
 ## When to use
 
 Invoke when the user has a validated requirement (ideally reviewed by `pharaoh-req-review`) and
-wants to derive one architecture element from it. Target element types: `component`, `module`,
-or `interface`.
+wants to derive one architecture element from it. The element's directive name and ID prefix
+come from the project's `artefact-catalog.yaml` / `id-conventions.yaml`; this skill is
+type-agnostic and supports any architecture-shaped type the catalog declares
+(`arch`, `swarch`, `sys-arch`, `module`, `component`, `interface`, …).
 
 Do NOT draft multiple architecture elements in a single invocation — one element per call.
 Do NOT create architecture elements without a parent requirement — every arch element must trace
@@ -23,12 +25,16 @@ Do NOT review — use `pharaoh-arch-review` after drafting.
 ## Inputs
 
 - **parent_req_id** (from user): need-id of the parent requirement — must exist in needs.json
-- **arch_type** (from user): one of `module`, `component`, or `interface`
+- **target_level** (from user): the artefact-catalog type name to emit. Any type declared in
+  `.pharaoh/project/artefact-catalog.yaml` is accepted (typical examples: `arch`, `swarch`,
+  `sys-arch`, `module`, `component`, `interface`). The emitted directive uses `target_level`
+  verbatim as the directive name; the ID prefix is resolved from the catalog / id-conventions.
 - **element_description** (from user): 1-3 sentences describing the element's responsibility
 - **tailoring** (from `.pharaoh/project/`):
-  - `artefact-catalog.yaml` — look up the `arch` entry if it exists; fall back to placeholder
-    prefix `arch__` if the entry is absent
-  - `id-conventions.yaml` — prefix, separator, id_regex
+  - `artefact-catalog.yaml` — look up the entry for `target_level` to read `required_fields`,
+    `optional_fields`, and `lifecycle`
+  - `id-conventions.yaml` — `prefixes` map (key = type name → value = identifier prefix
+    string), `separator`, `id_regex`
 - **needs.json**: required for parent resolution and ID uniqueness
 
 > Note: A `shared/tailoring-access.md` helper module is planned. Until it exists, Steps 1-2 below
@@ -41,11 +47,12 @@ Do NOT review — use `pharaoh-arch-review` after drafting.
 
 A single RST directive block for the architecture element, containing:
 
-- Unique ID using the project's arch prefix (from artefact-catalog `arch` entry) or `arch__` if
-  no entry exists
+- Unique ID using the prefix resolved for `target_level` from `id-conventions.yaml`
 - `:status: draft`
 - `:satisfies:` pointing to parent_req_id
-- `:type:` set to the requested arch_type (`module` / `component` / `interface`)
+- Every field listed in the catalog entry's `required_fields` (the directive name itself
+  carries the type, so a separate `:type:` option is only emitted when the catalog entry
+  declares it as required)
 - Body: 1-3 sentences describing the element's responsibility; no `shall` — architecture elements
   state what something *is*, not what it *shall do* (requirements do that)
 
@@ -57,33 +64,33 @@ A single RST directive block for the architecture element, containing:
 
 **1a. `artefact-catalog.yaml`**
 
-Look up the `arch` entry. If found, read:
-- `required_fields` — fields that must be present
+Look up the entry whose key equals `target_level`. If found, read:
+
+- `required_fields` — fields that must be present in the emitted directive
 - `optional_fields` — fields that may be added
 - `lifecycle` — valid `:status:` values
 
-If the `arch` entry does not exist (likely for Score until the catalog extension commit), use these
-defaults:
-- `required_fields`: `[id, status, satisfies, type]`
-- `optional_fields`: `[tags, rationale, description]`
-- `lifecycle`: `[draft, valid, inspected]`
+If the entry is absent, FAIL:
 
-Note the fallback in output if defaults were applied.
+```
+FAIL: target_level "<value>" is not declared in .pharaoh/project/artefact-catalog.yaml.
+Add an entry for "<value>" (with required_fields, optional_fields, lifecycle) before
+drafting, or pass a target_level that is already declared.
+```
 
 **1b. `id-conventions.yaml`**
 
-Extract `separator` and `id_regex`. Determine the arch prefix:
-- If artefact-catalog has an `arch` entry with a prefix key, use it
-- Otherwise use `arch__` (two underscores, matching Score id convention)
+Read the `prefixes:` map and look up the prefix for `target_level`. Also extract
+`separator` and `id_regex`.
 
-**1c. Validate arch_type**
-
-Accepted values: `module`, `component`, `interface`. If the user supplies a different value, FAIL:
+If `prefixes` does not declare `target_level`, FAIL:
 
 ```
-FAIL: arch_type "<value>" is not recognised.
-Accepted values: module, component, interface.
+FAIL: id-conventions.yaml prefixes map has no entry for "<value>".
+Declare a prefix for "<value>" (e.g. SWARCH_) before drafting.
 ```
+
+The resolved prefix is the value of `prefixes[target_level]`.
 
 ---
 
@@ -124,23 +131,22 @@ Architecture elements should trace to requirements. Proceeding at user's discret
 
 **4a. Derive local-ID part**
 
-Format: `<prefix><separator><local>` where local is derived from `element_description`:
+Format: `<prefix><local>` where `<prefix>` is the value resolved in Step 1b. The local part
+is derived from `element_description`:
+
 - Lowercase, words separated by underscores
 - Maximum 5 words; trim articles, prepositions, conjunctions
 - Example: "Power management module for ECU startup" → local `power_management_module`
 
-Prepend arch_type as first word if the local part does not already imply the type:
-- `module` → local starts with `mod_` if not already
-- `component` → no additional prefix (component is the default)
-- `interface` → local starts with `if_` if not already
-
 **4b. Check uniqueness**
 
-Candidate = `<prefix><separator><local>`. If already in needs.json ID set, append `_2`, `_3`, etc.
+Candidate = `<prefix><local>` (or `<prefix><separator><local>` if `id-conventions.yaml`
+declares an explicit separator distinct from the prefix's trailing punctuation).
+If the candidate is already in the needs.json ID set, append `_2`, `_3`, etc.
 
 **4c. Validate against id_regex**
 
-If the candidate does not match, FAIL:
+If the candidate does not match the `id_regex` declared in `id-conventions.yaml`, FAIL:
 
 ```
 FAIL: generated ID "<id>" does not match id_regex "<regex>".
@@ -152,6 +158,7 @@ Revise element_description to use lowercase ASCII words.
 ### Step 5: Draft the element body
 
 Write 1-3 sentences describing:
+
 1. What the element *is* (its role in the system)
 2. What it contains or depends on (if known from parent req)
 3. Its boundary (what it does NOT include) — only if the parent req implies a clear scope limit
@@ -199,22 +206,16 @@ Manual correction required before running pharaoh-arch-review.
 ### Step 7: Emit the directive block
 
 ```rst
-.. arch:: <element title>
+.. <target_level>:: <element title>
    :id: <id>
    :status: draft
    :satisfies: <parent_req_id>
-   :type: <arch_type>
 
    <1-3 sentence description>
 ```
 
-If the tailoring fallback was applied (no `arch` entry in catalog), append:
-
-```
-[NOTE] artefact-catalog.yaml has no 'arch' entry. Prefix 'arch__' and default required fields
-[id, status, satisfies, type] were used. Run the catalog extension commit or add an 'arch' entry
-to .pharaoh/project/artefact-catalog.yaml before promoting this element beyond draft.
-```
+Add any catalog-declared `required_fields` not already shown above (the catalog is the source
+of truth — emit every field it lists).
 
 ---
 
@@ -229,9 +230,11 @@ If parent_req_id is absent from needs.json, FAIL immediately (Step 3 handles thi
 If element_description covers more than one distinct concern, FAIL (Step 5 handles this). Do not
 silently draft a compound element.
 
-**G3 — arch_type not recognised**
+**G3 — target_level not declared**
 
-If arch_type is not `module`, `component`, or `interface`, FAIL (Step 1c handles this).
+If `target_level` is not declared in `artefact-catalog.yaml` or has no entry in
+`id-conventions.yaml`'s `prefixes` map, FAIL (Step 1 handles this). Do not silently fall
+back to a hardcoded default — the catalog is the contract.
 
 **G4 — needs.json unavailable**
 
@@ -254,11 +257,11 @@ Do not show this if the emit included a `[DIAGNOSTIC]`.
 ## Worked example
 
 **User input:**
-> Parent: `gd_req__abs_pump_activation`; type: `component`; description: "Manages the ABS pump
-> drive circuit, including PWM duty-cycle control and over-current protection."
+> Parent: `gd_req__abs_pump_activation`; target_level: `arch`; description: "Manages the ABS
+> pump drive circuit, including PWM duty-cycle control and over-current protection."
 
-**Step 1:** No `arch` entry found in artefact-catalog.yaml. Falling back to defaults: prefix
-`arch__`, required `[id, status, satisfies, type]`. arch_type `component` is valid.
+**Step 1:** `artefact-catalog.yaml` has an `arch` entry with `required_fields:
+[id, status, satisfies]`. `id-conventions.yaml` `prefixes` map has `arch: arch__`.
 
 **Step 2:** needs.json found at `docs/_build/needs/needs.json`; 185 IDs loaded.
 
@@ -278,22 +281,23 @@ needs.json. Passes id_regex `^[a-z][a-z_]*__[a-z0-9_]+$`. ID assigned.
    :id: arch__abs_pump_driver
    :status: draft
    :satisfies: gd_req__abs_pump_activation
-   :type: component
 
    The ABS pump driver component manages the pump drive circuit, controlling output
    PWM duty cycle and providing over-current protection for the pump motor.
 ```
 
 ```
-[NOTE] artefact-catalog.yaml has no 'arch' entry. Prefix 'arch__' and default required fields
-[id, status, satisfies, type] were used. Run the catalog extension commit or add an 'arch' entry
-to .pharaoh/project/artefact-catalog.yaml before promoting this element beyond draft.
-
 Consider running `pharaoh-arch-review arch__abs_pump_driver` to audit against ISO 26262-8 §6 axes.
 ```
 
+For a project that distinguishes system-level and software-level architecture, the same skill
+serves both — pass `target_level: sys-arch` to draft a system architecture element, or
+`target_level: swarch` for a software architecture element. The directive name and prefix come
+from the project's catalog and id-conventions; nothing in this skill is hardcoded to the three
+classical names `module` / `component` / `interface`.
+
 ## Last step
 
-After emitting the artefact, invoke `pharaoh-arch-review` on it. Pass the emitted artefact (or its `need_id`) as `target`. Attach the returned review JSON to the skill's output under the key `review`. If the review emits any axis with `score: 0` or `severity: critical`, return a non-success status with the review findings verbatim and do NOT finalize the artefact — the caller must regenerate (via `pharaoh-arch-regenerate` if available, or by re-invoking this skill with the findings as input).
+After emitting the artefact, invoke `pharaoh-arch-review` on it. Pass the emitted artefact (or its `need_id`) as `target`. Attach the returned review JSON to the skill's output under the key `review`. If the review emits any axis with `score: 0` or `severity: critical`, return a non-success status with the review findings verbatim and do NOT finalize the artefact — the caller must address the action items and re-invoke this skill with the revised target as input.
 
 See [`shared/self-review-invariant.md`](../shared/self-review-invariant.md) for the rationale and enforcement mechanism. Coverage is mechanically enforced by `pharaoh-self-review-coverage-check` in `pharaoh-quality-gate`.
