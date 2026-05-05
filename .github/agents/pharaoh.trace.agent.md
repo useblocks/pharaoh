@@ -1,5 +1,5 @@
 ---
-description: Navigate traceability links between requirements, specifications, implementations, tests, and code in any direction.
+description: Use when navigating traceability links between requirements, specifications, implementations, tests, and code in a sphinx-needs project
 handoffs:
   - label: Analyze Impact
     agent: pharaoh.change

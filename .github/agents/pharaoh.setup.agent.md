@@ -1,5 +1,5 @@
 ---
-description: Scaffold Pharaoh into a sphinx-needs project. Detects project structure, generates pharaoh.toml, installs Copilot agents, and recommends tooling.
+description: Use when setting up Pharaoh in a sphinx-needs project for the first time, scaffolding Copilot agents, or reconfiguring project detection
 handoffs:
   - label: Run MECE Check
     agent: pharaoh.mece
@@ -67,7 +67,26 @@ Data access:
 
 ### Step 3: Configure .gitignore
 
-Add `.pharaoh/` to `.gitignore` if not already present. Create `.gitignore` if needed.
+`.pharaoh/` contains a mix of committed tailoring and ephemeral run state. Ignoring the whole tree is wrong — it hides `.pharaoh/project/` tailoring which IS shared across the team. Ignore only the ephemeral subpaths:
+
+| Path                    | Purpose                                                  | Commit? |
+| ----------------------- | -------------------------------------------------------- | ------- |
+| `.pharaoh/project/`     | Tailoring: workflows, id-conventions, artefact-catalog, checklists | **yes** |
+| `.pharaoh/runs/`        | `pharaoh-execute-plan` run artefacts (report.yaml, staged RST) | no     |
+| `.pharaoh/plans/`       | plan.yaml files emitted by `pharaoh-write-plan`           | no      |
+| `.pharaoh/session.json` | Session / gate state                                      | no      |
+| `.pharaoh/cache/`       | Derived caches                                            | no      |
+
+Entries to add (create `.gitignore` if missing):
+
+```
+.pharaoh/runs/
+.pharaoh/plans/
+.pharaoh/session.json
+.pharaoh/cache/
+```
+
+If `.gitignore` already contains a bare `.pharaoh/` (or `.pharaoh`) line, leave it alone and warn the user that the wide form hides `.pharaoh/project/` tailoring which should be committed; recommend narrowing to the four ephemeral entries above. Do not auto-migrate — respect user control.
 
 ### Step 4: Recommend Tooling
 

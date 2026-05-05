@@ -1,5 +1,5 @@
 ---
-description: Check for gaps, redundancies, and inconsistencies in sphinx-needs requirements. Validates traceability completeness.
+description: Use when checking for gaps, redundancies, and inconsistencies in sphinx-needs requirements, or validating traceability completeness
 handoffs:
   - label: Trace a Need
     agent: pharaoh.trace
