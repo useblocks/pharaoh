@@ -7,12 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Migration
+
+- `id-conventions.yaml`: rename `id_regex_by_type:` to `id_regex_exceptions:` to
+  match the canonical schema. Existing tailoring with the old key name will fail
+  pharaoh-tailor-review C-rule validation.
+- `id-conventions.yaml` `prefixes:` value form: values must be literal identifier
+  prefix tokens (matching pattern `^[A-Za-z][A-Za-z0-9_]*$`), not human-readable
+  descriptions. Existing tailoring with description-style values will fail schema
+  validation.
+- `artefact-catalog.yaml`: drop `child_of:` and `lifecycle_ref:` per type if
+  present (schema's `additionalProperties: false` now rejects them).
+- `artefact-catalog.yaml` release-gate fields (`required_links`,
+  `required_metadata_fields`, `required_roles`): pharaoh-tailor-review rule C6
+  now surfaces a finding (severity: warning, not error) when these keys are
+  absent on a per-type entry. Existing projects without these fields previously
+  validated cleanly; after this change they will see new C6 findings. The
+  `overall` value remains `warnings_only` in that case — no CI gate that
+  treats warnings as non-blocking will break. Migrate by populating the
+  required-* fields per type using sensible project-specific defaults; consult
+  `schemas/artefact-catalog.schema.json` and `pharaoh-tailor-fill` Step 5 for
+  guidance. An explicit empty array (`[]`) is accepted and declares "no
+  requirement".
+
 ### Removed
 
 - **pharaoh-author** -- monolithic requirement-authoring skill, replaced by the atomic chain below.
 - **pharaoh-verify** -- monolithic requirement-review skill, replaced by the atomic chain below.
 
-  Empirical justification: Phase-1 pilot (pharaoh-validation `runs/phase1-*/FINDINGS.md`) and Phase-2 mini-pilot (pharaoh-validation `runs/phase2-1776446795/FINDINGS.md`) showed the atomic chain achieves A_exec 0.79 vs 0.15 for the monolith (+0.641 delta).
+  Rationale: the atomic chain enforces per-axis review and per-artefact drafting boundaries, so each step has an isolated scope, deterministic inputs/outputs, and is independently testable. The previous monolithic skills bundled drafting and review in one prompt, blurring atomicity and producing weaker per-axis findings.
 
 ### Added
 

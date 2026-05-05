@@ -29,7 +29,7 @@ Do NOT review — use `pharaoh-vplan-review` after drafting.
   verification-plan / test-case type declared in `.pharaoh/project/artefact-catalog.yaml`
   is accepted. The emitted directive uses `target_level` verbatim as the directive name; the
   ID prefix is resolved from `id-conventions.yaml`'s `prefixes` map.
-- **verification_level** (from user): one of `unit`, `integration`, or `system`
+- **verification_level** (from user, optional, default `system`): one of `unit`, `integration`, or `system`. When the dispatching caller (e.g. `pharaoh-author`) does not propagate this input, the default applies — `system` is the broadest scope and the safest default for a top-level test case.
 - **tailoring** (from `.pharaoh/project/`):
   - `artefact-catalog.yaml` — look up the entry for `target_level` to read `required_fields`,
     `optional_fields`, `lifecycle`, and `required_body_sections`
@@ -99,7 +99,9 @@ The resolved prefix is the value of `prefixes[target_level]` — e.g. `tc__` for
 
 **1c. Validate verification_level**
 
-Accepted values: `unit`, `integration`, `system`. If a different value is supplied, FAIL:
+Accepted values: `unit`, `integration`, `system`. If `verification_level` is absent,
+default to `system` (the broadest scope; the override is documented in the Inputs
+section above). If a different non-empty value is supplied, FAIL:
 
 ```
 FAIL: verification_level "<value>" is not recognised.

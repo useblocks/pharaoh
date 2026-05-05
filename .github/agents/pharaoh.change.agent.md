@@ -1,6 +1,12 @@
 ---
 description: Use when analyzing the impact of changing a requirement, specification, or any sphinx-needs item, including traceability to code via codelinks
 handoffs:
+  - label: Author the affected needs
+    agent: pharaoh.author
+    prompt: Author the needs flagged in this change analysis
+  - label: Verify the affected needs
+    agent: pharaoh.verify
+    prompt: Verify the authored needs against their parents and review axes
   - label: MECE Check
     agent: pharaoh.mece
     prompt: Check the affected area for gaps and redundancies

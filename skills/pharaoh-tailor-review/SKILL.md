@@ -124,8 +124,9 @@ but do not replace them.
 | `prefixes` | map | Must be present; must contain at least one entry |
 | `id_regex_exceptions` | map | Optional; if present must be a map of `<prefix>: <regex>` where `<prefix>` is declared in the `prefixes` map |
 
-For each entry in `prefixes`, the key must be a non-empty string and the value must be a
-non-empty string (the description). See
+For each entry in `prefixes`, the key must be a non-empty string and the value must be
+a literal identifier-prefix token (matches schema pattern `^[A-Za-z][A-Za-z0-9_]*$`);
+not a human description. See
 `<pharaoh_repo>/schemas/id-conventions.schema.json` for the authoritative
 JSON Schema.
 
@@ -301,9 +302,9 @@ default is the Pharaoh-shipped `schemas/` directory at the package root. See
 Schema `$id` values are anchored under `https://pharaoh.useblocks.com/schemas/` and do not
 need to resolve at runtime.
 
-The `pharaoh-validation` harness runs `python harness/validate_tailoring.py` to execute
-these checks mechanically (exits 0 on all-PASS). Cross-file consistency rules C1–C6 are
-**not** expressible in JSON Schema and remain implemented in Step 3 of this skill.
+These checks can be executed by any JSON Schema validator against the canonical
+schemas in `schemas/`. Cross-file consistency rules C1–C6 are **not** expressible in
+JSON Schema and remain implemented in Step 3 of this skill.
 
 ---
 

@@ -112,8 +112,13 @@ Present everything configured and list available agents:
 
 ```
 Available agents (GitHub Copilot):
-  @pharaoh.setup    @pharaoh.change   @pharaoh.trace   @pharaoh.mece
-  @pharaoh.author   @pharaoh.verify   @pharaoh.release @pharaoh.plan
+  <enumerate from the `.github/agents/pharaoh.*.agent.md` files installed
+   in this project, one entry per file in alphabetical order, formatted as
+   @pharaoh.<name>. Do not hardcode this list — the skill set has grown
+   beyond the original happy-path agents to include atomic skills like
+   pharaoh.req-draft, pharaoh.req-review, pharaoh.arch-draft,
+   pharaoh.tailor-detect, pharaoh.tailor-fill, pharaoh.audit-fanout, and
+   others.>
 
 Workflow: @pharaoh.change -> @pharaoh.author -> @pharaoh.verify -> @pharaoh.release
 ```

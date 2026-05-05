@@ -83,7 +83,7 @@ Normalise the user-supplied type to a catalog key:
 
 | User input (any case) | Resolves to |
 |---|---|
-| `req`, `requirement`, `gd_req`, `comp_req`, `sysreq`, `swreq`, `feat` | first matching key in artefact-catalog whose suffix is `req` (or `feat` for feature-level) |
+| `req`, `requirement`, `gd_req`, `comp_req`, `sysreq`, `swreq`, `feat` | the catalog key matching the user's `target_type` exactly when present; otherwise the catalog key whose suffix matches the request and which appears first in `artefact-catalog.yaml`'s declaration order. If two or more catalog keys match equally, FAIL with a clear `ambiguous target_type` error and list the candidates so the caller can resolve |
 | `hazard` | `hazard` (catalog key) |
 | `safety_goal`, `sg` | `safety_goal` (catalog key) |
 | `fsr`, `safety_requirement_functional`, `functional_safety_requirement` | `fsr` (catalog key) |
@@ -112,20 +112,16 @@ Apply the routing table:
 
 | Resolved key | Dispatched skill | Notes |
 |---|---|---|
-| `req`, `gd_req`, `comp_req`, `sysreq`, `swreq`, `feat`, or any key whose suffix is `req`; ISO 26262 safety-V types (`hazard`, `safety_goal`, `fsr`, `tsr`) | `pharaoh-req-draft` | type-agnostic; `target_level` forwarded verbatim. Safety-V types route here because `pharaoh-req-draft` is the canonical drafter for any requirement-shaped artefact and reads required fields / links / metadata fields from the catalog. |
-| any catalog key categorised as architecture (e.g. `arch`, `swarch`, `sys-arch`, `module`, `component`, `interface`) | `pharaoh-arch-draft` | type-agnostic; `target_level` forwarded verbatim |
-| any catalog key categorised as verification-plan / test-case (e.g. `tc`, `test`, `vplan`) | `pharaoh-vplan-draft` | type-agnostic; `target_level` forwarded verbatim |
+| `req`, `gd_req`, `comp_req`, `sysreq`, `swreq`, `feat`, or any key whose suffix matches `req`; ISO 26262 safety-V types (`hazard`, `safety_goal`, `fsr`, `tsr`) | `pharaoh-req-draft` | type-agnostic; `target_level` forwarded verbatim. Safety-V types route here because `pharaoh-req-draft` is the canonical drafter for any requirement-shaped artefact and reads required fields / links / metadata fields from the catalog. |
+| any catalog key whose suffix matches `arch` (e.g. `arch`, `swarch`, `sys-arch`) or whose synonym in the Step 0 table resolves to architecture (`module`, `component`, `interface`) | `pharaoh-arch-draft` | type-agnostic; `target_level` forwarded verbatim |
+| any catalog key whose suffix matches `tc`, `test`, `vplan`, or `safety_v` | `pharaoh-vplan-draft` | type-agnostic; `target_level` forwarded verbatim |
 | `decision` | `pharaoh-decide` | |
 
-Categorisation is read from the `category` field of each entry in
-`.pharaoh/project/artefact-catalog.yaml` when present. When the catalog does not declare
-a category, the resolution table in Step 0 above applies (e.g. `architecture` /
-`specification` / `module` / `component` / `interface` user inputs all resolve to the
-architecture category; `test_case` / `verification_plan` / `vplan` resolve to the
-verification-plan category; `hazard` / `safety_goal` / `fsr` / `tsr` resolve to the
-requirement category and route to `pharaoh-req-draft`). The router never matches on a
-hardcoded type-name allow-list — any catalog-declared type in the right category routes
-correctly.
+Routing is driven solely by the synonym table in Step 0 plus the suffix-matching rules
+above. The artefact-catalog schema does not carry a `category` field on per-type entries
+(`additionalProperties: false`), so the router does not read one. Any catalog-declared
+type whose key matches one of the suffix patterns above routes correctly without
+modification to this skill; types whose keys do not match are caught by Guardrail G2.
 
 These routing entries were thin passthroughs in the initial `pharaoh-author` commit. This
 update reflects the parameterised interfaces of the three drafting skills —
