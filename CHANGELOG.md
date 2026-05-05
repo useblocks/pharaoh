@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-05-05
+
 ### Migration
 
 - `id-conventions.yaml`: rename `id_regex_by_type:` to `id_regex_exceptions:` to
