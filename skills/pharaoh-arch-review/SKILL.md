@@ -257,7 +257,7 @@ Continue evaluating remaining axes.
 If `overall` is `"needs_work"` or `"fail"`, append — after the JSON — a single line:
 
 ```
-Re-run this review after action items are addressed to confirm the findings clear.
+Re-run this review after action items are addressed to confirm the findings are resolved.
 ```
 
 This is the only prose permitted after the JSON.
