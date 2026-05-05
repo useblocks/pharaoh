@@ -1,7 +1,7 @@
 ---
 name: pharaoh-arch-review
 description: Use when auditing a single architecture element against the 10 ISO 26262-8 §6 axes plus arch-specific axes (traceability back to requirement). Emits structured findings JSON.
-chains_from: [pharaoh-arch-draft, pharaoh-arch-regenerate]
+chains_from: [pharaoh-arch-draft]
 chains_to: [pharaoh-req-regenerate]
 ---
 
@@ -13,7 +13,7 @@ Invoke when the user has a single architecture element (either just drafted by `
 or retrieved from needs.json by ID) and wants per-axis inspection against ISO 26262-8 §6.
 
 Do NOT review sets of arch elements — each invocation audits exactly one element.
-Do NOT re-author or fix — invoke `pharaoh-arch-regenerate` (planned) after reviewing if needed.
+Do NOT re-author or fix — emit findings only. Re-authoring is a follow-up step outside this skill's scope.
 Do NOT audit requirements — use `pharaoh-req-review` for those.
 
 ---
@@ -89,7 +89,7 @@ In the output JSON, record each as
 ### Chain-level axis
 
 `maintainability` requires observing convergence across regeneration iterations. Record as
-`{"score": null, "reason": "chain-level axis — assess after pharaoh-arch-regenerate runs"}`.
+`{"score": null, "reason": "chain-level axis — assess after the parent requirement and architecture revisions land"}`.
 
 ### `overall` field
 
@@ -199,7 +199,7 @@ elements (score 1), normal engineering effort (score 2), or tightly and clearly 
 Set `completeness`, `external_consistency`, `no_duplication` to
 `{"score": "deferred", "reason": "set-level axis — assess with pharaoh-arch-set-review"}` and
 `maintainability` to
-`{"score": null, "reason": "chain-level axis — assess after pharaoh-arch-regenerate runs"}`.
+`{"score": null, "reason": "chain-level axis — assess after the parent requirement and architecture revisions land"}`.
 
 ---
 
@@ -257,7 +257,7 @@ Continue evaluating remaining axes.
 If `overall` is `"needs_work"` or `"fail"`, append — after the JSON — a single line:
 
 ```
-Consider `pharaoh-arch-regenerate <need_id>` after addressing action items.
+Re-run this review after action items are addressed to confirm the findings clear.
 ```
 
 This is the only prose permitted after the JSON.
@@ -310,7 +310,7 @@ This is the only prose permitted after the JSON.
     "completeness":         {"score": "deferred", "reason": "set-level axis — assess with pharaoh-arch-set-review"},
     "external_consistency": {"score": "deferred", "reason": "set-level axis — assess with pharaoh-arch-set-review"},
     "no_duplication":       {"score": "deferred", "reason": "set-level axis — assess with pharaoh-arch-set-review"},
-    "maintainability":      {"score": null, "reason": "chain-level axis — assess after pharaoh-arch-regenerate runs"},
+    "maintainability":      {"score": null, "reason": "chain-level axis — assess after the parent requirement and architecture revisions land"},
     "unambiguity_prose":    {"score": 3, "reason": "single clear interpretation: manages pump drive circuit"},
     "comprehensibility":    {"score": 3, "reason": "subject, responsibility, and constraints all explicit"},
     "feasibility":          {"score": 3, "reason": "standard automotive power electronics function; well-constrained"}
