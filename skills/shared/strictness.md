@@ -71,10 +71,7 @@ require_mece_on_release = false   # pharaoh:release requires pharaoh:mece
 
 These gates only have effect when `strictness = "enforcing"`. In advisory mode, they are used only for tip messages.
 
-Default values if keys are missing:
-- `require_change_analysis = true`
-- `require_verification = true`
-- `require_mece_on_release = false`
+The canonical default values for `require_change_analysis`, `require_verification`, and `require_mece_on_release` live in `pharaoh.toml.example` at the repo root. This document does not redeclare them: skills that need to reason about defaults should read the example file or fail loudly when a flag is absent. Do not introduce competing local defaults here. To change a default, edit `pharaoh.toml.example` only.
 
 ### Step 1d: Parse traceability requirements
 

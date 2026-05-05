@@ -237,13 +237,15 @@ Generate the `pharaoh.toml` content using the detected project data. Use `pharao
 - Set `auto_increment = true`.
 
 **`[pharaoh.workflow]` section:**
-- Populate the three flags from the mode table in Step 2a.bis based on the mode the user confirmed. Do NOT blindly copy values from `pharaoh.toml.example` — that file documents the steady-state shape, not the day-one defaults for every mode.
-- Emit a one-line comment above the three flags naming the chosen mode, so a later reader of `pharaoh.toml` can see what assumption produced these values:
+- Persist the chosen mode as a real key (`mode = "reverse-eng" | "greenfield" | "steady-state"`). The key lives in `pharaoh.toml` alongside the gate flags so a later reader (and any skill that wants to reason about lifecycle stage) can parse it directly. Do NOT persist it as a comment-only line — comments are not parseable.
+- Populate the three gate flags from the mode table in Step 2a.bis based on the mode the user confirmed. Do NOT blindly copy values from `pharaoh.toml.example` — that file documents the steady-state shape, not the day-one defaults for every mode.
+- Emit a short rationale comment above the gate flags naming the assumption that produced these values:
   ```toml
   [pharaoh.workflow]
-  # mode: reverse-eng — tighten as the catalogue stabilises
+  mode = "reverse-eng"
+  # Gates tuned for reverse-eng — tighten as the catalogue stabilises.
   require_change_analysis = false
-  require_verification = false
+  require_verification = true
   require_mece_on_release = false
   ```
 

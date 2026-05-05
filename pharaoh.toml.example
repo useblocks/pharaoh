@@ -1,6 +1,11 @@
 # Pharaoh configuration
 # Copy to pharaoh.toml and adjust to your project needs.
 # All settings are optional. Without this file, advisory mode applies.
+#
+# This file is the canonical source of truth for default values consumed by
+# Pharaoh skills. Other skills (e.g. pharaoh-gate-advisor, the shared
+# strictness contract in shared/strictness.md) defer to the values declared
+# here rather than redeclaring their own defaults.
 
 [pharaoh]
 # "advisory" (default) - suggests workflow but never blocks
@@ -14,6 +19,14 @@ pattern = "{TYPE}-{MODULE}-{NUMBER}"
 auto_increment = true
 
 [pharaoh.workflow]
+# Lifecycle stage of the project. Read by pharaoh-setup to choose between
+# descriptive (existing-project) and prescriptive (new-project) defaults.
+#   "reverse-eng":  existing codebase; setup captures what already exists.
+#                   Workflow gates start permissive and tighten over time.
+#   "greenfield":   new project; setup imposes Pharaoh defaults from day one.
+#   "steady-state": mature catalogue (≥10 needs); full gating in effect.
+mode = "reverse-eng"
+
 # Gate-enablement ladder — see skills/shared/gate-enablement.md for rationale.
 # Bootstrap ships step 1 (require_verification) on by default; projects enable
 # the other steps as the pre-work for each lands.
@@ -36,3 +49,58 @@ required_links = [
 [pharaoh.codelinks]
 # Follow sphinx-codelinks in change analysis
 enabled = true
+# Project-relative path containing source files to scan when resolving
+# sphinx-codelinks comments. Consumed by pharaoh-write-plan and
+# pharaoh-feat-file-map. If unset, the skills fall back to the
+# sphinx-codelinks `[source_discover].src_dir` from `ubproject.toml`, then to
+# the project root.
+src_dir = "src"
+
+[pharaoh.codelink_comments]
+# How code-anchored requirements are written into source files. Consumed by
+# pharaoh-req-codelink-annotate and pharaoh-req-from-code; the latter branches
+# on `mode` to decide between emitting an RST directive or a one-line comment.
+#   "backref":   source file gets a minimal `# @req REQ_ID: title` pointer;
+#                the need itself lives in an RST file.
+#   "codelinks": source file carries the full sphinx-codelinks one-line form
+#                `# @ title, id, type, [links]`; the comment IS the need.
+mode = "backref"
+# `backref` mode only — the comment marker used for grep and the line template.
+prefix = "@req"
+format = "{prefix} {id}: {title}"
+
+[pharaoh.diagrams]
+# Default renderer for diagrams emitted by *-diagram-draft skills.
+# Allowed: "mermaid", "plantuml". Per-type override via [pharaoh.diagrams.<type>].
+# See skills/shared/diagram-tailoring.md for the resolution order.
+renderer = "mermaid"
+# Optional: gates pharaoh-mece and future CI skills on diagram coverage.
+# Diagram-draft skills themselves do NOT consult this list; they emit what the
+# caller asks for.
+# required = ["component", "sequence"]
+
+# Per-diagram-type overrides. Omit a [pharaoh.diagrams.<type>] block to use
+# [pharaoh.diagrams].renderer. Allowed type keys: component, sequence, class,
+# state, activity, use_case, block, deployment, fault_tree.
+[pharaoh.diagrams.component]
+# direction = "TB"   # TB | LR | BT | RL
+# renderer = "mermaid"
+
+[pharaoh.diagrams.sequence]
+# renderer = "plantuml"   # PlantUML sequence diagrams are richer than Mermaid
+
+[pharaoh.diagrams.type_styles]
+# Visual styling overrides applied per need-type. Map of need-type to inline
+# table; renderer-specific values translated by each diagram skill (e.g.
+# Mermaid classDef, PlantUML skinparam). Read by *-diagram-draft skills when
+# emitting typed nodes; absent → renderer defaults (no styling).
+# feat     = { shape = "stadium", color = "#4ECDC4" }
+# comp_req = { shape = "rect",    color = "#BFD8D2" }
+# arch     = { shape = "hexagon", color = "#F7B2B7" }
+
+[pharaoh.quality_gate]
+# Enables strict-mode checks across quality skills. When true,
+# pharaoh-diagram-lint upgrades parser warnings to errors. Other quality
+# skills may consult this flag for their own strict-mode behavior; per-skill
+# semantics live in the relevant SKILL.md.
+strict = false
