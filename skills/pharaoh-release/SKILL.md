@@ -3,16 +3,6 @@ name: pharaoh-release
 description: "Use when preparing a release, generating changelogs from requirements, or summarizing requirement changes for version management"
 ---
 
-## Output invariant
-
-This skill's visible output is the full release report (changelog plus release summary) as defined in Step 7. The report is mandatory. Every invocation MUST emit the complete report. The session-state update is internal bookkeeping. The skill is self-terminating. No interactive prompt at the end of the turn.
-
-Failure modes:
-- Ending the turn with a "save these release artifacts?" prompt instead of the report -> REGRESSION. Emit the full report and end the turn.
-- Returning a brief summary instead of the full changelog and release summary -> REGRESSION.
-
-File-save behaviour is controlled by an input flag (`save_artifacts`), not an interactive prompt. See Step 7.2 below.
-
 # pharaoh-release
 
 Generate release artifacts from sphinx-needs changes. This skill identifies which
@@ -28,10 +18,6 @@ analysis).
 - Summarizing what needs were added, modified, or removed since the last release or tag.
 - Producing traceability coverage metrics for compliance or audit documentation.
 - Generating release notes that include requirement impact chains.
-
-## Input
-
-- **`save_artifacts`** (optional, default `none`): one of `none` | `changelog` | `release_notes` | `both`. Controls whether the skill writes the rendered changelog/release-notes artifacts to disk in addition to emitting them in the turn output. Pass explicitly when calling non-interactively. Defaults to `none` so a bare invocation never silently writes files.
 
 ## Prerequisites
 
@@ -452,83 +438,87 @@ Code files referencing needs: <count>
 
 ### Step 7: Output and Next Steps
 
-The sub-steps below run in this fixed order: session-state update first
-(internal bookkeeping), then artifact writes per the `save_artifacts` input
-flag (silent side effects), and finally the visible release report. The
-report is the LAST instruction in the skill so it is the last visible turn
-content. The skill MUST end the turn after the report. No interactive
-prompts.
+#### 7a. Present changelog to user
 
-#### 7.1. Update session state (internal)
+Display the complete changelog (from Step 5) and release summary (from Step 6)
+to the user in a single output.
 
-Run this BEFORE emitting any visible output. Update `.pharaoh/session.json`:
+#### 7b. Offer to write to file
+
+After presenting the output, ask the user:
+
+```
+Would you like to save these release artifacts?
+
+  1. Write changelog to CHANGELOG.md (append at top)
+  2. Write full release notes to docs/releases/<version>.md
+  3. Write both
+  4. Do not write any files
+
+Choose an option: [1/2/3/4]
+```
+
+**Option 1: Append to CHANGELOG.md**
+
+1. Check if `CHANGELOG.md` exists in the workspace root.
+2. If it exists, read its current content. Insert the new changelog entry at the
+   top of the file, after any existing header (e.g., after a `# Changelog` line).
+3. If it does not exist, create it with a `# Changelog` header followed by the
+   new entry.
+4. Show the user what will be written and confirm before writing.
+
+**Option 2: Write to docs/releases/**
+
+1. Create the `docs/releases/` directory if it does not exist.
+2. Write the full release notes (changelog + release summary) to
+   `docs/releases/<version>.md`.
+3. Show the user what will be written and confirm before writing.
+
+**Option 3: Both**
+
+Execute both Option 1 and Option 2.
+
+**Option 4: No files**
+
+Do nothing. The output was already presented on screen.
+
+#### 7c. Suggest git tag
+
+After file output is handled, suggest tagging:
+
+```
+Suggested next step:
+  git tag -a <version> -m "Release <version>"
+
+Create this tag now? [yes/no]
+```
+
+If the user confirms, run the `git tag` command. Do **not** push the tag. If the
+user wants to push, they must explicitly request it.
+
+If the user declines, do nothing.
+
+#### 7d. Update session state
+
+After the release process completes successfully (regardless of whether files were
+written), update `.pharaoh/session.json`:
 
 1. Read the current session state (or create the initial structure).
 2. Set `global.last_release` to the current ISO 8601 timestamp.
 3. Set `updated` to the current ISO 8601 timestamp.
 4. Write the updated JSON back to `.pharaoh/session.json`.
 
-This is internal bookkeeping. It MUST NOT produce any visible turn output.
-
-#### 7.2. Write artifacts per `save_artifacts` input flag
-
-Branch on the `save_artifacts` input value (default `none`):
-
-- `none`: do nothing. The output was already presented.
-- `changelog`: append the changelog entry to `CHANGELOG.md` (Option 1 logic below).
-- `release_notes`: write `docs/releases/<version>.md` (Option 2 logic below).
-- `both`: execute both branches in order.
-
-Do NOT ask the user. Callers that want to choose interactively pass the flag explicitly.
-
-**`changelog` branch (append to CHANGELOG.md):**
-
-1. Check if `CHANGELOG.md` exists in the workspace root.
-2. If it exists, read its current content. Insert the new changelog entry at the top, after any existing header (e.g. after a `# Changelog` line).
-3. If it does not exist, create it with a `# Changelog` header followed by the new entry.
-
-**`release_notes` branch (write `docs/releases/<version>.md`):**
-
-1. Create the `docs/releases/` directory if it does not exist.
-2. Write the full release notes (changelog plus release summary) to `docs/releases/<version>.md`.
-
-**`both` branch:** execute both branches in order.
-
-#### 7.3. Emit the release report (final visible output)
-
-This sub-step is the LAST instruction in the skill and produces the LAST
-visible turn content. After emitting the report, end the turn. Do not ask
-follow-up questions.
-
-Display the complete changelog (from Step 5) and release summary (from
-Step 6) to the user in a single output. Append the tag suggestion below as
-the final footer line of the report.
-
-**Tag suggestion footer (append at the end of the report):**
-
-```
-Suggested next step:
-  git tag -a <version> -m "Release <version>"
-
-(Run the tag command manually if desired. The skill does not run git tag
-automatically.)
-```
-
-The skill MUST NOT execute `git tag` itself. The skill MUST NOT ask the
-user whether to create the tag. The footer is informational only.
-
 ---
 
 ## Key Constraints
 
-1. **Never run `git tag` or `git push`.** The skill MUST NOT execute either
-   command. The release report includes a tag suggestion as a footer line so the
-   user can run it manually. The skill MUST NOT prompt the user about tagging.
+1. **Never auto-tag or auto-push without user confirmation.** The `git tag` and
+   `git push` commands must always be explicitly confirmed by the user. Never run
+   them silently.
 
-2. **File writes are gated by the `save_artifacts` input flag.** The skill MUST
-   NOT prompt the user before writing `CHANGELOG.md` or `docs/releases/<version>.md`.
-   The flag is the contract. Default `none` means no files are written. When the
-   flag selects a write branch, perform the write without asking.
+2. **Never overwrite files without asking.** Before writing to `CHANGELOG.md` or
+   any release notes file, show the user what will be written and get explicit
+   confirmation. If the file already exists, show how it will be modified.
 
 3. **Include traceability metrics for safety-critical audit trails.** The release
    summary must always include the needs inventory and traceability coverage
