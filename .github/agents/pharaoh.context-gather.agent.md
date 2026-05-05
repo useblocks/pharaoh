@@ -1,10 +1,10 @@
 ---
-description: Retrieve rationale memories from a Papyrus workspace before authoring or review.
+description: Use when retrieving rationale memories relevant to an authoring context from a Papyrus workspace, before invoking any draft or review skill. Returns a structured list of memories (memory_id, text, relevance_score). Does NOT draft, review, or modify artefacts.
 handoffs: []
 ---
 
 # @pharaoh.context-gather
 
-Retrieve rationale memories from a Papyrus workspace before authoring or review.
+Use when retrieving rationale memories relevant to an authoring context from a Papyrus workspace, before invoking any draft or review skill. Returns a structured list of memories (memory_id, text, relevance_score). Does NOT draft, review, or modify artefacts.
 
 See [`skills/pharaoh-context-gather/SKILL.md`](../../skills/pharaoh-context-gather/SKILL.md) for the full atomic specification — inputs, outputs, atomicity contract, and composition patterns.

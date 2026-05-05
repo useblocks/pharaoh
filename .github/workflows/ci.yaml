@@ -85,6 +85,28 @@ jobs:
               status=1
             fi
 
+            # Detect truncation artefacts in description: unbalanced parens,
+            # brackets, or backticks render as broken Markdown in Copilot UIs
+            # (see issue #12 — pharaoh.write-plan and pharaoh.toctree-emit).
+            description=$(echo "$frontmatter" | sed -n 's/^description:[[:space:]]*//p')
+            opens=$(echo -n "$description" | tr -cd '(' | wc -c)
+            closes=$(echo -n "$description" | tr -cd ')' | wc -c)
+            if [ "$opens" -ne "$closes" ]; then
+              echo "ERROR: $agent_file 'description' has unbalanced parentheses ($opens '(' vs $closes ')')"
+              status=1
+            fi
+            obrack=$(echo -n "$description" | tr -cd '[' | wc -c)
+            cbrack=$(echo -n "$description" | tr -cd ']' | wc -c)
+            if [ "$obrack" -ne "$cbrack" ]; then
+              echo "ERROR: $agent_file 'description' has unbalanced brackets ($obrack '[' vs $cbrack ']')"
+              status=1
+            fi
+            ticks=$(echo -n "$description" | tr -cd '`' | wc -c)
+            if [ $((ticks % 2)) -ne 0 ]; then
+              echo "ERROR: $agent_file 'description' has unbalanced backticks ($ticks total)"
+              status=1
+            fi
+
             echo "OK: $agent_file"
           done
           exit $status

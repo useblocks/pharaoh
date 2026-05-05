@@ -1,5 +1,5 @@
 ---
-description: Generate a Superpowers-compatible spec and plan document from sphinx-needs requirements, bridging requirements to implementation.
+description: Use when generating a Superpowers-compatible spec and plan document from sphinx-needs requirements, bridging requirements to implementation
 handoffs:
   - label: Execute Plan
     agent: pharaoh.plan

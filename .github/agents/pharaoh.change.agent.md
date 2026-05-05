@@ -1,5 +1,5 @@
 ---
-description: Analyze the impact of changing a requirement, specification, or any sphinx-needs item. Traces through all link types and codelinks to produce a Change Document.
+description: Use when analyzing the impact of changing a requirement, specification, or any sphinx-needs item, including traceability to code via codelinks
 handoffs:
   - label: MECE Check
     agent: pharaoh.mece
