@@ -47,6 +47,42 @@
           "minLength": 1
         },
         "uniqueItems": true
+      },
+      "required_links": {
+        "type": "array",
+        "description": "Link-relation names that every need of this type must declare with a non-empty target list. Enforced at release by pharaoh-link-completeness-check (and aggregated by pharaoh-quality-gate via the link_types_covered invariant). Empty array explicitly disables the check for this type; absent key is treated as empty.",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "uniqueItems": true
+      },
+      "optional_links": {
+        "type": "array",
+        "description": "Link-relation names that may be declared on a need of this type. Read by pharaoh-link-completeness-check for completeness reporting. Must not overlap with required_links (enforced by pharaoh-tailor-review).",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "uniqueItems": true
+      },
+      "required_metadata_fields": {
+        "type": "array",
+        "description": "sphinx-needs option keys that must be set with non-empty values before release. Enforced by pharaoh-output-validate in graph mode (delegated by pharaoh-quality-gate via the metadata_fields_present invariant). Empty array explicitly disables the check for this type; absent key is treated as empty.",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "uniqueItems": true
+      },
+      "required_roles": {
+        "type": "array",
+        "description": "Role-bearing option keys that must be set with non-empty values before release (e.g. reviewer, approved_by). Enforced by pharaoh-review-completeness. Empty array explicitly disables the check for this type; absent key is treated as no review/approval requirement.",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "uniqueItems": true
       }
     },
     "additionalProperties": false

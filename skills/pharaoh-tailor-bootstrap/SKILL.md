@@ -107,6 +107,42 @@ For each declared type, emit:
 - `optional_fields`: `reviewer`, `approved_by`, plus `source_doc` for types that typically carry provenance (heuristic: top-level types like `feat`, `story`, `use_case` — if unsure, include it).
 - `lifecycle`: list of states from `workflows.yaml` that apply to this type (typically the full state list).
 - `required_body_sections`: optional list of body-prose section headings (e.g. `Inputs`, `Steps`, `Expected` for `tc`); omit when no body sections are required.
+- `required_links`, `optional_links`, `required_metadata_fields`, `required_roles`: release-gate fields read by `pharaoh-link-completeness-check`, `pharaoh-output-validate`, and `pharaoh-review-completeness` (and aggregated by `pharaoh-quality-gate`). Emit all four as arrays of strings — empty arrays are valid and declare an explicit "no requirement" choice; absent keys are flagged by `pharaoh-tailor-review` rule C6 as an unmade decision.
+
+Inference rules for the four release-gate fields:
+
+- `required_links`: include the `option` of every `[[needs.extra_links]]` entry that resolves to this type as the source side of the link. Concretely: for an extra_link with `outgoing: <this_type>` (the link is declared on directives of this type), include its `option`. If the project does not declare the direction explicitly, default to including link options whose semantic name implies a parent reference (`satisfies`, `verifies`, `refines`, `derives_from`) for downstream artefact types (anything with `_req`, `arch`, `tc`, `impl`, `spec` in its directive). Other types default to `[]`.
+- `optional_links`: any other extra_link `option` that may legally appear on this type but is not in `required_links`. Default to `[]` when no other links are declared.
+- `required_metadata_fields`: include `status` always (every governed type has a lifecycle). Add any field that the project's `[needs.fields.X]` table declares as required for this directive. If `ubproject.toml` carries no such hints, emit `[status]`.
+- `required_roles`: emit `[]` by default — bootstrap runs on greenfield projects with no observed review process. Tailoring authors are expected to fill in `[reviewer]` (or `[reviewer, approved_by]`) once a review gate is established. `pharaoh-tailor-review` rule C6 surfaces a finding if the key is absent so the project explicitly declares the choice.
+
+Worked example for a `comp_req` directive with `[[needs.extra_links]] option = "satisfies", outgoing = "comp_req"`:
+
+```yaml
+comp_req:
+  required_fields: [id, status, title, satisfies]
+  optional_fields: [reviewer, approved_by, source_doc]
+  lifecycle: [draft, reviewed, approved]
+  required_links: [satisfies]
+  optional_links: []
+  required_metadata_fields: [status]
+  required_roles: []
+```
+
+A type with no observed link declarations emits empty arrays:
+
+```yaml
+feat:
+  required_fields: [id, status, title]
+  optional_fields: [reviewer, approved_by, source_doc]
+  lifecycle: [draft, reviewed, approved]
+  required_links: []
+  optional_links: []
+  required_metadata_fields: [status]
+  required_roles: []
+```
+
+Empty arrays are deliberate: they say "the project considered this and chose no requirement". Omitting the key entirely is what `pharaoh-tailor-review` flags as an unmade decision (rule C6).
 
 The emitted `artefact-catalog.yaml` validates against
 `schemas/artefact-catalog.schema.json` shipped at the Pharaoh package root
