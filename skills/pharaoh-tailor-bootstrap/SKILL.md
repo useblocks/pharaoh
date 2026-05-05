@@ -79,8 +79,13 @@ See fixture for exact format.
 For each declared type, emit:
 - `required_fields`: at minimum `id`, `status`.
 - `optional_fields`: `reviewer`, `approved_by`, plus `source_doc` for types that typically carry provenance (heuristic: top-level types like `feat`, `story`, `use_case` — if unsure, include it).
-- `child_of`: list of parent types inferred from extra_links. Rule: if `satisfies` link exists, types that commonly use it (`comp_req`, `spec`, `impl`) list their parent (`feat`, `story`, etc.). If no clear inference, `child_of: []` — caller tunes later.
-- `lifecycle_ref`: `workflows.yaml#<type>`.
+- `lifecycle`: list of states from `workflows.yaml` that apply to this type (typically the full state list).
+- `required_body_sections`: optional list of body-prose section headings (e.g. `Inputs`, `Steps`, `Expected` for `tc`); omit when no body sections are required.
+
+The emitted `artefact-catalog.yaml` validates against
+`schemas/artefact-catalog.schema.json` shipped at the Pharaoh package root
+(see `schemas/README.md`). `pharaoh-tailor-review` enforces this on the
+output of every bootstrap run.
 
 ### Step 5: Emit per-type checklists
 

@@ -23,9 +23,16 @@ Do NOT invoke to author or repair tailoring files — use `pharaoh-tailor-fill` 
 
 - **tailoring_dir** (from user): path to `.pharaoh/project/` containing the four tailoring
   files
-- **schemas_dir** (from user, optional): path to JSON schema files. Defaults to
-  `<tailoring_dir>/schemas/` if that directory exists; otherwise applies built-in structural
-  checks (see Step 2).
+- **schemas_dir** (from user, optional): path to JSON schema files. Resolved in
+  this order:
+    1. The explicit value if provided.
+    2. `<tailoring_dir>/schemas/` if that directory exists (per-project overrides).
+    3. The Pharaoh-shipped `schemas/` directory at the package root
+       (`<pharaoh_repo>/schemas/`). This is the default and ships with the four
+       canonical schemas (`artefact-catalog.schema.json`, `workflows.schema.json`,
+       `id-conventions.schema.json`, `checklists-frontmatter.schema.json`).
+    4. If none of the above resolve, falls back to built-in structural rules and
+       emits a `degraded_mode: true` flag in the output.
 
 The four expected files:
 - `<tailoring_dir>/id-conventions.yaml`
@@ -119,7 +126,7 @@ but do not replace them.
 
 For each entry in `prefixes`, the key must be a non-empty string and the value must be a
 non-empty string (the description). See
-`examples/my-project/.pharaoh/project/schemas/id-conventions.schema.json` for the authoritative
+`<pharaoh_repo>/schemas/id-conventions.schema.json` for the authoritative
 JSON Schema.
 
 **workflows.yaml required keys:**
@@ -134,7 +141,7 @@ For each transition in `transitions`:
 - `from` and `to` must be non-empty strings.
 - `requires` must be a list (may be empty).
 
-See `examples/my-project/.pharaoh/project/schemas/workflows.schema.json` for the authoritative
+See `<pharaoh_repo>/schemas/workflows.schema.json` for the authoritative
 JSON Schema.
 
 **artefact-catalog.yaml required structure:**
@@ -148,14 +155,14 @@ Top level must be a map of artefact-type keys. For each artefact type:
 | `required_body_sections` | list | Optional; entries are top-level heading names that must appear inside the directive body prose (e.g. `Inputs`, `Steps`, `Expected` for `tc`). Validated as body prose, not as `:key:` options. |
 | `lifecycle` | list | Optional; if present must be non-empty |
 
-See `examples/my-project/.pharaoh/project/schemas/artefact-catalog.schema.json` for the
+See `<pharaoh_repo>/schemas/artefact-catalog.schema.json` for the
 authoritative JSON Schema.
 
 **checklists/*.md frontmatter:**
 
 YAML frontmatter (delimited by `---`) at the top of a checklist file is **optional**. When
 present, it is validated against
-`examples/my-project/.pharaoh/project/schemas/checklists-frontmatter.schema.json`:
+`<pharaoh_repo>/schemas/checklists-frontmatter.schema.json`:
 
 | Key | Rule |
 |---|---|
@@ -239,15 +246,19 @@ Emit the JSON document. No prose before or after.
 
 ## Schema validation
 
-Four JSON Schema (draft 2020-12) files live alongside the tailoring files and make structural
+Four JSON Schema (draft 2020-12) files ship with Pharaoh and make structural
 validation deterministic:
 
 | Tailoring file | Schema |
 |---|---|
-| `id-conventions.yaml` | `<tailoring_dir>/schemas/id-conventions.schema.json` |
-| `workflows.yaml` | `<tailoring_dir>/schemas/workflows.schema.json` |
-| `artefact-catalog.yaml` | `<tailoring_dir>/schemas/artefact-catalog.schema.json` |
-| `checklists/*.md` (frontmatter) | `<tailoring_dir>/schemas/checklists-frontmatter.schema.json` |
+| `id-conventions.yaml` | `<schemas_dir>/id-conventions.schema.json` |
+| `workflows.yaml` | `<schemas_dir>/workflows.schema.json` |
+| `artefact-catalog.yaml` | `<schemas_dir>/artefact-catalog.schema.json` |
+| `checklists/*.md` (frontmatter) | `<schemas_dir>/checklists-frontmatter.schema.json` |
+
+`<schemas_dir>` is resolved per the order documented in Inputs above; the
+default is the Pharaoh-shipped `schemas/` directory at the package root. See
+`schemas/README.md` for the full resolution order and per-file responsibilities.
 
 Schema `$id` values are anchored under `https://pharaoh.useblocks.com/schemas/` and do not
 need to resolve at runtime.
