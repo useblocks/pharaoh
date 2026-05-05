@@ -8,10 +8,11 @@
   "properties": {
     "prefixes": {
       "type": "object",
-      "description": "Map of prefix token (e.g. gd_req) to human-readable description.",
+      "description": "Map from prefix key (e.g. feat, gd_req) to the literal identifier-prefix string that is prepended to the local-part to form an id (e.g. FEAT_, gd_req). Values must be identifier-shaped tokens, not human descriptions — they are consumed by pharaoh-id-allocate and pharaoh-id-convention-check.",
       "minProperties": 1,
       "additionalProperties": {
         "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9_]*$",
         "minLength": 1
       }
     },

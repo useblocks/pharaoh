@@ -66,9 +66,12 @@ current state is a valid declared state for this artefact type.
 
 ### Step 1: Load tailoring and needs.json
 
-**1a.** Read `workflows.yaml` from `.pharaoh/project/`. Extract:
-- `lifecycle_states` map (keys are valid state names)
-- `transitions` list: each entry has `from`, `to`, `requires`
+**1a.** Read `workflows.yaml` from `.pharaoh/project/`. The file shape is fixed by
+`schemas/workflows.schema.json` (flat `lifecycle_states` array, `transitions` array of
+`{from, to, requires}`). Extract:
+- `lifecycle_states` — flat list of declared state-name strings
+- `transitions` list: each entry has `from`, `to`, and a `requires` list of gate-name
+  strings (always a list per the schema, never a scalar)
 
 **1b.** Read `artefact-catalog.yaml`. Find the entry for the artefact type of `need_id`.
 Record the `lifecycle` list for that type (if present).

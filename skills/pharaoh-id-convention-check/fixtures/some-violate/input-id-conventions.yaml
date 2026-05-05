@@ -2,6 +2,6 @@
 
 id_regex: "^[a-z][a-z_]*__[a-z0-9_]+$"
 
-id_regex_by_type:
+id_regex_exceptions:
   comp_req: "^CREQ_[a-z]+_[a-z]+_[a-z]+$"
   test_case: "^tc__[a-z0-9_]+$"

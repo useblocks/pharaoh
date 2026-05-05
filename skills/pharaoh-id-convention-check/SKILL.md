@@ -33,20 +33,20 @@ Do NOT use to discover or count id schemes — the tailoring author declares ONE
   id_regex: "^[a-z][a-z_]*__[a-z0-9_]+$"
 
   # per-type overrides — the regex applied to needs of that type
-  id_regex_by_type:
+  id_regex_exceptions:
     comp_req: "^CREQ_[a-z]+_[a-z]+_[a-z]+$"
     gd_req:   "^CREQ_.+$|^gd_req__.+$"
   ```
 
-  Resolution order for a need of type `T`: `id_regex_by_type[T]` if declared, else `id_regex` (top-level default), else fail the whole check with `reason: "no regex declared for type <T>"` on every need of that type.
+  Resolution order for a need of type `T`: `id_regex_exceptions[T]` if declared, else `id_regex` (top-level default), else fail the whole check with `reason: "no regex declared for type <T>"` on every need of that type.
 
 - `needs_json_path`: absolute path to the built sphinx-needs corpus `needs.json`. Accepts either the flat `{"needs": {<id>: {id, type, ...}, ...}}` shape or the versioned `{"versions": {"<v>": {"needs": {...}}}}` shape (uses `current_version` if declared, else the latest key). Each need object must carry at least `id` and `type`; needs missing either field are reported as violations with `reason: "missing id or type field"`.
 
 Edge cases:
 - Empty corpus (`needs` is `{}`) → `needs_checked: 0, violations: [], overall: "pass"` (vacuously true).
-- `id-conventions.yaml` has neither `id_regex` nor `id_regex_by_type` → every need is a violation with `reason: "no regex declared for type <T>"`.
+- `id-conventions.yaml` has neither `id_regex` nor `id_regex_exceptions` → every need is a violation with `reason: "no regex declared for type <T>"`.
 - Regex compilation error (invalid Python regex syntax in the tailoring) → `overall: "fail"` with a single violation `{need_id: "*", type: "<T>", expected_regex: "<bad regex>", reason: "regex compile error: <python error>"}` and `needs_checked: 0`.
-- Need `type` not mentioned in `id_regex_by_type` and no top-level default → violation with `reason: "no regex declared for type <T>"`.
+- Need `type` not mentioned in `id_regex_exceptions` and no top-level default → violation with `reason: "no regex declared for type <T>"`.
 
 ## Output
 
@@ -78,7 +78,7 @@ Edge cases:
 For every need `N` in the flattened needs map:
 
 1. Read `N.id` and `N.type`. If either is absent, emit violation `{need_id: <whatever id is, or "<missing>">, type: <or "<missing>">, expected_regex: null, reason: "missing id or type field"}` and continue.
-2. Resolve the regex for `N.type`: first `id_regex_by_type[N.type]`, else top-level `id_regex`. If neither is declared, emit violation `{need_id: N.id, type: N.type, expected_regex: null, reason: "no regex declared for type <N.type>"}` and continue.
+2. Resolve the regex for `N.type`: first `id_regex_exceptions[N.type]`, else top-level `id_regex`. If neither is declared, emit violation `{need_id: N.id, type: N.type, expected_regex: null, reason: "no regex declared for type <N.type>"}` and continue.
 3. Compile the regex with Python `re.compile(pattern)`. On `re.error`, emit a single synthetic violation (see Edge cases above) and abort.
 4. Apply `re.fullmatch(pattern, N.id)`. If `None`, emit violation `{need_id: N.id, type: N.type, expected_regex: <pattern>, reason: "does not match"}`.
 
@@ -94,7 +94,7 @@ nj    = json.load(open(needs_json_path))
 needs = nj.get("needs") or next(iter(nj.get("versions", {}).values()), {}).get("needs", {})
 
 default = conv.get("id_regex")
-by_type = conv.get("id_regex_by_type", {}) or {}
+by_type = conv.get("id_regex_exceptions", {}) or {}
 
 violations = []
 for nid, n in needs.items():
