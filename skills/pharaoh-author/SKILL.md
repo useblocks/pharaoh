@@ -145,6 +145,11 @@ let the dispatched skill apply its own defaults and FAIL when its inputs are ins
 
 **`pharaoh-req-draft`**
 
+- `target_level` ← the resolved catalog key from Step 0 (e.g. `gd_req`, `comp_req`, `sysreq`,
+  `swreq`, `hazard`, `safety_goal`, `fsr`, `tsr`). The drafter looks up the entry in
+  `artefact-catalog.yaml` and reads `required_fields`, `required_metadata_fields`, and
+  `required_links`; if the type is missing from the catalog it FAILs with a clear
+  "type X not declared" message
 - `feature_context` ← `draft_seed`
 - `parent_link` ← `parent_link` (may be a workflow-id when drafting a top-level requirement)
 

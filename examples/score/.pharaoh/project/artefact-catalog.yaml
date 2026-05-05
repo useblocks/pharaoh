@@ -5,24 +5,40 @@ gd_req:
   # "required" means "should be present in well-formed needs" — not "100% present in corpus".
   optional_fields: [complies, tags, rationale, verification]
   lifecycle: [draft, valid, inspected]
+  required_links: [satisfies]
+  optional_links: [complies, verification]
+  required_metadata_fields: [status]
+  required_roles: []
 wp:
   required_fields: [id, status]
   # NOTE: wp needs do NOT carry a satisfies field (0/74 in corpus).  Plan specified
   # satisfies as required but real data contradicts this; removed from required_fields.
   # wp needs are linked to wf via input_back/output_back back-links, not satisfies.
   optional_fields: [tags, complies]
+  required_links: []
+  optional_links: [complies]
+  required_metadata_fields: [status]
+  required_roles: []
 wf:
   required_fields: [id, status, input, output, responsible]
   # NOTE: wf needs do NOT carry a satisfies field (0/79) and do NOT use rasic (0/79).
   # Plan specified satisfies as required and rasic as optional — both removed/corrected.
   # Actual wf fields used: input, output, responsible, approved_by, supported_by, has, contains.
   optional_fields: [tags, approved_by, supported_by, has, contains]
+  required_links: [input, output]
+  optional_links: [has, contains, supported_by]
+  required_metadata_fields: [status, responsible]
+  required_roles: [responsible]
 arch:
   required_fields: [id, status, satisfies, type]
   # type: one of module | component | interface
   # satisfies: links to parent requirement (gd_req or equivalent)
   optional_fields: [tags, rationale, description]
   lifecycle: [draft, valid, inspected]
+  required_links: [satisfies]
+  optional_links: []
+  required_metadata_fields: [status, type]
+  required_roles: []
 tc:
   required_fields: [id, status, verifies]
   # verifies: links to parent requirement or arch element.
@@ -32,3 +48,7 @@ tc:
   optional_fields: [tags, rationale, level]
   required_body_sections: [Inputs, Steps, Expected]
   lifecycle: [draft, valid, inspected]
+  required_links: [verifies]
+  optional_links: []
+  required_metadata_fields: [status]
+  required_roles: []
