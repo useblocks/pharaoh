@@ -5,7 +5,7 @@ description: "Use when analyzing the impact of changing a requirement, specifica
 
 ## Output invariant
 
-This skill's visible output is the full **Change Document** as defined in Step 4. The document is mandatory. Every invocation MUST emit the complete document with all sections. The session-state update in Step 5 is internal bookkeeping and MUST NOT replace the document.
+This skill's visible output is the full **Change Document** as defined in Step 5. The document is mandatory. Every invocation MUST emit the complete document with all sections. The session-state update in Step 4 is internal bookkeeping and MUST NOT replace the document. Step 5 is the LAST major section of the skill before Strictness Behavior, so the Change Document is the final visible content of the turn.
 
 Failure modes:
 - Returning only "Acknowledge this change analysis?" -> REGRESSION. Emit the full document.
@@ -193,9 +193,67 @@ For each affected item (need or code file), classify the required action:
 
 ---
 
-## 4. Produce the Change Document
+## 4. Update Session State (internal)
 
-Present results in the following structured format. Use markdown tables for readability.
+This step is internal bookkeeping. It writes the change-analysis record to `.pharaoh/session.json` and emits NOTHING to the visible turn output. The Change Document is emitted in Step 5 (the final visible action of the turn).
+
+Follow the session state instructions in `skills/shared/strictness.md` (Section 4).
+
+### Step 4a: Read or initialize session state
+
+1. Check if `.pharaoh/session.json` exists.
+2. If it does not exist, create the `.pharaoh/` directory and initialize the session state:
+
+```json
+{
+  "version": 1,
+  "created": "<current ISO 8601 timestamp>",
+  "updated": "<current ISO 8601 timestamp>",
+  "changes": {},
+  "global": {
+    "mece_checked": false,
+    "mece_timestamp": null,
+    "last_release": null
+  }
+}
+```
+
+3. If it exists, read and parse it. If the JSON is malformed, warn the user and re-initialize.
+
+### Step 4b: Record the change analysis
+
+For each target need ID, add or update an entry in the `changes` dictionary:
+
+```json
+{
+  "changes": {
+    "<TARGET_ID>": {
+      "change_analysis": "<current ISO 8601 timestamp>",
+      "acknowledged": false,
+      "authored": false,
+      "verified": false
+    }
+  }
+}
+```
+
+Key points:
+- Set `change_analysis` to the current timestamp.
+- Set `acknowledged` to `false`. Downstream enforcing-mode authoring skills check this flag and the user flips it by editing the session-state file directly.
+- Do not overwrite `authored` or `verified` if the entry already exists -- preserve those values.
+- Update the top-level `updated` timestamp.
+
+### Step 4c: Write the session state
+
+Write the updated JSON to `.pharaoh/session.json`. Ensure the JSON is properly formatted (indented for readability).
+
+---
+
+## 5. Emit the Change Document (final visible output)
+
+This is the visible output of the skill. After Step 4 has written session state, emit the full Change Document below as the final action of the turn. The document is the LAST instruction of the skill. Do NOT ask any follow-up question. End the turn after emitting.
+
+Use the structured format below. Use markdown tables for readability. Omit sections that have no rows but always emit the Change Request, Summary, and Recommendation header lines.
 
 ```
 ## Change Document
@@ -258,78 +316,20 @@ The following needs appear in the impact scope of multiple targets:
 - <NEED_ID>: affected by both <TARGET_1> and <TARGET_2>
 ```
 
----
+### Acknowledgment is a separate concern
 
-## 5. Update Session State
-
-After producing the Change Document, update the session state file so other skills can check whether change analysis was performed.
-
-Follow the session state instructions in `skills/shared/strictness.md` (Section 4).
-
-### Step 5a: Read or initialize session state
-
-1. Check if `.pharaoh/session.json` exists.
-2. If it does not exist, create the `.pharaoh/` directory and initialize the session state:
-
-```json
-{
-  "version": 1,
-  "created": "<current ISO 8601 timestamp>",
-  "updated": "<current ISO 8601 timestamp>",
-  "changes": {},
-  "global": {
-    "mece_checked": false,
-    "mece_timestamp": null,
-    "last_release": null
-  }
-}
-```
-
-3. If it exists, read and parse it. If the JSON is malformed, warn the user and re-initialize.
-
-### Step 5b: Record the change analysis
-
-For each target need ID, add or update an entry in the `changes` dictionary:
-
-```json
-{
-  "changes": {
-    "<TARGET_ID>": {
-      "change_analysis": "<current ISO 8601 timestamp>",
-      "acknowledged": false,
-      "authored": false,
-      "verified": false
-    }
-  }
-}
-```
-
-Key points:
-- Set `change_analysis` to the current timestamp.
-- Set `acknowledged` to `false`. Downstream enforcing-mode authoring skills check this flag and the user flips it by editing the session-state file directly.
-- Do not overwrite `authored` or `verified` if the entry already exists -- preserve those values.
-- Update the top-level `updated` timestamp.
-
-### Step 5c: Write the session state
-
-Write the updated JSON to `.pharaoh/session.json`. Ensure the JSON is properly formatted (indented for readability).
-
----
-
-## 6. End the turn
-
-After emitting the Change Document and writing session state, end the turn. Do not ask the user any follow-up question.
-
-Acknowledgment is a separate concern handled by downstream authoring skills:
+Acknowledgment is NOT part of this skill's output. Do not ask the user to acknowledge the analysis. Downstream behavior:
 
 - In **advisory** strictness, no skill checks `acknowledged`. The user proceeds freely.
 - In **enforcing** strictness, downstream authoring skills check `.pharaoh/session.json[changes][<id>].acknowledged` and FAIL with a message naming the file path and the field to flip. The user edits the session-state file directly to acknowledge.
 
 This split keeps `pharaoh-change` non-interactive and CI-safe.
 
+End the turn after emitting the Change Document.
+
 ---
 
-## 7. Strictness Behavior
+## 6. Strictness Behavior
 
 Follow the instructions in `skills/shared/strictness.md` for strictness handling. The specifics for this skill:
 
@@ -351,7 +351,7 @@ Both advisory and enforcing modes perform the same analysis. Strictness only aff
 
 ---
 
-## 8. Using ubc diff
+## 7. Using ubc diff
 
 If the ubc CLI is available (detected in Step 2), use `ubc diff` to supplement or replace parts of the manual impact analysis.
 
@@ -389,7 +389,7 @@ If `ubc diff` does not provide impact tracing (older version), use it only for i
 
 ---
 
-## 9. Edge Cases
+## 8. Edge Cases
 
 ### Target need does not exist
 
@@ -447,7 +447,7 @@ Handled in Step 2a. If the user says "change the brake response time requirement
 
 ---
 
-## 10. Complete Workflow Example
+## 9. Complete Workflow Example
 
 To illustrate the full process, here is a walkthrough using the Brake System test fixture.
 
@@ -481,8 +481,6 @@ Transitive:
 
 Code impact: Not applicable (codelinks not configured).
 
-**Step 4** -- Change Document produced with the tables above. Summary: 2 must update, 2 review needed, 3 no change needed, 0 code files. Recommendation: proceed.
+**Step 4** -- Session state written: `REQ_001` entry with `acknowledged: false`. No visible output from this step.
 
-**Step 5** -- Session state written: `REQ_001` entry with `acknowledged: false`.
-
-**Step 6** -- Turn ends after the Change Document and session-state write. Session state holds `acknowledged: false`. The user edits `.pharaoh/session.json` directly to flip the flag before invoking an enforcing-mode authoring skill.
+**Step 5** -- Change Document emitted with the tables above. Summary: 2 must update, 2 review needed, 3 no change needed, 0 code files. Recommendation: proceed. Turn ends after emission. Session state holds `acknowledged: false`. The user edits `.pharaoh/session.json` directly to flip the flag before invoking an enforcing-mode authoring skill.
