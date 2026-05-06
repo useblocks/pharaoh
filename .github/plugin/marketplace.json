@@ -8,7 +8,7 @@
     {
       "name": "pharaoh",
       "description": "AI assistant framework for sphinx-needs projects",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "source": "./",
       "author": {
         "name": "useblocks"

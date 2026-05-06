@@ -1,7 +1,7 @@
 {
   "name": "pharaoh",
   "description": "AI assistant framework for sphinx-needs projects: change analysis, traceability, MECE, authoring, verification, and release management",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "author": {
     "name": "useblocks"
   },

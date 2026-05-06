@@ -3,6 +3,17 @@ name: pharaoh-decide
 description: "Use when recording a design decision as a traceable sphinx-needs object with alternatives, rationale, and links to affected requirements"
 ---
 
+## Output invariant
+
+This skill's visible output MUST contain, in order:
+
+1. Confirmation line: `Decision <DEC_ID> written to <file_path>`
+2. Optional follow-up suggestion (Step 7 content)
+
+The confirmation is mandatory. The suggestion is optional and is suppressed when the skill is called by `pharaoh:spec` (per existing Step 7 logic). Returning only the suggestion without the confirmation line is a REGRESSION.
+
+Session-state update is internal bookkeeping and runs before the visible output.
+
 # pharaoh-decide
 
 Record design decisions as traceable sphinx-needs `decision` directives. Each decision captures the chosen option, rejected alternatives, rationale, and explicit links to the requirements or specifications it affects. This skill ensures every decision has proper `decided_by`, `alternatives`, and `rationale` fields.
@@ -175,7 +186,9 @@ Decisions
 
 ---
 
-### Step 6: Update Session State
+### Step 6: Update Session State (internal)
+
+This step is internal bookkeeping. It MUST run before any visible output is emitted in Step 7. Do not print anything in this step.
 
 After successfully writing the decision:
 
@@ -203,15 +216,19 @@ After successfully writing the decision:
 
 #### Standalone invocation
 
-After writing the decision, suggest the next step:
+Emit the visible turn output. The FIRST line MUST be the written-confirmation. The follow-up suggestion is appended after a blank line:
 
 ```
+Decision <DEC_ID> written to <file_path>
+
 Next step: Run pharaoh:req-review to validate the decision against its linked requirements.
 ```
 
+Substitute `<DEC_ID>` with the generated ID from Step 3 and `<file_path>` with the absolute or repo-relative path to the file written in Step 4 / Step 5. The confirmation line MUST appear even if the follow-up suggestion is suppressed for any reason.
+
 #### Called by `pharaoh:spec`
 
-Return the decision ID silently. Do not print follow-up suggestions. The calling skill manages the workflow.
+Return the decision ID silently. Do not print follow-up suggestions. Do not print the written-confirmation line. The calling skill manages the workflow.
 
 ---
 
@@ -302,9 +319,11 @@ Why was PostgreSQL chosen over the alternatives?
 
 **Step 6** -- Session state updated: `DEC_003.authored = true`.
 
-**Step 7** -- Follow-up:
+**Step 7** -- Visible output:
 
 ```
+Decision DEC_003 written to docs/decisions.rst
+
 Next step: Run pharaoh:req-review to validate the decision against its linked requirements.
 ```
 
