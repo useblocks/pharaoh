@@ -3,6 +3,17 @@ name: pharaoh-mece
 description: "Use when checking for gaps, redundancies, and inconsistencies in sphinx-needs requirements, or validating traceability completeness"
 ---
 
+## Output invariant
+
+This skill's visible output is the full **MECE Analysis Report** as defined in Step 9. The report is mandatory -- every invocation MUST emit the complete report with all sections (omit only sections with no findings, but always emit the Summary section). The session-state update in Step 8 is internal bookkeeping and MUST NOT replace the report in the output.
+
+Failure modes:
+- Returning a one-paragraph executive summary instead of the table-formatted report -> REGRESSION. Emit the full report.
+- Returning only the session-state confirmation -> REGRESSION. Emit the full report.
+- Returning the report and asking the user a follow-up question instead of finishing -> REGRESSION. End the turn after the report.
+
+Non-interactive callers (`claude -p`, CI, batch) cannot reach the report past a follow-up prompt. The skill MUST be self-terminating.
+
 # pharaoh:mece -- MECE Analysis
 
 Analyze a sphinx-needs project for structural completeness and consistency.
@@ -300,11 +311,33 @@ Schema validation: Skipped (ubc CLI not available)
 
 ---
 
-### Step 8: Present MECE report
+### Step 8: Update session state (internal)
 
-Compile all findings into a single structured report. Use the format below
-exactly. Omit sections that have no findings (but mention "None found" in the
-summary counts).
+This step is internal bookkeeping. Perform it silently before emitting the
+report in Step 9 -- do not narrate it in the visible output.
+
+Update the session state file (`.pharaoh/session.json`) as described in
+`skills/shared/strictness.md`:
+
+1. Read the current `.pharaoh/session.json` (or create the default structure
+   if it does not exist).
+2. Set `global.mece_checked` to `true`.
+3. Set `global.mece_timestamp` to the current ISO 8601 timestamp.
+4. Set `updated` to the current ISO 8601 timestamp.
+5. Write the file back.
+
+The interaction with `require_mece_on_release` is described in Section 3
+(Strictness Behavior).
+
+---
+
+### Step 9: Emit the MECE report (visible output)
+
+This is the skill's visible output. Compile all findings into a single
+structured report. Use the format below exactly. Omit sections that have no
+findings (but mention "None found" in the summary counts). Always emit the
+Summary section. After emitting the report, end the turn -- do not ask the
+user follow-up questions.
 
 ```
 ## MECE Analysis Report
@@ -376,22 +409,7 @@ summary counts).
 - **critical**: More than 5 errors, or any category has more errors than valid
   needs of that type. The traceability structure has significant problems.
 
----
-
-### Step 9: Update session state
-
-After presenting the report, update the session state file
-(`.pharaoh/session.json`) as described in `skills/shared/strictness.md`:
-
-1. Read the current `.pharaoh/session.json` (or create the default structure
-   if it does not exist).
-2. Set `global.mece_checked` to `true`.
-3. Set `global.mece_timestamp` to the current ISO 8601 timestamp.
-4. Set `updated` to the current ISO 8601 timestamp.
-5. Write the file back.
-
-This records that MECE analysis was performed, which satisfies the
-`require_mece_on_release` gate if `pharaoh.toml` has it enabled.
+Emit the report and end the turn.
 
 ---
 
