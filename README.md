@@ -55,16 +55,18 @@ copilot plugin install pharaoh@pharaoh-dev
 
 ## Skills / Agents
 
-71 atomic skills, organised by purpose. Names below are the Claude Code
-slash form `pharaoh:pharaoh-<name>` (the `pharaoh-` prefix is part of each
-skill's own name). The GitHub Copilot equivalent strips the redundant
-prefix: `@pharaoh.<name>`.
+Skills organised by purpose. Names below are the Claude Code slash form
+`pharaoh:pharaoh-<name>` (the `pharaoh-` prefix is part of each skill's
+own name). The GitHub Copilot equivalent strips the redundant prefix:
+`@pharaoh.<name>`. Most skills are atomic (one artefact × one phase).
+`pharaoh-sdd` is the non-atomic V-model SDD entry point.
 
 **Core workflow:**
 
 | Skill | Purpose |
 |-------|---------|
 | `pharaoh:pharaoh-setup` | Set up Pharaoh in a sphinx-needs project -- detect structure, scaffold Copilot agents |
+| `pharaoh:pharaoh-sdd` | Non-atomic V-model SDD orchestrator -- elicit requirements, walk tiers with human approval at every checkpoint, end with quality-gate |
 | `pharaoh:pharaoh-change` | Analyze the impact of a requirement change, including traceability to code via codelinks |
 | `pharaoh:pharaoh-trace` | Navigate traceability links across requirements, specs, implementations, tests, and code |
 | `pharaoh:pharaoh-mece` | Gap and redundancy analysis -- orphans, missing links, MECE violations |
