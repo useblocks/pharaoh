@@ -52,6 +52,11 @@ with no sphinx-needs structure.
   config, and any domain-specific checklists.
 - `pharaoh.toml` at the project root and `.pharaoh/project/` tailoring (inputs for deriving
   tier order, described in Phase 1 below).
+- `ubproject.toml` at the project root: `[needs.links]` is read from it for the project's
+  link-field convention (used in the `normalise` step of the tier loop).
+
+Data-access and strictness concerns are handled by the dispatched atomic skills. pharaoh-sdd
+does not restate them.
 
 ## Output
 
@@ -81,8 +86,8 @@ all review JSON written during the tier loop. The Terminal step passes this dire
 
 Derive the V-model tier order by checking these sources in priority order. First, look for
 an explicit tier or chain declaration in `pharaoh.toml` or `.pharaoh/project/`. If none
-exists, topologically sort the `required_links` chain pairs from `[pharaoh.traceability]`
-when they cover all tiers in use. If that is still incomplete, infer the order from the
+exists, topologically sort the `required_links` chain pairs from the `[pharaoh.traceability]`
+table in `pharaoh.toml` when they cover all tiers in use. If that is still incomplete, infer the order from the
 artefact-catalog types together with the link structure observed in the existing corpus
 (`needs.json`). Present the derived tier order to the developer and get confirmation before
 any drafting begins.
@@ -94,21 +99,28 @@ Do not hardcode tier depth. For each tier, in order, run this loop:
 | draft | Dispatch the tier's atomic draft skill once per artefact. The draft skill self-invokes its review and returns `{artefact, review}`. |
 | evaluate | Read the attached review. If `overall: fail`, `overall: needs_work`, or any binary axis has `score: 0`, re-dispatch the draft skill with the review action items folded into the description. Use `pharaoh-req-regenerate` for requirements, re-invoke the draft skill directly for arch and vplan. |
 | normalise | If the project traces with a generic link field (read from `ubproject.toml [needs.links]` and the existing corpus), rewrite the drafted directive's typed link option (`:satisfies:` or `:verifies:`) to that field. If `ubproject.toml` is absent or has no `[needs.links]` table, keep the typed link as-is. |
-| persist | Write the artefact into the docs tree. Write its review JSON into the run directory so `pharaoh-quality-gate` can confirm review coverage. |
-| rebuild | Run `sphinx-build -W` on the docs. The tier is not done until the build is clean and `needs.json` regenerates with the new needs. |
+| persist | Write the artefact into the docs tree. Write the review JSON into the run directory using the filename convention `<id>_review.json` (for req-review), `<id>_arch_review.json` (for arch-review), and `<id>_vplan_review.json` (for vplan-review). These names are matched by `pharaoh-self-review-coverage-check`. |
+| rebuild | Run `sphinx-build -W` on the docs. The tier is not done until the build is clean and `needs.json` regenerates with the new needs. The `needs.json` output location is the project's configured path, resolvable from `conf.py` or `ubproject.toml` (on a typical demo it is `docs/_build/html/needs.json`). |
 | checkpoint | Present the tier's artefacts to the developer. Get approval before the next tier. |
 
 At the implementation tier the agent writes the code directly, following test-driven
 development practice (write the failing test first, then make it pass, then refactor). No
 Pharaoh atomic skill governs this tier. Once the implementation is complete, run
 `pharaoh-req-codelink-annotate` with `file_path`, `anchor`, `project_root`, and `mode`
-supplied to link the finished code back into the requirement graph.
+supplied to link the finished code back into the requirement graph. After annotation, run
+`sphinx-build -W` to confirm the build is clean with the code links in place. Present the
+completed implementation and annotation to the developer and get approval before proceeding
+to the Terminal step.
 
 ### Terminal
 
-Aggregate the persisted review JSONs into the summary YAML that `pharaoh-quality-gate`
-expects. Run `pharaoh-quality-gate`. The deliverable is a V-model graph where every tier
-traces to the next, every artefact has a review on disk, and the build is clean.
+Run `pharaoh-quality-gate` passing `project_root` and the run directory (via
+`gate_spec.invariants.self_review_coverage`). The `self_review_coverage` invariant reads the
+run directory directly and confirms every drafted artefact has a matching review JSON on
+disk. `artefacts_summary_path` is optional and may be omitted here because the pharaoh-sdd
+chain runs draft-and-review per tier but does not run `pharaoh-mece` or
+`pharaoh-coverage-gap`. The deliverable is a V-model graph where every tier traces to the
+next, every artefact has a review on disk, and the build is clean.
 
 ## The baseline this skill exists to stop
 
