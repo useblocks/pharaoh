@@ -13,6 +13,7 @@ Pharaoh is a skill-based AI assistant framework for sphinx-needs projects. It he
 | Agent | Purpose |
 |-------|---------|
 | `@pharaoh.setup` | Scaffold Pharaoh into a project -- detect structure, generate `pharaoh.toml` |
+| `@pharaoh.sdd` | Non-atomic V-model SDD orchestrator -- elicit requirements, walk tiers with human approval at every checkpoint, end with quality-gate |
 | `@pharaoh.change` | Analyze impact of a change -- trace through needs links and codelinks, produce a Change Document |
 | `@pharaoh.trace` | Navigate traceability in any direction -- show everything linked to a need across all levels |
 | `@pharaoh.mece` | Gap and redundancy analysis -- find orphans, missing links, MECE violations |
