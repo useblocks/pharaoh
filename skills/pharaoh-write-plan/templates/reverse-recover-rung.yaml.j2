@@ -1,0 +1,306 @@
+---
+# Template front-matter. Parsed by pharaoh-write-plan, stripped before render.
+template_name: reverse-recover-rung
+description: |
+  Single-rung reverse recovery: caller supplies rung_type ("extraction" or
+  "synthesis") plus that rung's sources, and the plan emits the rung's
+  recovery skill(s), codelink annotation (extraction rung only -- a
+  synthesized or split need has no single source line to annotate), and
+  the ledger write via pharaoh-rev-record-ledger, the only skill allowed
+  to shell out to `ubc agent reverse record`. Terminal quality_gate.
+
+  rung_type == "extraction": id-allocate, then pharaoh-req-from-code per
+  file with status: recovered, then per-req review / grounding-check /
+  codelink-annotate, then one pharaoh-rev-record-ledger call per file.
+
+  rung_type == "synthesis": pharaoh-rev-cluster-synthesize per cluster,
+  then pharaoh-rev-atomicity-split on its emitted need, then per-item
+  review, then one pharaoh-rev-record-ledger call per cluster applying
+  that cluster's member_uplinks to its pre-existing lower-rung members
+  (already persisted by an earlier extraction-rung run of this template).
+
+  Files and clusters are UNROLLED into concrete per-item tasks at write
+  time (no runtime foreach over the caller-supplied list), matching
+  reverse-engineer-module. This suits a bounded rung (a handful of files
+  or clusters). A larger corpus is split into multiple rung-template
+  invocations rather than one template handling every rung at once.
+
+  Project precondition (status gates) -- the consumer project's
+  ubproject.toml must:
+  (a) list "recovered" in [workflow.lifecycle].states, or the
+      status_undeclared gap flags every recovered need as an
+      unrecognised status.
+  (b) list "recovered" in [workflow].release_disallow_status, so an
+      un-owned recovered need blocks a release gate until a human moves
+      it off "recovered" -- recovery populates the corpus, it does not
+      certify it, so the honest default is to disallow release while a
+      need still carries that status.
+  This template does not check or write ubproject.toml itself -- it is a
+  project-config precondition, not a plan task.
+required_vars:
+  - project_root          # absolute path
+  - rung_name             # slug for plan.name and workspace naming, e.g. "csv_module" or "cluster_export"
+  - rung_type             # "extraction" | "synthesis" -- selects which recovery skill(s) this rung renders
+  - target_level           # directive name for this rung's recovered/synthesized need type, from ubproject.toml [[needs.types]]
+  - target_rst             # relative to project_root -- RST file the recovered/synthesized needs render into
+  - docs_root              # relative to project_root (e.g. "docs/source") -- used to locate needs.json
+optional_vars:
+  # extraction rung (rung_type == "extraction")
+  - src_root               # relative to project_root -- base dir for `files`. Required when rung_type == "extraction".
+  - files                  # list[{filename, stem}] relative to src_root, caller supplies stems. Required when rung_type == "extraction".
+  - target_prefix          # id prefix for target_level, e.g. "CREQ_". Required when rung_type == "extraction" (id-allocate needs it).
+  - parent_feat_ids        # list[str], up-links every extracted need carries. Defaults to empty.
+  # synthesis rung (rung_type == "synthesis")
+  - clusters               # list[{cluster_id, members: list[str], intent_snippets: list[{id, source, text}]}]. Required when rung_type == "synthesis".
+  # shared
+  - papyrus_seeds          # list[{canonical_name, body}], caller-supplied
+  - execution_mode         # default "inline" (small N)
+  - papyrus_workspace      # default <project_root>/.papyrus
+  - workspace_dir          # default <project_root>/.pharaoh/runs/<rung_name>-<ts>/
+  - model                  # model id recorded in every record_ledger call's run.model. default "unspecified"
+  - prompt_hash            # stable hash recorded in run.prompt_hash. default "unspecified"
+---
+# ---------------------------------------------------------------------
+# Status-gate precondition (see template description above for detail):
+#   (a) "recovered" must be declared in [workflow.lifecycle].states in
+#       the consumer's ubproject.toml, or every recovered need trips the
+#       status_undeclared gap.
+#   (b) "recovered" should be listed in [workflow].release_disallow_status
+#       so un-owned recovered needs cannot pass a release gate until a
+#       human takes ownership.
+# This template assumes both are already configured. It does not
+# configure them.
+# ---------------------------------------------------------------------
+name: reverse-recover-{{ rung_name }}
+version: 1
+project_root: {{ project_root }}
+{% if workspace_dir %}workspace_dir: {{ workspace_dir }}{% endif %}
+defaults:
+  execution_mode: {{ execution_mode | default("inline") }}
+  retry_on_validation_fail: 1
+
+tasks:
+{% if papyrus_seeds %}
+{% for seed in papyrus_seeds %}
+  - id: preseed_{{ loop.index0 }}
+    skill: pharaoh-decision-record
+    inputs:
+      type: fact
+      canonical_name: "{{ seed.canonical_name }}"
+      body: "{{ seed.body }}"
+      reporter_id: "write-plan:preseed-{{ rung_name }}"
+      tags: ["origin:preseed"]
+{% endfor %}
+{% endif %}
+
+{% if rung_type == "extraction" %}
+  # --- Extraction rung: id-allocate, then one req-from-code / review /
+  # grounding-check / codelink-annotate / record-ledger chain per file. ---
+
+  - id: id_allocate
+    skill: pharaoh-id-allocate
+    inputs:
+      requests:
+{% for f in files %}
+        - stem: {{ f.stem }}
+          count: 3
+          prefix: {{ target_prefix }}
+          type: {{ target_level }}
+          parent_feat_id: {{ (parent_feat_ids | default([]))[0] | default("null") }}
+{% endfor %}
+      existing_ids_file: {{ project_root }}/{{ docs_root }}/_build/needs/needs.json
+    depends_on: {% if papyrus_seeds %}[{% for seed in papyrus_seeds %}preseed_{{ loop.index0 }}{% if not loop.last %}, {% endif %}{% endfor %}]{% else %}[]{% endif %}
+    outputs:
+      allocations: mapping
+
+{% for f in files %}
+  - id: reqs_{{ f.stem }}
+    skill: pharaoh-req-from-code
+    inputs:
+      file_path: {{ src_root }}/{{ f.filename }}
+      target_level: {{ target_level }}
+      status: recovered
+      parent_feat_ids: {{ parent_feat_ids | default([]) }}
+      split_strategy: ${heuristics.split_strategy("{{ src_root }}/{{ f.filename }}")}
+      allowed_ids: ${id_allocate.allocations | by_stem("{{ f.stem }}")}
+      papyrus_workspace: {{ papyrus_workspace | default(project_root + "/.papyrus") }}
+      project_root: {{ project_root }}
+      reporter_id: "write-plan:req-from-code-{{ f.stem }}"
+    depends_on: [id_allocate]
+    parallel_group: reqs_from_code
+    expected_output_schema: json_obj
+    outputs:
+      reqs: list  # [{id, title, type, body, source_doc, satisfies, verification, raw_rst}, ...]
+
+  - id: review_{{ f.stem }}
+    skill: pharaoh-req-review
+    foreach: "{% raw %}${reqs_{% endraw %}{{ f.stem }}{% raw %}.reqs}{% endraw %}"
+    execution_mode: subagents
+    depends_on: [reqs_{{ f.stem }}]
+    inputs:
+      target: ${item.raw_rst}
+      checklist_path: skills/shared/checklists/requirement.md
+      tailoring_path: "{{ project_root }}/.pharaoh/project"
+    parallel_group: review_recovered_reqs
+
+  - id: grounding_{{ f.stem }}
+    skill: pharaoh-req-code-grounding-check
+    foreach: "{% raw %}${reqs_{% endraw %}{{ f.stem }}{% raw %}.reqs}{% endraw %}"
+    execution_mode: subagents
+    depends_on: [reqs_{{ f.stem }}]
+    inputs:
+      target: ${item.raw_rst}
+      source_doc_path: ${item.source_doc}
+      project_root: ${project_root}
+      tailoring_path: "{{ project_root }}/.pharaoh/project"
+    parallel_group: grounding_recovered_reqs
+
+  - id: codelink_annotate_{{ f.stem }}
+    skill: pharaoh-req-codelink-annotate
+    foreach: "{% raw %}${reqs_{% endraw %}{{ f.stem }}{% raw %}.reqs}{% endraw %}"
+    execution_mode: subagents
+    depends_on: [reqs_{{ f.stem }}]
+    inputs:
+      req_id: ${item.id}
+      req_title: ${item.title}
+      req_type: ${item.type}
+      file_path: ${item.source_doc}
+      anchor: {type: top_of_file}
+      parent_links: ${item.satisfies}
+      project_root: {{ project_root }}
+    parallel_group: codelink_annotate_recovered
+    expected_output_schema: json_obj
+
+  - id: record_ledger_{{ f.stem }}
+    skill: pharaoh-rev-record-ledger
+    depends_on: [reqs_{{ f.stem }}, codelink_annotate_{{ f.stem }}]
+    inputs:
+      reqs: "{% raw %}${reqs_{% endraw %}{{ f.stem }}{% raw %}.reqs}{% endraw %}"
+      source_span_lines: "{% raw %}${codelink_annotate_{% endraw %}{{ f.stem }}{% raw %}.inserted_line}{% endraw %}"
+      source_path: {{ src_root }}/{{ f.filename }}
+      target_rst: {{ target_rst }}
+      run:
+        agent: "rev-record-ledger:{{ f.stem }}"
+        model: {{ model | default("unspecified") }}
+        prompt_hash: {{ prompt_hash | default("unspecified") }}
+        sources: [{{ src_root }}/{{ f.filename }}]
+      project_root: {{ project_root }}
+{% endfor %}
+{% endif %}
+
+{% if rung_type == "synthesis" %}
+  # --- Synthesis rung: one cluster-synthesize / atomicity-split / review /
+  # record-ledger chain per precomputed cluster. No codelink_annotate here
+  # -- a synthesized or split need has no single source line to anchor.
+  # source_span stays unset for these needs (see pharaoh-rev-record-ledger
+  # Input: source_span_lines is optional). ---
+
+{% for c in clusters %}
+  - id: cluster_synth_{{ c.cluster_id }}
+    skill: pharaoh-rev-cluster-synthesize
+    inputs:
+      cluster_id: {{ c.cluster_id }}
+      members: {{ c.members }}
+      intent_snippets: {{ c.intent_snippets | default([]) }}
+      target_level: {{ target_level }}
+      project_root: {{ project_root }}
+      tailoring_path: "{{ project_root }}/.pharaoh/project"
+      papyrus_workspace: {{ papyrus_workspace | default(project_root + "/.papyrus") }}
+      reporter_id: "write-plan:rev-cluster-synthesize-{{ c.cluster_id }}"
+    depends_on: {% if papyrus_seeds %}[{% for seed in papyrus_seeds %}preseed_{{ loop.index0 }}{% if not loop.last %}, {% endif %}{% endfor %}]{% else %}[]{% endif %}
+    parallel_group: cluster_synthesize
+    expected_output_schema: json_obj
+    outputs:
+      reqs: list       # [{id, title, type, body, intent_refs, intent_gap, cluster_id, raw_rst}]
+      member_uplinks: mapping
+
+  - id: review_cluster_synth_{{ c.cluster_id }}
+    skill: pharaoh-feat-review
+    foreach: "{% raw %}${cluster_synth_{% endraw %}{{ c.cluster_id }}{% raw %}.reqs}{% endraw %}"
+    execution_mode: subagents
+    depends_on: [cluster_synth_{{ c.cluster_id }}]
+    inputs:
+      target: ${item.raw_rst}
+      checklist_path: skills/shared/checklists/feat.md
+      tailoring_path: "{{ project_root }}/.pharaoh/project"
+    parallel_group: review_cluster_synth
+
+  - id: atomicity_split_{{ c.cluster_id }}
+    skill: pharaoh-rev-atomicity-split
+    foreach: "{% raw %}${cluster_synth_{% endraw %}{{ c.cluster_id }}{% raw %}.reqs}{% endraw %}"
+    execution_mode: subagents
+    depends_on: [cluster_synth_{{ c.cluster_id }}]
+    inputs:
+      recovered_need: ${item}
+      project_root: {{ project_root }}
+      tailoring_path: "{{ project_root }}/.pharaoh/project"
+      reporter_id: "write-plan:rev-atomicity-split-{{ c.cluster_id }}"
+    parallel_group: atomicity_split
+    outputs:
+      reqs: list
+
+  - id: review_atomicity_split_{{ c.cluster_id }}
+    skill: pharaoh-req-review
+    foreach: "{% raw %}${atomicity_split_{% endraw %}{{ c.cluster_id }}{% raw %}.reqs | flatten}{% endraw %}"
+    execution_mode: subagents
+    depends_on: [atomicity_split_{{ c.cluster_id }}]
+    inputs:
+      target: ${item.raw_rst}
+      checklist_path: skills/shared/checklists/requirement.md
+      tailoring_path: "{{ project_root }}/.pharaoh/project"
+    parallel_group: review_atomicity_split
+
+  - id: record_ledger_{{ c.cluster_id }}
+    skill: pharaoh-rev-record-ledger
+    depends_on: [atomicity_split_{{ c.cluster_id }}]
+    inputs:
+      reqs: "{% raw %}${atomicity_split_{% endraw %}{{ c.cluster_id }}{% raw %}.reqs | flatten}{% endraw %}"
+      member_uplinks: "{% raw %}${cluster_synth_{% endraw %}{{ c.cluster_id }}{% raw %}.member_uplinks}{% endraw %}"
+      source_path: {{ target_rst }}
+      target_rst: {{ target_rst }}
+      run:
+        agent: "rev-record-ledger:{{ c.cluster_id }}"
+        model: {{ model | default("unspecified") }}
+        prompt_hash: {{ prompt_hash | default("unspecified") }}
+        sources: {{ c.members }}
+      project_root: {{ project_root }}
+{% endfor %}
+{% endif %}
+
+  - id: quality_gate
+    skill: pharaoh-quality-gate
+    inputs:
+      artefacts_dir: ${workspace}/artefacts
+      project_root: {{ project_root }}
+      gate_spec:
+        invariants:
+          self_review_coverage:
+            enabled: true
+            self_review_map_path: skills/shared/self-review-map.yaml
+{% if papyrus_seeds %}
+          papyrus_non_empty:
+            enabled: true
+            required_min: 1
+{% endif %}
+          dispatch_signal_matches_plan:
+            enabled: true
+{% if rung_type == "extraction" %}
+    depends_on: [{% for f in files %}reqs_{{ f.stem }}, review_{{ f.stem }}, grounding_{{ f.stem }}, codelink_annotate_{{ f.stem }}, record_ledger_{{ f.stem }}{% if not loop.last %}, {% endif %}{% endfor %}]
+{% elif rung_type == "synthesis" %}
+    depends_on: [{% for c in clusters %}cluster_synth_{{ c.cluster_id }}, review_cluster_synth_{{ c.cluster_id }}, atomicity_split_{{ c.cluster_id }}, review_atomicity_split_{{ c.cluster_id }}, record_ledger_{{ c.cluster_id }}{% if not loop.last %}, {% endif %}{% endfor %}]
+{% endif %}
+
+validation:
+{% if rung_type == "extraction" %}
+{% for f in files %}
+  - task_output: ${reqs_{{ f.stem }}}
+    schema: json_obj
+    on_fail: skip_dependents
+{% endfor %}
+{% elif rung_type == "synthesis" %}
+{% for c in clusters %}
+  - task_output: ${cluster_synth_{{ c.cluster_id }}}
+    schema: json_obj
+    on_fail: skip_dependents
+{% endfor %}
+{% endif %}

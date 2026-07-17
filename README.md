@@ -145,6 +145,7 @@ own name). The GitHub Copilot equivalent strips the redundant prefix:
 |-------|---------|
 | `pharaoh:pharaoh-rev-cluster-synthesize` | Synthesize one higher-level need from a cluster of lower needs plus the diffuse intent signal in the git surface |
 | `pharaoh:pharaoh-rev-atomicity-split` | Split a recovered need that bundles several atomic requirements into atomic needs, preserving its up-links |
+| `pharaoh:pharaoh-rev-record-ledger` | Wrap a recovery emission into the engine's `RecoveryResult` shape and persist it via `ubc agent reverse record` |
 
 **Analysis and audit:**
 

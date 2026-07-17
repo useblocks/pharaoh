@@ -117,7 +117,7 @@ If `on_missing_config == "prompt"` (default) AND tailoring is missing (no `targe
 ## Atomicity
 
 - (a) Indivisible — one file in → N reqs out. No I/O beyond file read + optional Papyrus query/write + req emit. Emits in exactly one representation per call (`rst` OR `codelinks_comment`).
-- (b) Input: `{file_path, target_level, tailoring_path, shared_context_path?, papyrus_workspace?, reporter_id, parent_feat_ids?, emit_override?, codelinks_project_name?, on_missing_config?, allowed_ids?, split_strategy?}`. Output: single JSON object `{"reqs": [{"id", "title", "type", "body", "source_doc", "satisfies", "verification", "raw_rst"}, ...]}` for `emit=rst`, or `{"codelinks": [str, ...]}` for `emit=codelinks_comment`. On missing tailoring with `on_missing_config=prompt`: single JSON object `{status: "needs_confirmation", proposal}`.
+- (b) Input: `{file_path, target_level, tailoring_path, shared_context_path?, papyrus_workspace?, reporter_id, parent_feat_ids?, emit_override?, codelinks_project_name?, on_missing_config?, allowed_ids?, split_strategy?, status?}`. Output: single JSON object `{"reqs": [{"id", "title", "type", "body", "source_doc", "satisfies", "verification", "raw_rst"}, ...]}` for `emit=rst`, or `{"codelinks": [str, ...]}` for `emit=codelinks_comment`. On missing tailoring with `on_missing_config=prompt`: single JSON object `{status: "needs_confirmation", proposal}`.
 - (c) Reward: language-parametric fixture — given `test_fixture.<ext>` (`.py` / `.cpp` / `.rs` / `.ts`) containing exactly 3 named symbols (`FooBar`, `BazQux`, `Quux`), emitted reqs must mention all 3 by canonical name. Directive name must equal `target_level`. If `parent_feat_ids` is non-empty, every emitted block MUST contain `:satisfies: <id1>, <id2>, ...` with all parents comma-joined.
 - (d) Reusable across reverse-engineering workflows, spec drafting, standalone CI "are there reqs for this code?" gates.
 - (e) Composable — strictly one phase. Never invokes `pharaoh-arch-draft`, `pharaoh-fmea`, `pharaoh-plan`.
@@ -133,6 +133,7 @@ If `on_missing_config == "prompt"` (default) AND tailoring is missing (no `targe
 - `parent_feat_ids` (optional): list of parent feature IDs. When non-empty, every emitted block gets `:satisfies: <id1>, <id2>, ...` comma-joined.
 - `allowed_ids` (optional): pre-allocated ID list. When provided, emitter MUST NOT invent IDs outside this list; emits only `len(allowed_ids)` reqs max; overflow logged as a warning comment.
 - `split_strategy` (optional): `"single"` (default, whole file as one scope, target 1-5 reqs), `"top_level_symbols"` (per top-level symbol, target 1-3 reqs/symbol), or `"sections"` (per `# ---` / `// ===` horizontal-rule marker, target 1-3 reqs/section). Plans supply this via `${heuristics.split_strategy(...)}`.
+- `status` (optional, default `"draft"`): the sphinx-needs `:status:` value to emit on every block in this call, `emit=rst` only. A reverse-recovery plan sets this to `"recovered"` at the extraction rung so the two status gates (`shared/data-access.md`-adjacent project config, see `pharaoh-write-plan/templates/reverse-recover-rung.yaml.j2`'s header) can distinguish machine-recovered needs from hand-authored drafts. Absent input behaves exactly as before this field existed -- `status: draft` -- so existing callers and plans need no change.
 
 ## Output
 
@@ -151,7 +152,7 @@ A single JSON object. The top-level key names the emit mode: `reqs` for `emit=rs
       "source_doc": "<path to implementing source file>",
       "satisfies": ["<parent_1>", "<parent_2>"],
       "verification": "tc__TBD",
-      "raw_rst": ".. <target_level>:: <short_title>\n   :id: ...\n   :status: draft\n   :satisfies: ...\n   :source_doc: ...\n   :verification: tc__TBD\n\n   <body>\n"
+      "raw_rst": ".. <target_level>:: <short_title>\n   :id: ...\n   :status: <status input, default draft>\n   :satisfies: ...\n   :source_doc: ...\n   :verification: tc__TBD\n\n   <body>\n"
     }
   ]
 }
@@ -164,6 +165,7 @@ Field semantics:
 - `id` — `<id_prefix><snake_case_id>`. `<id_prefix>` defaults to `target_level` (`comp_req` → `comp_req__foo_01`). If `[[needs.types]].prefix` declares `"CREQ_"`, use `CREQ_foo_01`.
 - `type` — equals input `target_level`.
 - `satisfies` — list of parent feat ids. Empty list when `parent_feat_ids` was empty. Always present (use `[]`).
+- `status` (inside `raw_rst`'s `:status:` option, not a separate top-level `reqs[*]` key) -- equals input `status`, default `"draft"` when the input is absent. `emit=rst` only, see Step 5a.
 - `raw_rst` — exactly the RST directive block as it would appear in an `.rst` file. Downstream review / annotation skills read `raw_rst` when they need the directive text; helpers that consume `reqs` (e.g. by-stem grouping) read `id` / `source_doc`.
 
 ### `emit=codelinks_comment`
@@ -278,7 +280,7 @@ For each boundary-observable behavior (per Rule 5 enumeration):
 
 - `<short_title>` — 3-6 word summary.
 - `:id: <id_prefix><filename_stem>_<n>` — `<id_prefix>` resolved in Step 4. File basename (stem, snake_case) as disambiguator. Examples: `comp_req__csv2needs_01`, `CREQ_csv2needs_01`.
-- `:status: draft`.
+- `:status: <status>` -- the input `status` value, verbatim. Default `"draft"` when the caller omits `status` (backward compatible with every existing plan and direct invocation, which never passed this field before). A reverse-recovery plan passes `status: "recovered"` at the extraction rung so the corpus can tell a machine-recovered need from a hand-authored draft. See the two status-gate preconditions documented in `pharaoh-write-plan/templates/reverse-recover-rung.yaml.j2`.
 - `:satisfies: <parent_1>, ...` — iff `parent_feat_ids` non-empty. All parents comma-joined. If `[[needs.extra_links]]` declares a different outgoing name (e.g. `realizes`), use that instead.
 - `:source_doc: <path to implementing source file>` -- emit only if the project's `artefact-catalog.yaml` declares `source_doc` for `target_level` per Rule 3.
 - `:verification: tc__TBD` -- emit only if `[[needs.extra_links]]` in `ubproject.toml` declares `verification` (or the catalog declares it as a field) for `target_level` per Rule 6. Use the project's declared placeholder when one is configured.
@@ -289,6 +291,8 @@ For each boundary-observable behavior (per Rule 5 enumeration):
 For each behavior, emit one line that sphinx-codelinks' oneline parser would read back into a need equivalent to what `rst` mode would produce. Follow tailored `needs_fields` order and escape rules. Do NOT include the language comment prefix — that is `pharaoh-req-codelink-annotate`'s concern.
 
 Rules 3 and 6 do not gate codelinks-mode output. The `:source_doc:` and `:verification:` RST options have no counterpart in the one-line comment string. Code grounding is implicit (the comment lives in the source file itself) and the verification relation is carried via the tailored `needs_fields` (e.g. as a `links` slot or omitted entirely). Project tailoring of which fields appear in the comment is governed by `[codelinks.projects.<name>.analyse.oneline_comment_style]`, not by `artefact-catalog.yaml` or `[[needs.extra_links]]`.
+
+**Scoping limit -- `status` does not reach `codelinks_comment` mode.** The `status` input (Step 5a) has no counterpart field in the one-line comment format: sphinx-codelinks' `oneline_comment_style.needs_fields` carries `title`/`id`/`type`/`links` and whatever else the project tailors, never a status. A codelinks-tailored project therefore cannot reach `status: "recovered"` through this skill -- its recovered needs stay whatever status sphinx-codelinks itself assigns on build (typically the type's configured default). This is a known scoping limit, not a defect to silently work around: do not invent a pseudo-status field in the comment format to compensate. A project that needs the `recovered` status gate (see `pharaoh-write-plan/templates/reverse-recover-rung.yaml.j2`) on codelinks-tailored source must resolve `emit` to `"rst"` for its reverse-recovery runs, even if `"codelinks_comment"` is its normal tailored mode for hand-authored work.
 
 The `links` field renders as `[<parent_1>, ...]` when `parent_feat_ids` non-empty, else `[]` (or omitted if tailored `default = []`). The body shall-clause does NOT fit on a one-line comment — implied by the title and lost in this mode. For full shall-clause text use `emit="rst"`.
 
