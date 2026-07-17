@@ -1,0 +1,28 @@
+{
+  "reqs": [
+    {
+      "id": "comp_req__csv_export_bundle_01",
+      "title": "Validate CSV export column headers",
+      "type": "comp_req",
+      "body": "The CSV Exporter shall validate the configured column headers against the target schema.",
+      "satisfies": [
+        "FEAT_csv_export"
+      ],
+      "status": "draft",
+      "split_from": "comp_req__csv_export_bundle",
+      "raw_rst": ".. comp_req:: Validate CSV export column headers\n   :id: comp_req__csv_export_bundle_01\n   :status: draft\n   :satisfies: FEAT_csv_export\n\n   The CSV Exporter shall validate the configured column headers against the target schema.\n"
+    },
+    {
+      "id": "comp_req__csv_export_bundle_02",
+      "title": "Write CSV export rows",
+      "type": "comp_req",
+      "body": "The CSV Exporter shall write one CSV row per exported need, in the order returned by the needs query.",
+      "satisfies": [
+        "FEAT_csv_export"
+      ],
+      "status": "draft",
+      "split_from": "comp_req__csv_export_bundle",
+      "raw_rst": ".. comp_req:: Write CSV export rows\n   :id: comp_req__csv_export_bundle_02\n   :status: draft\n   :satisfies: FEAT_csv_export\n\n   The CSV Exporter shall write one CSV row per exported need, in the order returned by the needs query.\n"
+    }
+  ]
+}

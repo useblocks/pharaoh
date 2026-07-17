@@ -1,0 +1,10 @@
+{
+  "id": "comp_req__csv_export_bundle",
+  "type": "comp_req",
+  "title": "Validate headers and write CSV rows",
+  "body": "The CSV Exporter shall validate the configured column headers against the target schema. The CSV Exporter shall write one CSV row per exported need, in the order returned by the needs query.",
+  "status": "draft",
+  "satisfies": [
+    "FEAT_csv_export"
+  ]
+}

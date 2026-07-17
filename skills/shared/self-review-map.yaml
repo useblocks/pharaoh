@@ -35,6 +35,7 @@ map:
 
   # Reverse recovery emission
   pharaoh-rev-cluster-synthesize: pharaoh-feat-review
+  pharaoh-rev-atomicity-split: pharaoh-req-review
 
   # Diagram emission — extractors
   pharaoh-feat-component-extract: pharaoh-diagram-review
