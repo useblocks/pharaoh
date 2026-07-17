@@ -33,6 +33,9 @@ map:
   # Decision emission
   pharaoh-decision-record: pharaoh-decision-review
 
+  # Reverse recovery emission
+  pharaoh-rev-cluster-synthesize: pharaoh-feat-review
+
   # Diagram emission — extractors
   pharaoh-feat-component-extract: pharaoh-diagram-review
   pharaoh-feat-flow-extract: pharaoh-diagram-review

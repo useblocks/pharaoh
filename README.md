@@ -139,6 +139,12 @@ own name). The GitHub Copilot equivalent strips the redundant prefix:
 | `pharaoh:pharaoh-feat-balance` | Check feature granularity -- under/over-decomposition, fused sub-features, redundant pairs |
 | `pharaoh:pharaoh-feat-review` | Audit a feature-level need against generic feat axes plus per-project addenda |
 
+**Reverse recovery:**
+
+| Skill | Purpose |
+|-------|---------|
+| `pharaoh:pharaoh-rev-cluster-synthesize` | Synthesize one higher-level need from a cluster of lower needs plus the diffuse intent signal in the git surface |
+
 **Analysis and audit:**
 
 | Skill | Purpose |

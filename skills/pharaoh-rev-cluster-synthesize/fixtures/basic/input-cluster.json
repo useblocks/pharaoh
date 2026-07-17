@@ -1,0 +1,28 @@
+{
+  "cluster_id": "cluster_csv_export",
+  "members": [
+    "CREQ_csv_validate_headers",
+    "CREQ_csv_map_columns",
+    "CREQ_csv_write_rows"
+  ],
+  "needs": {
+    "CREQ_csv_validate_headers": {
+      "id": "CREQ_csv_validate_headers",
+      "type": "comp_req",
+      "title": "Validate CSV header row",
+      "content": "The CSV Exporter shall reject an export request when the configured column mapping references a header not present in the target schema."
+    },
+    "CREQ_csv_map_columns": {
+      "id": "CREQ_csv_map_columns",
+      "type": "comp_req",
+      "title": "Map need fields to CSV columns",
+      "content": "The CSV Exporter shall map each need field named in the column mapping to the corresponding CSV column in the emitted row."
+    },
+    "CREQ_csv_write_rows": {
+      "id": "CREQ_csv_write_rows",
+      "type": "comp_req",
+      "title": "Write one CSV row per need",
+      "content": "The CSV Exporter shall write exactly one CSV row per exported need, in the order returned by the needs query."
+    }
+  }
+}

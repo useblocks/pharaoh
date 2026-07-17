@@ -1,0 +1,14 @@
+{
+  "intent_snippets": [
+    {
+      "id": "commit_a1b2c3d",
+      "source": "commit a1b2c3d",
+      "text": "Add CSV export: users can now export the full needs set to a CSV file for spreadsheet review."
+    },
+    {
+      "id": "pr_142",
+      "source": "PR #142 description",
+      "text": "This PR wires up CSV export end to end: header validation, column mapping, row writing. Closes the CSV export request from the sales team."
+    }
+  ]
+}
