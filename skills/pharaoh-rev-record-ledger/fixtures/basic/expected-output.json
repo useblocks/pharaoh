@@ -1,7 +1,6 @@
 {
   "status": "recorded",
   "written": ["FEAT_csv_export"],
-  "updated": ["CREQ_csv_validate_headers", "CREQ_csv_map_columns", "CREQ_csv_write_rows"],
   "target_rst": "docs/source/recovered/feat_csv_export.rst",
   "report_path": "/abs/path/to/consumer-project/.pharaoh/runs/reverse-record-2026-07-17T00-00-00Z.json"
 }

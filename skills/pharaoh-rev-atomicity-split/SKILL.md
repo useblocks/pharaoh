@@ -273,6 +273,8 @@ flags a recovered need as bundling more than one behavior -- including the case
 out over-broad. After this skill emits `reqs`, `pharaoh-rev-record-ledger` wraps the atoms into
 the engine's `RecoveryResult` shape (`reqs` -> `needs`) and runs
 `ubc agent reverse record --input <tempfile>` -- the only legal way a plan-DAG task reaches the
-CLI -- which replaces the retired original need with its atoms and re-authors the up-link field on
-each. This skill never invokes the CLI, never clusters, never synthesizes, and never emits a
-down-link from an atom to another atom or to the retired original.
+CLI. That call writes only the advisory ledger for the atoms (`record` never edits RST or links).
+Each atom's up-link field is already correct as emitted by this skill (Step 5, copied verbatim
+from the retired original), so no further RST authoring is needed for it downstream. This skill
+never invokes the CLI, never clusters, never synthesizes, and never emits a down-link from an atom
+to another atom or to the retired original.

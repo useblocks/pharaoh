@@ -11,15 +11,7 @@
       "raw_rst": ".. feat:: CSV Export\n   :id: FEAT_csv_export\n   :status: draft\n\n   The system shall export the needs set to a CSV file, validating the configured column headers, mapping need fields to columns, and writing one row per exported need.\n"
     }
   ],
-  "member_uplinks": {
-    "link_field": "satisfies",
-    "links": [
-      {"member_id": "CREQ_csv_validate_headers", "target_id": "FEAT_csv_export"},
-      {"member_id": "CREQ_csv_map_columns", "target_id": "FEAT_csv_export"},
-      {"member_id": "CREQ_csv_write_rows", "target_id": "FEAT_csv_export"}
-    ]
-  },
-  "source_span_lines": null,
+  "source_spans": null,
   "source_path": "src/csv_export/exporter.py",
   "target_rst": "docs/source/recovered/feat_csv_export.rst",
   "run": {

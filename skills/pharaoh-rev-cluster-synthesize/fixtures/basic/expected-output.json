@@ -14,21 +14,27 @@
       "raw_rst": ".. feat:: CSV Export\n   :id: FEAT_csv_export\n   :status: draft\n\n   The system shall export the needs set to a CSV file, validating the configured column headers, mapping need fields to columns, and writing one row per exported need.\n"
     }
   ],
-  "member_uplinks": {
-    "link_field": "satisfies",
-    "links": [
-      {
-        "member_id": "CREQ_csv_validate_headers",
-        "target_id": "FEAT_csv_export"
-      },
-      {
-        "member_id": "CREQ_csv_map_columns",
-        "target_id": "FEAT_csv_export"
-      },
-      {
-        "member_id": "CREQ_csv_write_rows",
-        "target_id": "FEAT_csv_export"
-      }
-    ]
-  }
+  "member_updates": [
+    {
+      "member_id": "CREQ_csv_validate_headers",
+      "file": "src/csv_export/exporter.py",
+      "line": 42,
+      "link_field": "satisfies",
+      "raw_rst": ".. comp_req:: Validate CSV header row\n   :id: CREQ_csv_validate_headers\n   :status: recovered\n   :satisfies: FEAT_csv_export\n\n   The CSV Exporter shall reject an export request when the configured column mapping references a header not present in the target schema.\n"
+    },
+    {
+      "member_id": "CREQ_csv_map_columns",
+      "file": "src/csv_export/exporter.py",
+      "line": 58,
+      "link_field": "satisfies",
+      "raw_rst": ".. comp_req:: Map need fields to CSV columns\n   :id: CREQ_csv_map_columns\n   :status: recovered\n   :satisfies: FEAT_csv_export\n\n   The CSV Exporter shall map each need field named in the column mapping to the corresponding CSV column in the emitted row.\n"
+    },
+    {
+      "member_id": "CREQ_csv_write_rows",
+      "file": "src/csv_export/exporter.py",
+      "line": 74,
+      "link_field": "satisfies",
+      "raw_rst": ".. comp_req:: Write one CSV row per need\n   :id: CREQ_csv_write_rows\n   :status: recovered\n   :satisfies: FEAT_csv_export\n\n   The CSV Exporter shall write exactly one CSV row per exported need, in the order returned by the needs query.\n"
+    }
+  ]
 }

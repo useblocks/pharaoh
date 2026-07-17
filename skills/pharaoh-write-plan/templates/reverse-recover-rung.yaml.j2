@@ -13,11 +13,12 @@ description: |
   file with status: recovered, then per-req review / grounding-check /
   codelink-annotate, then one pharaoh-rev-record-ledger call per file.
 
-  rung_type == "synthesis": pharaoh-rev-cluster-synthesize per cluster,
-  then pharaoh-rev-atomicity-split on its emitted need, then per-item
-  review, then one pharaoh-rev-record-ledger call per cluster applying
-  that cluster's member_uplinks to its pre-existing lower-rung members
-  (already persisted by an earlier extraction-rung run of this template).
+  rung_type == "synthesis": pharaoh-rev-cluster-synthesize per cluster
+  (also authoring that cluster's member up-link RST edits, persisted the
+  normal way alongside its own emitted need), then pharaoh-rev-atomicity-split
+  on the emitted need, then per-item review, then one pharaoh-rev-record-ledger
+  call per cluster that records ONLY the (possibly split) synthesized need(s)
+  to the ledger -- record never touches the member up-links.
 
   Files and clusters are UNROLLED into concrete per-item tasks at write
   time (no runtime foreach over the caller-supplied list), matching
@@ -171,12 +172,17 @@ tasks:
     parallel_group: codelink_annotate_recovered
     expected_output_schema: json_obj
 
+  # codelink_annotate_{{ f.stem }}.inserted_line is the line the *comment* was
+  # inserted at, not the code element's own line range -- it is not a valid
+  # source for pharaoh-rev-record-ledger's source_spans input (see that
+  # skill's Input section). No element-range source exists at this rung yet,
+  # so source_spans is omitted here and every recorded need's source_span
+  # stays unset (None on the engine side).
   - id: record_ledger_{{ f.stem }}
     skill: pharaoh-rev-record-ledger
-    depends_on: [reqs_{{ f.stem }}, codelink_annotate_{{ f.stem }}]
+    depends_on: [reqs_{{ f.stem }}, review_{{ f.stem }}, grounding_{{ f.stem }}, codelink_annotate_{{ f.stem }}]
     inputs:
       reqs: "{% raw %}${reqs_{% endraw %}{{ f.stem }}{% raw %}.reqs}{% endraw %}"
-      source_span_lines: "{% raw %}${codelink_annotate_{% endraw %}{{ f.stem }}{% raw %}.inserted_line}{% endraw %}"
       source_path: {{ src_root }}/{{ f.filename }}
       target_rst: {{ target_rst }}
       run:
@@ -193,7 +199,11 @@ tasks:
   # record-ledger chain per precomputed cluster. No codelink_annotate here
   # -- a synthesized or split need has no single source line to anchor.
   # source_span stays unset for these needs (see pharaoh-rev-record-ledger
-  # Input: source_span_lines is optional). ---
+  # Input: source_spans is optional). cluster_synth_* also authors this
+  # cluster's member up-link RST edits (member_updates) alongside its own
+  # emitted need -- persisted by the plan's normal RST-persistence path
+  # (pharaoh-execute-plan Step 4.6), not by record_ledger_*, which only
+  # ever records reqs (the synthesized/split need) to the ledger. ---
 
 {% for c in clusters %}
   - id: cluster_synth_{{ c.cluster_id }}
@@ -211,8 +221,11 @@ tasks:
     parallel_group: cluster_synthesize
     expected_output_schema: json_obj
     outputs:
-      reqs: list       # [{id, title, type, body, intent_refs, intent_gap, cluster_id, raw_rst}]
-      member_uplinks: mapping
+      reqs: list           # [{id, title, type, body, intent_refs, intent_gap, cluster_id, raw_rst}]
+      member_updates: list  # [{member_id, file, line, link_field, raw_rst}, ...] -- RST edits this
+                             # task itself authors for each cluster member, persisted by the plan's
+                             # normal RST-persistence path alongside reqs[0].raw_rst, NOT applied
+                             # by record_ledger_{{ c.cluster_id }} below.
 
   - id: review_cluster_synth_{{ c.cluster_id }}
     skill: pharaoh-feat-review
@@ -239,6 +252,15 @@ tasks:
     outputs:
       reqs: list
 
+  # v1 note: if this split fires (the synthesized need was over-consolidated),
+  # cluster_synth_{{ c.cluster_id }}.member_updates already cites the
+  # PRE-SPLIT synthesized need id (its raw_rst carries the original
+  # cluster_synth_{{ c.cluster_id }}.reqs[0].id, not the post-split atom
+  # ids above). v1 does NOT re-point member up-links at the post-split
+  # atoms -- a human corrects the member directives by hand after a split
+  # fires, or a future version threads atomicity_split_{{ c.cluster_id }}'s
+  # output back into member_updates before persistence.
+
   - id: review_atomicity_split_{{ c.cluster_id }}
     skill: pharaoh-req-review
     foreach: "{% raw %}${atomicity_split_{% endraw %}{{ c.cluster_id }}{% raw %}.reqs | flatten}{% endraw %}"
@@ -250,12 +272,15 @@ tasks:
       tailoring_path: "{{ project_root }}/.pharaoh/project"
     parallel_group: review_atomicity_split
 
+  # Records only the (possibly split) synthesized need(s) to the advisory
+  # ledger. member_updates (cluster_synth_{{ c.cluster_id }}'s own RST edits
+  # for this cluster's members) is never sent here -- record is ledger-only
+  # and never touches RST. See pharaoh-rev-record-ledger's Input contract.
   - id: record_ledger_{{ c.cluster_id }}
     skill: pharaoh-rev-record-ledger
-    depends_on: [atomicity_split_{{ c.cluster_id }}]
+    depends_on: [cluster_synth_{{ c.cluster_id }}, review_cluster_synth_{{ c.cluster_id }}, atomicity_split_{{ c.cluster_id }}, review_atomicity_split_{{ c.cluster_id }}]
     inputs:
       reqs: "{% raw %}${atomicity_split_{% endraw %}{{ c.cluster_id }}{% raw %}.reqs | flatten}{% endraw %}"
-      member_uplinks: "{% raw %}${cluster_synth_{% endraw %}{{ c.cluster_id }}{% raw %}.member_uplinks}{% endraw %}"
       source_path: {{ target_rst }}
       target_rst: {{ target_rst }}
       run:
