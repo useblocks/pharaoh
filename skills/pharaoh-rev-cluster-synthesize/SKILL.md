@@ -18,7 +18,7 @@ The emitted directive name and ID prefix come from the consumer project's `ubpro
 ## Atomicity
 
 - (a) Indivisible -- one invocation reads one precomputed cluster (member ids) plus its intent snippets and emits exactly one synthesized need, plus that need's up-link edit for each cluster member. No clustering. No fan-out across clusters (the caller's `foreach` handles that). No CLI invocation, no ledger write -- authoring RST (the synthesized need and its members' up-link edits) is this skill's own output, persisted by the plan the normal way any skill's `raw_rst` output is persisted, not something `ubc agent reverse record` does.
-- (b) Input: `{cluster_id, members: list[str], intent_snippets: list[{id, source, text}], target_level, project_root, tailoring_path?, papyrus_workspace?, reporter_id, on_missing_config?}`. Output: single JSON object `{"reqs": [{"id", "title", "type", "body", "intent_refs", "intent_gap", "cluster_id", "raw_rst"}], "member_updates": [{"member_id", "file", "line", "link_field", "raw_rst"}, ...]}`.
+- (b) Input: `{cluster_id, members: list[str], intent_snippets: list[{id, source, text}], target_level, project_root, tailoring_path?, papyrus_workspace?, reporter_id, on_missing_config?, status?}`. Output: single JSON object `{"reqs": [{"id", "title", "type", "body", "intent_refs", "intent_gap", "cluster_id", "raw_rst"}], "member_updates": [{"member_id", "file", "line", "link_field", "raw_rst"}, ...]}`.
 - (c) Reward: deterministic fixture -- a cluster of 3 lower reqs sharing one theme plus 2 intent snippets that name that theme explicitly. Scorer checks: (1) exactly one emitted need, (2) the emitted need's `raw_rst` carries no down-link to the members, (3) `member_updates` lists all 3 member ids, each entry's `raw_rst` carrying the resolved `link_field` extended to include the emitted need's `id` and every other pre-existing field on that member unchanged, (4) `intent_refs` cites at least one of the 2 snippet ids, (5) `intent_gap` is `false`, (6) the emitted `type` equals `target_level`, (7) the body's vocabulary overlaps with both the members' shared theme and the intent snippets (substring match, case-insensitive), (8) both the emitted need's `raw_rst` and every `member_updates[*].raw_rst` match the directive Stage 1 + Stage 2 regex from `pharaoh-req-from-code` `## Output schema`.
 - (d) Reusable across any bottom-up reverse-engineering workflow synthesizing a missing upper rung from an existing lower-rung corpus plus repository history.
 - (e) Composable -- strictly one phase (cluster + intent -> one synthesized need plus its members' up-link edits). Never invokes clustering, `pharaoh-rev-atomicity-split`, or `pharaoh-rev-record-ledger` itself, and never shells out to the CLI or writes the ledger. A plan emitted by `pharaoh-write-plan` composes this skill (one call per cluster) with `pharaoh-rev-atomicity-split` and `pharaoh-rev-record-ledger` downstream.
@@ -34,6 +34,7 @@ The emitted directive name and ID prefix come from the consumer project's `ubpro
 - `papyrus_workspace` (optional): path to `.papyrus/` for canonical-term coordination with concurrent agents. Absent -> no-memory mode.
 - `reporter_id`: short identifier for this agent, passed to `pharaoh-decision-record` calls.
 - `on_missing_config` (optional): `"fail" | "prompt" | "use_default"`. Default `"prompt"`. Same semantics as `pharaoh-feat-draft-from-docs` Step 3.
+- `status` (optional, default `"draft"`): the sphinx-needs `:status:` value to emit on the synthesized need's `raw_rst`. A reverse-recovery plan sets this to `"recovered"` at the synthesis rung, same as it does for `pharaoh-req-from-code` at the extraction rung, so the two status gates (see `pharaoh-write-plan/templates/reverse-recover-rung.yaml.j2`'s header) treat a synthesized need the same as an extracted one -- a synthesized need is no less machine-recovered than an extracted one, and must not be status-indistinguishable from a hand-authored draft. Absent input behaves exactly as before this field existed -- `status: draft` -- so existing callers and plans need no change. `pharaoh-rev-atomicity-split` copies this value verbatim onto every atom it produces from a split synthesized need (see that skill's Output field semantics), so passing `status: "recovered"` here also reaches the atoms.
 
 ## Output
 
@@ -50,7 +51,7 @@ A single JSON object with two top-level keys: `reqs` (a one-element list -- one 
       "intent_refs": ["<intent_snippet_id>", "..."],
       "intent_gap": false,
       "cluster_id": "<cluster_id>",
-      "raw_rst": ".. <target_level>:: <short_title>\n   :id: ...\n   :status: draft\n\n   <body>\n"
+      "raw_rst": ".. <target_level>:: <short_title>\n   :id: ...\n   :status: <status input, default draft>\n\n   <body>\n"
     }
   ],
   "member_updates": [
@@ -72,7 +73,7 @@ Field semantics:
 - `intent_refs` -- the subset of `intent_snippets[*].id` that actually grounded the synthesized body. Empty list when no snippet contributed.
 - `intent_gap` -- `true` when no `intent_snippets` entry shares vocabulary or theme with the cluster, `false` otherwise. See Process Step 4.
 - `cluster_id` -- echoes the input, letting the caller reconcile output against the precomputed cluster list.
-- `raw_rst` -- exactly the directive block as it would appear pasted into an RST file, for the synthesized need alone. It carries no `:satisfies:` (or any other down-pointing link) to the cluster -- a higher need never authors a link down to the needs it summarizes, it only ever appears as the target of their up-links. Downstream skills that need the directive text read it from here.
+- `raw_rst` -- exactly the directive block as it would appear pasted into an RST file, for the synthesized need alone. Its `:status:` option equals the input `status` value, verbatim, default `"draft"` when the caller omits `status` (backward compatible with every existing plan and direct invocation, which never passed this field before). It carries no `:satisfies:` (or any other down-pointing link) to the cluster -- a higher need never authors a link down to the needs it summarizes, it only ever appears as the target of their up-links. Downstream skills that need the directive text read it from here.
 - `member_updates` -- one entry per cluster member, sphinx-needs convention (child cites parent): this skill authors the RST edit itself, it does not merely describe one for another skill to apply. `link_field` is the rung's configured up-link name for `target_level` (`satisfies` unless `ubproject.toml` or `tailoring_path` declares a rename), resolved the same way `pharaoh-req-from-code` resolves the name it renders `parent_feat_ids` under, and is the same value on every entry. `file` / `line` are the member's existing directive location, resolved via Tier 1, letting the caller splice the updated block back in place rather than append a duplicate. `raw_rst` is the member's own directive block, re-rendered with every pre-existing field unchanged except `link_field`, whose value is extended by `reqs[0].id` (deduplicated, existing order preserved, appended if new). This is a plan-persisted RST edit like any other skill output -- `pharaoh-rev-record-ledger` never sees `member_updates` and never touches RST. It is not part of the engine's `RecoveryResult` shape.
 
 The output is one JSON object -- no surrounding prose, no concatenated RST outside the JSON.
@@ -126,7 +127,7 @@ Only if `papyrus_workspace` is provided. If the synthesized title or body introd
 
 ### Step 6: Emit
 
-Build the single `reqs[0]` entry per the Output shape: `id`, `title`, `type` (= `target_level`), `body`, `intent_refs`, `intent_gap`, `cluster_id`, `raw_rst` (no `:satisfies:` or any other down-link to the members).
+Build the single `reqs[0]` entry per the Output shape: `id`, `title`, `type` (= `target_level`), `body`, `intent_refs`, `intent_gap`, `cluster_id`, `raw_rst` (`:status:` = input `status`, default `"draft"`, no `:satisfies:` or any other down-link to the members).
 
 Then build `member_updates`, one entry per resolved member (the `link_field` name is resolved the same way `pharaoh-req-from-code` resolves the name it renders `parent_feat_ids` under -- declared rename in `ubproject.toml` / `tailoring_path`, else `satisfies` -- and is the same value on every entry):
 

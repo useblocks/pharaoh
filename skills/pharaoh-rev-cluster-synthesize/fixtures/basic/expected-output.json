@@ -11,7 +11,7 @@
       ],
       "intent_gap": false,
       "cluster_id": "cluster_csv_export",
-      "raw_rst": ".. feat:: CSV Export\n   :id: FEAT_csv_export\n   :status: draft\n\n   The system shall export the needs set to a CSV file, validating the configured column headers, mapping need fields to columns, and writing one row per exported need.\n"
+      "raw_rst": ".. feat:: CSV Export\n   :id: FEAT_csv_export\n   :status: recovered\n\n   The system shall export the needs set to a CSV file, validating the configured column headers, mapping need fields to columns, and writing one row per exported need.\n"
     }
   ],
   "member_updates": [

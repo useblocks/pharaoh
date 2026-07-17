@@ -8,9 +8,9 @@
       "satisfies": [
         "FEAT_csv_export"
       ],
-      "status": "draft",
+      "status": "recovered",
       "split_from": "comp_req__csv_export_bundle",
-      "raw_rst": ".. comp_req:: Validate CSV export column headers\n   :id: comp_req__csv_export_bundle_01\n   :status: draft\n   :satisfies: FEAT_csv_export\n\n   The CSV Exporter shall validate the configured column headers against the target schema.\n"
+      "raw_rst": ".. comp_req:: Validate CSV export column headers\n   :id: comp_req__csv_export_bundle_01\n   :status: recovered\n   :satisfies: FEAT_csv_export\n\n   The CSV Exporter shall validate the configured column headers against the target schema.\n"
     },
     {
       "id": "comp_req__csv_export_bundle_02",
@@ -20,9 +20,9 @@
       "satisfies": [
         "FEAT_csv_export"
       ],
-      "status": "draft",
+      "status": "recovered",
       "split_from": "comp_req__csv_export_bundle",
-      "raw_rst": ".. comp_req:: Write CSV export rows\n   :id: comp_req__csv_export_bundle_02\n   :status: draft\n   :satisfies: FEAT_csv_export\n\n   The CSV Exporter shall write one CSV row per exported need, in the order returned by the needs query.\n"
+      "raw_rst": ".. comp_req:: Write CSV export rows\n   :id: comp_req__csv_export_bundle_02\n   :status: recovered\n   :satisfies: FEAT_csv_export\n\n   The CSV Exporter shall write one CSV row per exported need, in the order returned by the needs query.\n"
     }
   ]
 }

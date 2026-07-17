@@ -1,6 +1,4 @@
 {
-  "status": "recorded",
-  "written": ["FEAT_csv_export"],
-  "target_rst": "docs/source/recovered/feat_csv_export.rst",
-  "report_path": "/abs/path/to/consumer-project/.pharaoh/runs/reverse-record-2026-07-17T00-00-00Z.json"
+  "shard_path": "/abs/path/to/consumer-project/.pharaoh/rev-eng/src/csv_export/exporter.py.json",
+  "need_count": 1
 }

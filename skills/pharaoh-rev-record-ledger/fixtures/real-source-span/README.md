@@ -33,6 +33,7 @@ builds and writes to the temp file (Step 3 of Process):
   absent key or a two-element array.
 
 `expected-output.json` is the mocked CLI stdout this skill returns
-verbatim from Step 6 -- both reqs written, matching `fixtures/basic`'s
-convention. The exact response envelope is owned by Task 10's engine,
-not by Pharaoh.
+verbatim from Step 6: `{"shard_path": "...", "need_count": 2}`, the same
+engine `RecordOutcome` shape `fixtures/basic` documents (see that
+fixture's README for the shard-path derivation) -- `need_count` is `2`
+here since this fixture's `RecoveryResult` carries both `comp_req` reqs.

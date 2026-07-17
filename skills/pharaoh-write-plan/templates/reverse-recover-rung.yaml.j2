@@ -14,11 +14,13 @@ description: |
   codelink-annotate, then one pharaoh-rev-record-ledger call per file.
 
   rung_type == "synthesis": pharaoh-rev-cluster-synthesize per cluster
-  (also authoring that cluster's member up-link RST edits, persisted the
-  normal way alongside its own emitted need), then pharaoh-rev-atomicity-split
-  on the emitted need, then per-item review, then one pharaoh-rev-record-ledger
-  call per cluster that records ONLY the (possibly split) synthesized need(s)
-  to the ledger -- record never touches the member up-links.
+  with status: recovered (also authoring that cluster's member up-link RST
+  edits, persisted the normal way alongside its own emitted need), then
+  pharaoh-rev-atomicity-split on the emitted need (copies status verbatim
+  onto every atom, so recovered reaches split atoms too), then per-item
+  review, then one pharaoh-rev-record-ledger call per cluster that records
+  ONLY the (possibly split) synthesized need(s) to the ledger -- record
+  never touches the member up-links.
 
   Files and clusters are UNROLLED into concrete per-item tasks at write
   time (no runtime foreach over the caller-supplied list), matching
@@ -213,6 +215,7 @@ tasks:
       members: {{ c.members }}
       intent_snippets: {{ c.intent_snippets | default([]) }}
       target_level: {{ target_level }}
+      status: recovered
       project_root: {{ project_root }}
       tailoring_path: "{{ project_root }}/.pharaoh/project"
       papyrus_workspace: {{ papyrus_workspace | default(project_root + "/.papyrus") }}

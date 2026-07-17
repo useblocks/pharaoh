@@ -33,12 +33,18 @@ Applying `input-result.json` per this skill's Process:
   record --input <tempfile>` from `project_root`.
 
 `expected-output.json` is the mocked CLI stdout this skill returns
-verbatim from Step 6 -- one `feat` written, nothing else. The exact
-response envelope is owned by Task 10's engine, not by Pharaoh. This
-fixture records Pharaoh's current best understanding of that shape as a
-documentation aid, not a guarantee the engine will match it byte-for-byte.
-A full end-to-end scorer against the real `ubc agent reverse record`
-binary runs once the engine ships -- out of scope for this worktree.
+verbatim from Step 6: `{"shard_path": "...", "need_count": 1}`, the
+engine's actual `RecordOutcome` shape (`ubc_agent::reverse::record::RecordOutcome`,
+serialized as-is by `ubc agent reverse record` -- see
+`rust/ubc_agent/src/reverse/record.rs` and
+`rust/ubc_cli/src/commands/agent/reverse.rs`'s `record_report`). `need_count`
+is `1`, the single `FEAT_csv_export` need this fixture's `RecoveryResult`
+carries. `shard_path` mirrors `source_path` under
+`<project_root>/.pharaoh/rev-eng/` with `.json` appended
+(`ubc_agent::reverse::ledger::shard_path`). A full end-to-end scorer
+against the real `ubc agent reverse record` binary is still out of scope
+for this worktree -- this fixture models the confirmed struct shape, not
+a live CLI run.
 
 See `fixtures/real-source-span` for the fixture exercising a real,
 non-null `source_span` (the two-element-array shape this fixture, with
