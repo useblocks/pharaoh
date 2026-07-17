@@ -1,6 +1,6 @@
 ---
 name: pharaoh-rev-cluster-synthesize
-description: Use when synthesizing one higher-level need from a cluster of lower needs plus the diffuse intent signal in the git surface, linking the new need down to the cluster. Does NOT cluster lower needs itself, does NOT split an over-consolidated result (that is `pharaoh-rev-atomicity-split`), and does NOT invoke the CLI (that is `pharaoh-rev-record-ledger`).
+description: Use when synthesizing one higher-level need from a cluster of lower needs plus the diffuse intent signal in the git surface, emitting the up-links the cluster members should carry to the new need. Does NOT cluster lower needs itself, does NOT split an over-consolidated result (that is `pharaoh-rev-atomicity-split`), and does NOT invoke the CLI (that is `pharaoh-rev-record-ledger`).
 ---
 
 # pharaoh-rev-cluster-synthesize
@@ -18,8 +18,8 @@ The emitted directive name and ID prefix come from the consumer project's `ubpro
 ## Atomicity
 
 - (a) Indivisible -- one invocation reads one precomputed cluster (member ids) plus its intent snippets and emits exactly one synthesized need. No clustering. No fan-out across clusters (the caller's `foreach` handles that). No CLI invocation, no file write.
-- (b) Input: `{cluster_id, members: list[str], intent_snippets: list[{id, source, text}], target_level, project_root, tailoring_path?, papyrus_workspace?, reporter_id, on_missing_config?}`. Output: single JSON object `{"reqs": [{"id", "title", "type", "body", "satisfies", "intent_refs", "intent_gap", "cluster_id", "raw_rst"}]}`.
-- (c) Reward: deterministic fixture -- a cluster of 3 lower reqs sharing one theme plus 2 intent snippets that name that theme explicitly. Scorer checks: (1) exactly one emitted need, (2) `satisfies` lists all 3 member ids and nothing else, (3) `intent_refs` cites at least one of the 2 snippet ids, (4) `intent_gap` is `false`, (5) the emitted `type` equals `target_level`, (6) the body's vocabulary overlaps with both the members' shared theme and the intent snippets (substring match, case-insensitive), (7) `raw_rst` matches the directive Stage 1 + Stage 2 regex from `pharaoh-req-from-code` `## Output schema`.
+- (b) Input: `{cluster_id, members: list[str], intent_snippets: list[{id, source, text}], target_level, project_root, tailoring_path?, papyrus_workspace?, reporter_id, on_missing_config?}`. Output: single JSON object `{"reqs": [{"id", "title", "type", "body", "intent_refs", "intent_gap", "cluster_id", "raw_rst"}], "member_uplinks": {"link_field", "links": [{"member_id", "target_id"}, ...]}}`.
+- (c) Reward: deterministic fixture -- a cluster of 3 lower reqs sharing one theme plus 2 intent snippets that name that theme explicitly. Scorer checks: (1) exactly one emitted need, (2) the emitted need's `raw_rst` carries no down-link to the members, (3) `member_uplinks.links` lists all 3 member ids each paired with the emitted need's `id` and nothing else, (4) `intent_refs` cites at least one of the 2 snippet ids, (5) `intent_gap` is `false`, (6) the emitted `type` equals `target_level`, (7) the body's vocabulary overlaps with both the members' shared theme and the intent snippets (substring match, case-insensitive), (8) `raw_rst` matches the directive Stage 1 + Stage 2 regex from `pharaoh-req-from-code` `## Output schema`.
 - (d) Reusable across any bottom-up reverse-engineering workflow synthesizing a missing upper rung from an existing lower-rung corpus plus repository history.
 - (e) Composable -- strictly one phase (cluster + intent -> one synthesized need). Never invokes clustering, `pharaoh-rev-atomicity-split`, or `pharaoh-rev-record-ledger` itself. A plan emitted by `pharaoh-write-plan` composes this skill (one call per cluster) with `pharaoh-rev-atomicity-split` and `pharaoh-rev-record-ledger` downstream.
 
@@ -30,14 +30,14 @@ The emitted directive name and ID prefix come from the consumer project's `ubpro
 - `intent_snippets`: list of `{id, source, text}` objects, already gathered by the caller (e.g. `forge::fetch_intent` or manually selected commit/PR text). `source` is a short provenance label (`"commit a1b2c3d"`, `"PR #142 description"`). May be empty -- see intent-gap handling in Process.
 - `target_level`: directive name for the synthesized need. Must match a `[[needs.types]].directive` in the consumer project's `ubproject.toml`. Default `feat`. The emitted directive uses this name verbatim.
 - `project_root`: absolute path to the consumer project's root, used to resolve the ID prefix from `ubproject.toml`. If undeclared, fall back to `<target_level>__`.
-- `tailoring_path` (optional): absolute path to `.pharaoh/project/` for extra-field declarations (e.g. whether a project-specific down-link name replaces `satisfies` for `target_level`).
+- `tailoring_path` (optional): absolute path to `.pharaoh/project/` for extra-field declarations (e.g. whether a project-specific up-link name replaces `satisfies` for the members' link to `target_level`).
 - `papyrus_workspace` (optional): path to `.papyrus/` for canonical-term coordination with concurrent agents. Absent -> no-memory mode.
 - `reporter_id`: short identifier for this agent, passed to `pharaoh-decision-record` calls.
 - `on_missing_config` (optional): `"fail" | "prompt" | "use_default"`. Default `"prompt"`. Same semantics as `pharaoh-feat-draft-from-docs` Step 3.
 
 ## Output
 
-A single JSON object with one top-level key `reqs` (a one-element list -- one synthesized need per invocation). Shape:
+A single JSON object with two top-level keys: `reqs` (a one-element list -- one synthesized need per invocation) and `member_uplinks` (the up-links the cluster members should carry to that need). Shape:
 
 ```json
 {
@@ -47,13 +47,19 @@ A single JSON object with one top-level key `reqs` (a one-element list -- one sy
       "title": "<short_title>",
       "type": "<target_level>",
       "body": "<synthesized higher-rung capability statement, grounded in the cluster and, where available, the intent signal>",
-      "satisfies": ["<member_1>", "<member_2>", "..."],
       "intent_refs": ["<intent_snippet_id>", "..."],
       "intent_gap": false,
       "cluster_id": "<cluster_id>",
-      "raw_rst": ".. <target_level>:: <short_title>\n   :id: ...\n   :status: draft\n   :satisfies: <member_1>, <member_2>, ...\n\n   <body>\n"
+      "raw_rst": ".. <target_level>:: <short_title>\n   :id: ...\n   :status: draft\n\n   <body>\n"
     }
-  ]
+  ],
+  "member_uplinks": {
+    "link_field": "<up_link_field_name>",
+    "links": [
+      {"member_id": "<member_1>", "target_id": "<reqs[0].id>"},
+      {"member_id": "<member_2>", "target_id": "<reqs[0].id>"}
+    ]
+  }
 }
 ```
 
@@ -61,11 +67,11 @@ Field semantics:
 
 - `id` -- `<id_prefix><snake_case_id>` resolved the same way as `pharaoh-feat-draft-from-docs` Step 3 (declared `prefix` -> use it verbatim, declared type with no prefix -> `<target_level>__`). `<snake_case_id>` is derived from the synthesized title.
 - `type` -- equals input `target_level`.
-- `satisfies` -- the full `members` list, unchanged and complete. This is the synthesized need's downward link to the cluster it summarizes: the need exists because, and only because, these members exist. It is carried in the `satisfies` key for envelope consistency with `pharaoh-req-from-code`'s `reqs` shape (both feed `pharaoh-rev-record-ledger`). The emitted `raw_rst` renders it under the project's tailored down-link name if `ubproject.toml` or `tailoring_path` declares one for `target_level`, else as `:satisfies:` verbatim.
 - `intent_refs` -- the subset of `intent_snippets[*].id` that actually grounded the synthesized body. Empty list when no snippet contributed.
 - `intent_gap` -- `true` when no `intent_snippets` entry shares vocabulary or theme with the cluster, `false` otherwise. See Process Step 4.
 - `cluster_id` -- echoes the input, letting the caller reconcile output against the precomputed cluster list.
-- `raw_rst` -- exactly the directive block as it would appear pasted into an RST file. Downstream skills that need the directive text read it from here.
+- `raw_rst` -- exactly the directive block as it would appear pasted into an RST file, for the synthesized need alone. It carries no `:satisfies:` (or any other down-pointing link) to the cluster -- a higher need never authors a link down to the needs it summarizes, it only ever appears as the target of their up-links. Downstream skills that need the directive text read it from here.
+- `member_uplinks` -- the up-links the cluster members must be given so they cite the synthesized need, sphinx-needs convention (child cites parent). `link_field` is the rung's configured up-link name for `target_level` (`satisfies` unless `ubproject.toml` or `tailoring_path` declares a rename), resolved the same way `pharaoh-req-from-code` resolves the name it renders `parent_feat_ids` under. `links` is the full `members` list, unchanged and complete, each paired with the emitted need's own `id` as `target_id`. This skill does not write to the members itself -- `pharaoh-rev-record-ledger` (or the recovery template) is what applies `member_uplinks` by adding/rendering `link_field` on each member need.
 
 The output is one JSON object -- no surrounding prose, no concatenated RST outside the JSON.
 
@@ -73,12 +79,12 @@ The output is one JSON object -- no surrounding prose, no concatenated RST outsi
 
 Validated as `json_obj` by `pharaoh-output-validate`. Validator checks:
 
-1. Top-level is a JSON object with exactly one required key `reqs` (a list of exactly one item).
-2. The item has the keys `id`, `title`, `type`, `body`, `satisfies`, `intent_refs`, `intent_gap`, `cluster_id`, `raw_rst`.
+1. Top-level is a JSON object with exactly two required keys: `reqs` (a list of exactly one item) and `member_uplinks` (an object).
+2. The `reqs` item has the keys `id`, `title`, `type`, `body`, `intent_refs`, `intent_gap`, `cluster_id`, `raw_rst`, and does NOT have a `satisfies` key or any other down-link key.
 3. `type` equals input `target_level`.
-4. `satisfies` is a non-empty list and equals the input `members` list (same set, order-independent).
+4. `member_uplinks.link_field` is a non-empty string. `member_uplinks.links` is a non-empty list whose `member_id` values equal the input `members` list (same set, order-independent) and whose `target_id` equals `reqs[0].id` on every entry.
 5. `intent_gap` is a boolean. `intent_refs` is `[]` whenever `intent_gap` is `true`.
-6. `raw_rst` matches the RST directive Stage 1 + Stage 2 regex from `pharaoh-req-from-code` `## Output schema`, with directive name = `type` and `:id:` / `:status:` present.
+6. `raw_rst` matches the RST directive Stage 1 + Stage 2 regex from `pharaoh-req-from-code` `## Output schema`, with directive name = `type` and `:id:` / `:status:` present, and contains no `:satisfies:` (or configured down-link) field.
 7. `id` matches the resolved `<id_prefix><snake_case_id>` pattern.
 
 ## Process
@@ -117,7 +123,7 @@ Only if `papyrus_workspace` is provided. If the synthesized title or body introd
 
 ### Step 6: Emit
 
-Build the single `reqs[0]` entry per the Output shape: `id`, `title`, `type` (= `target_level`), `body`, `satisfies` (= `members`, complete), `intent_refs`, `intent_gap`, `cluster_id`, `raw_rst`. Nothing else on stdout -- no prose wrapper, no fenced code block.
+Build the single `reqs[0]` entry per the Output shape: `id`, `title`, `type` (= `target_level`), `body`, `intent_refs`, `intent_gap`, `cluster_id`, `raw_rst` (no `:satisfies:` or any other down-link to the members). Then build `member_uplinks`: resolve `link_field` the same way `pharaoh-req-from-code` resolves the name it renders `parent_feat_ids` under (declared rename in `ubproject.toml` / `tailoring_path`, else `satisfies`), and emit one `{member_id, target_id}` pair per entry in `members`, with `target_id` set to the just-emitted `reqs[0].id`. Nothing else on stdout -- no prose wrapper, no fenced code block.
 
 ## No-memory mode
 
@@ -139,4 +145,4 @@ See [`shared/self-review-invariant.md`](../shared/self-review-invariant.md) for 
 
 ## Composition
 
-A plan emitted by `pharaoh-write-plan` dispatches one instance of this skill per precomputed cluster via a `foreach` task. Downstream, `pharaoh-rev-atomicity-split` may re-split the emitted need if `pharaoh-feat-review` (or a human auditor) finds it over-consolidated. `pharaoh-rev-record-ledger` then wraps the resulting `reqs` (`reqs` -> `needs`) into the engine's `RecoveryResult` shape and runs `ubc agent reverse record --input <tempfile>` -- the only legal way a plan-DAG task reaches the CLI. This skill never invokes the CLI, never clusters, and never splits.
+A plan emitted by `pharaoh-write-plan` dispatches one instance of this skill per precomputed cluster via a `foreach` task. Downstream, `pharaoh-rev-atomicity-split` may re-split the emitted need if `pharaoh-feat-review` (or a human auditor) finds it over-consolidated. `pharaoh-rev-record-ledger` then wraps the resulting `reqs` (`reqs` -> `needs`) into the engine's `RecoveryResult` shape, applies `member_uplinks` to author the up-link field on each cluster member, and runs `ubc agent reverse record --input <tempfile>` -- the only legal way a plan-DAG task reaches the CLI. This skill never invokes the CLI, never clusters, never splits, and never authors a down-link from the synthesized need to its members.
