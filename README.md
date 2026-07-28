@@ -1,8 +1,19 @@
 # Pharaoh
 
+---
+**Important note**: This repository is archived and no longer maintained.
+The described skills are now part of the Pharaoh integration in
+[ubCode](https://ubcode.useblocks.com/usage/agentic_engineer/index.html) and [ubTrace](https://useblocks.com/products/ubtrace).
+
+ubCode and its Pharaoh integration are **freely available** for open-source tools.
+
+--- 
+
 AI assistant framework for [sphinx-needs](https://sphinx-needs.readthedocs.io/) projects. Pharaoh combines structured development workflows with requirements engineering intelligence to help teams author, analyze, trace, and validate requirements using AI.
 
 Pharaoh has no runtime binary or Python package. All analysis logic is encoded in skill/agent markdown instructions. The AI is the runtime.
+
+
 
 ## Quick Start
 
